@@ -1,5 +1,5 @@
 # ─── STAGE 1: RUST PLANNER (Cargo Chef) ───────────────────────────────────────
-FROM lukemathwalker/cargo-chef:0.1.70-rust-1.82-bookworm AS chef
+FROM lukemathwalker/cargo-chef:0.1.68-rust-1.82-bookworm AS chef
 
 # BSS-37: Install build dependencies + solc/protoc for ethers abigen + protos
 RUN apt-get update && apt-get install -y --no-install-recommends \
