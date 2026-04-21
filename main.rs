@@ -1376,15 +1376,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let solver_trigger = Arc::new(tokio::sync::Notify::new());
 
     // --- SUBSYSTEM BSS-05: Reactive WebSocket Sync Layer ---
-    // Elite-grade implementation: Replaces polling with event-driven subscriptions.
-    let chains = vec![1, 8453, 42161, 137, 10];
-    // BSS-05: Dynamic Chain Subscription
-    // Respects the CHAIN_ID environment variable to focus ingestion on the execution target.
-    let target_chain = std::env::var("CHAIN_ID")
-        .unwrap_or_else(|_| "8453".to_string())
-        .parse::<u64>()
-        .unwrap_or(8453);
-    let chains = vec![target_chain];
+    // BSS-05: Multi-Chain Matrix Sync
+    // Spawns independent ingestion tasks for all Tier-1 chains to detect cross-market inefficiencies.
+    let chains = vec![1, 8453, 42161, 137, 10]; // ETH, Base, Arbitrum, Polygon, Optimism
 
     for chain_id in chains {
         let chain_tx = tx.clone();
@@ -1446,6 +1440,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             let loop_start = Instant::now();
             let policy = policy_rx.borrow().clone();
+            let target_chain_id = std::env::var("CHAIN_ID").unwrap_or_default().parse::<u64>().unwrap_or(8453);
             
             let start_token: Arc<str> = Arc::from("WETH");
             
@@ -1501,7 +1496,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         
                         let telemetry = serde_json::json!({
                             "spreadPct": profit_pct,
-                            "chain_id": 8453, // Target execution chain (Base)
+                            "chain_id": target_chain_id, 
                             "path": ["WETH", "USDC", "WETH"], // Reconstructed cycle path
                             "timestamp": std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs(),
                             "shadow_mode_active": policy.shadow_mode,
