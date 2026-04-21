@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y musl-dev && rustup target add x86_64-un
 FROM node:22.12-alpine AS pnpm-builder
 RUN apk add --no-cache git bash
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@9 --activate
+RUN npm install -g pnpm@9
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 RUN pnpm install --frozen-lockfile
 COPY lib lib/
