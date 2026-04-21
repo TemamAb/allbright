@@ -427,7 +427,7 @@ export async function scanForOpportunities(
 ): Promise<Opportunity[]> {
   // Fetch all data sources in parallel — no sequential bottleneck
   const ethPricePromise = getEthPriceUsd();
-  const [ethPrice, uniswapSpread, llamaData, gasCostBase] = await Promise.all([
+  const [ethPrice, uniswapSpread, llamaData, _aggregatorQuotes, gasCostBase] = await Promise.all([
     ethPricePromise,
     ethPricePromise.then(price => fetchUniswapV3Spread(price, chainId)),
     fetchDeFiLlamaMultiSpread(),
@@ -493,7 +493,9 @@ export async function scanForOpportunities(
       // Minimum viable spread: net > 0 AND spread > DEX fee (0.03% for optimized stable swaps)
       if (bestLoan.netProfit > 0 && rawSpreadPct > 0.03) {
         return {
-          ...pair,
+          protocol: pair.protocol,
+          tokenIn: pair.tokenIn,
+          tokenOut: pair.tokenOut,
           estProfitEth: parseFloat(bestLoan.netProfit.toFixed(6)),
           spreadPct: parseFloat(rawSpreadPct.toFixed(5)),
           flashLoanSizeEth: bestLoan.flashLoanSizeEth,
@@ -506,9 +508,8 @@ export async function scanForOpportunities(
           recommendedLoanSizeEth: bestLoan.flashLoanSizeEth,
           path: [pair.tokenIn, pair.tokenOut],
           flash_source: dataSource,
-        } satisfies Opportunity;
+        } as Opportunity;
       }
-      return null;
     }),
   );
 
@@ -552,14 +553,14 @@ export async function scanForOpportunities(
           recommendedLoanSizeEth: bestCycleLoan.flashLoanSizeEth,
           path: [u, v], // Simplified path for multi-hop
           flash_source: "bellman_ford_engine",
-        });
+        } as Opportunity);
       }
     }
   }
 
   // Collect non-null results, sorted by estimated profit descending
   const valid = pairResults
-    .filter((o): o is Opportunity => o !== null)
+    .filter((o): o is Opportunity => o !== null && typeof o === 'object')
     .sort((a, b) => b.estProfitEth - a.estProfitEth);
 
   if (valid.length > 0) {
