@@ -34,12 +34,12 @@ router.get("/telemetry", async (req, res) => {
 
   // Real trade data from DB
   const allTrades = await db.select().from(tradesTable).orderBy(desc(tradesTable.timestamp)).limit(500);
-  const executed = allTrades.filter(t => t.status === "EXECUTED" || t.status === "SHADOW");
+  const executed = allTrades.filter((t: any) => t.status === "EXECUTED" || t.status === "SHADOW");
 
   const sessionCutoff = new Date(Date.now() - 3600 * 1000);
-  const sessionTrades = executed.filter(t => t.timestamp && new Date(t.timestamp) >= sessionCutoff);
+  const sessionTrades = executed.filter((t: any) => t.timestamp && new Date(t.timestamp) >= sessionCutoff);
 
-  const sessionProfitEth = sessionTrades.reduce((sum, t) => sum + parseFloat(t.profit || "0"), 0);
+  const sessionProfitEth = sessionTrades.reduce((sum: number, t: any) => sum + parseFloat(t.profit || "0"), 0);
 
   // IMPROVEMENT: Use the high-speed price from the shared engine state if available
   // fallback to oracle only if backbone is offline.
@@ -51,9 +51,9 @@ router.get("/telemetry", async (req, res) => {
   // Real latency from actual DB records (measured, not simulated)
   // We filter out 0 or null values to ensure the P99 is not skewed by skipped scans
   const latencies = executed
-    .filter(t => t.latencyMs != null && parseFloat(t.latencyMs as string) > 0)
-    .map(t => parseFloat(t.latencyMs as string))
-    .sort((a, b) => a - b);
+    .filter((t: any) => t.latencyMs != null && parseFloat(t.latencyMs as string) > 0)
+    .map((t: any) => parseFloat(t.latencyMs as string))
+    .sort((a: number, b: number) => a - b);
 
   // Latency is stored in ms, displayed in ms (not µs — that was a false conversion)
   // Real Node.js + PostgreSQL round-trip is 10-100ms, not µs
@@ -62,7 +62,7 @@ router.get("/telemetry", async (req, res) => {
     ? latencies[Math.floor(latencies.length * 0.99)]
     : null;
   const avgLatencyMs = latencies.length > 0
-    ? latencies.reduce((a, b) => a + b, 0) / latencies.length
+    ? latencies.reduce((a: number, b: number) => a + b, 0) / latencies.length
     : null;
 
   // Real block stats from Cloudflare RPC tracker
@@ -74,11 +74,11 @@ router.get("/telemetry", async (req, res) => {
     const bucketEnd = new Date(Date.now() - i * 5 * 60_000);
     const bucketStart = new Date(bucketEnd.getTime() - 5 * 60_000);
     const label = bucketEnd.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-    const inBucket = executed.filter(tr => {
+    const inBucket = executed.filter((tr: any) => {
       const d = new Date(tr.timestamp);
       return d >= bucketStart && d < bucketEnd;
     });
-    const eth = inBucket.reduce((s, tr) => s + parseFloat(tr.profit || "0"), 0);
+    const eth = inBucket.reduce((s: number, tr: any) => s + parseFloat(tr.profit || "0"), 0);
     profitHistory.push({ time: label, eth, usd: eth * ethPrice });
   }
 

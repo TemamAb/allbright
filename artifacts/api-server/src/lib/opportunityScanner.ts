@@ -38,6 +38,8 @@ export interface Opportunity {
   dataSource: string; // which API provided the spread
   gasEstimate: number; // estimated gas units for this route
   recommendedLoanSizeEth: number; // best notional found for this route
+  path: string[];
+  flash_source: string;
 }
 
 interface PairDefinition {
@@ -502,6 +504,8 @@ export async function scanForOpportunities(
           dataSource,
           gasEstimate: pair.gasUnits,
           recommendedLoanSizeEth: bestLoan.flashLoanSizeEth,
+          path: [pair.tokenIn, pair.tokenOut],
+          flash_source: dataSource,
         } satisfies Opportunity;
       }
       return null;
@@ -546,6 +550,8 @@ export async function scanForOpportunities(
           dataSource: "bellman_ford_engine",
           gasEstimate: cycleGasUnits,
           recommendedLoanSizeEth: bestCycleLoan.flashLoanSizeEth,
+          path: [u, v], // Simplified path for multi-hop
+          flash_source: "bellman_ford_engine",
         });
       }
     }

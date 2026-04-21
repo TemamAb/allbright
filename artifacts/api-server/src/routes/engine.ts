@@ -35,7 +35,6 @@ import { getEthPriceUsd } from "../lib/priceOracle";
 import { startBlockTracking, stopBlockTracking, fetchCurrentBlock, getBlockStats } from "../lib/blockTracker";
 import { scanForOpportunities } from "../lib/opportunityScanner";
 import { sharedEngineState } from "../lib/engineState";
-import { getStoredPimlicoKey, getStoredRpcEndpoint } from "./settings";
 import { BrightSkyBribeEngine } from "../../../../bribe-engine";
 import * as net from "net";
 import { sql } from "drizzle-orm";
@@ -304,6 +303,9 @@ async function buildAndSubmitUserOp(
 // ─── Core Scan Cycle ────────────────────────────────────────────────────────────
 async function scanCycle() {
   if (engineState.scanInFlight) {
+    const stats = getBlockStats();
+    const blockNumber = stats.currentBlock > 0 ? stats.currentBlock : 21_500_000;
+
     engineState.skippedScanCycles += 1;
     logger.warn(
       { skippedScanCycles: engineState.skippedScanCycles },
@@ -312,15 +314,18 @@ async function scanCycle() {
     return;
   }
 
-  broadcastTelemetry("ENGINE_TICK", { blockNumber: getBlockStats().currentBlock });
+  const stats = getBlockStats();
+  const blockNumber = stats.currentBlock > 0 ? stats.currentBlock : 21_500_000;
+
+  broadcastTelemetry("ENGINE_TICK", { blockNumber });
 
   // KPI 10: Risk Engine Auto-stop. If consecutive failures exceed 3, stop the engine.
   if (engineState.circuitBreaker.consecutiveFailures >= 3) {
-    logger.error({ failures: engineState.circuitBreaker.consecutiveFailures }, "Circuit breaker threshold reached (3+ failures). Auto-stopping engine.");
+    logger.error({ failures: engineState.circuitBreaker.consecutiveFailures }, "Circuit breaker threshold reached (3+ failures).");
     await db.insert(streamEventsTable).values({
       id: genId("evt"),
       type: "SCANNING",
-      message: `[CRITICAL] Auto-stopping engine: ${engineState.circuitBreaker.consecutiveFailures} consecutive failures detected.`,
+      message: `[CRITICAL] Auto-stopping: ${engineState.circuitBreaker.consecutiveFailures} failures.`,
       blockNumber,
     });
     await stopEngineInternal();
@@ -331,9 +336,6 @@ async function scanCycle() {
   engineState.scanInFlight = true;
   engineState.lastScanStartedAt = new Date();
 
-  const stats = getBlockStats();
-  // KPI 8: Support for concurrent multi-chain block heights (Elite Grade: 10+ chains)
-  const blockNumber = stats.currentBlock > 0 ? stats.currentBlock : 21_500_000;
   // Define target chains for parallel worker execution (Total: 11 chains)
   const targetChains = [
     1,      // Ethereum
@@ -359,8 +361,8 @@ async function scanCycle() {
     const simulationMode = settings?.simulationMode ?? true;
     const targetProtocols = (settings?.targetProtocols ?? "uniswap_v3,aave_v3,balancer")
       .split(",")
-      .map((protocol) => protocol.trim())
-      .filter((protocol) => protocol.length > 0);
+      .map((protocol: any) => protocol.trim())
+      .filter((protocol: any) => protocol.length > 0);
     const ethPrice = await getEthPriceUsd();
 
     const activeChainIds = targetChains.filter(id => getBlockStats(id).currentBlock > 0);

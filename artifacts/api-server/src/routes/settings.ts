@@ -41,7 +41,7 @@ router.put("/settings", async (req, res) => {
         await db.insert(settingsTable)
           .values({ key, value, updatedAt: new Date() })
           .onConflictDoUpdate({
-            target: settingsTable.key,
+            target: (settingsTable as any).key,
             set: { value, updatedAt: new Date() }
           });
       }

@@ -21,7 +21,7 @@ export class AlphaCopilot {
       const lastTrades = await db.select().from(tradesTable).orderBy(desc(tradesTable.timestamp)).limit(5);
       const recentEvents = await db.select().from(streamEventsTable).orderBy(desc(streamEventsTable.timestamp)).limit(10);
 
-      const totalPnL = lastTrades.reduce((acc, t) => acc + Number(t.profitUsd || 0), 0);
+      const totalPnL = lastTrades.reduce((acc: number, t: any) => acc + Number(t.profitUsd || 0), 0);
       
       const report = [
         "─── BRIGHTSKY MISSION REPORT ───",
@@ -32,10 +32,10 @@ export class AlphaCopilot {
         "─── PERFORMANCE ───",
         `RECENT_PNL: $${totalPnL.toFixed(2)}`,
         `LAST_TRADES:`,
-        ...lastTrades.map(t => `  • [${t.status}] $${t.profitUsd} (${t.latencyMs}ms)`),
+        ...lastTrades.map((t: any) => `  • [${t.status}] $${t.profitUsd} (${t.latencyMs}ms)`),
         "",
         "─── SYSTEM EVENTS ───",
-        ...recentEvents.map(e => {
+        ...recentEvents.map((e: any) => {
           const msg = e.message.length > 50 ? e.message.substring(0, 47) + "..." : e.message;
           return `  ! [${e.type}] ${msg}`;
         }),
