@@ -41,7 +41,7 @@ router.get("/trades/summary", async (req, res) => {
   const tradesPerHour = sessionTrades.length;
 
   const protocolCounts: Record<string, number> = {};
-  executed.forEach(t => { if (t.protocol) protocolCounts[t.protocol] = (protocolCounts[t.protocol] || 0) + 1; });
+  executed.forEach((t: any) => { if (t.protocol) protocolCounts[t.protocol] = (protocolCounts[t.protocol] || 0) + 1; });
   const topProtocol = Object.entries(protocolCounts).sort(([, a], [, b]) => b - a)[0]?.[0] ?? null;
 
   res.json({
