@@ -28,15 +28,15 @@ router.get("/trades/summary", async (req, res) => {
   // Use real-time ETH price — NOT the hardcoded $3200
   const ethPrice = await getEthPriceUsd();
 
-  const totalProfitEth = executed.reduce((sum, t) => sum + parseFloat(t.profit || "0"), 0);
+  const totalProfitEth = executed.reduce((sum: number, t: any) => sum + parseFloat(t.profit || "0"), 0);
   const totalProfitUsd = totalProfitEth * ethPrice;
   const successRate = allTrades.length > 0 ? (executed.length / allTrades.length) * 100 : 0;
   const avgProfitPerTrade = executed.length > 0 ? totalProfitEth / executed.length : 0;
-  const totalBribesPaid = executed.reduce((sum, t) => sum + parseFloat(t.bribePaid || "0"), 0);
+  const totalBribesPaid = executed.reduce((sum: number, t: any) => sum + parseFloat(t.bribePaid || "0"), 0);
 
   const sessionCutoff = new Date(Date.now() - 3600 * 1000);
   const sessionTrades = executed.filter(t => t.timestamp && new Date(t.timestamp) >= sessionCutoff);
-  const sessionProfitEth = sessionTrades.reduce((sum, t) => sum + parseFloat(t.profit || "0"), 0);
+  const sessionProfitEth = sessionTrades.reduce((sum: number, t: any) => sum + parseFloat(t.profit || "0"), 0);
   const sessionProfitUsd = sessionProfitEth * ethPrice;
   const tradesPerHour = sessionTrades.length;
 
