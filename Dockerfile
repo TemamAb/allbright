@@ -4,7 +4,7 @@ COPY Cargo.toml .
 COPY Cargo.lock .
 COPY main.rs .
 COPY bss_04_graph.rs .
-RUN apt-get update && apt-get install -y musl-dev && rustup target add x86_64-unknown-linux-musl && cargo build --release --target x86_64-unknown-linux-musl
+RUN apt-get update && apt-get install -y musl-dev musl-tools && rustup target add x86_64-unknown-linux-musl && cargo build --release --target x86_64-unknown-linux-musl
 
 FROM node:22.12-alpine AS pnpm-builder
 ENV CI=true
