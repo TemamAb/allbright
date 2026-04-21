@@ -1,12 +1,11 @@
 # ─── STAGE 1: RUST PLANNER (Cargo Chef) ───────────────────────────────────────
-FROM rust:1.82-slim-bookworm AS chef
+FROM lukemathwalker/cargo-chef:0.1.68-rust-1.82-bookworm AS chef
 
-# BSS-37: Install build dependencies required for cargo-chef and solver compilation
+# BSS-37: Install build dependencies required for solver compilation (OpenSSL, etc.)
 RUN apt-get update && apt-get install -y \
     pkg-config libssl-dev build-essential cmake ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-RUN cargo install cargo-chef
 WORKDIR /app
 
 # ─── STAGE 2: RUST RECIPE ─────────────────────────────────────────────────────
