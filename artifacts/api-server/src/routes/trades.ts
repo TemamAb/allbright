@@ -23,7 +23,7 @@ router.get("/trades", async (req, res) => {
 
 router.get("/trades/summary", async (req, res) => {
   const allTrades = await db.select().from(tradesTable);
-  const executed = allTrades.filter(t => t.status === "EXECUTED");
+  const executed = allTrades.filter((t: any) => t.status === "EXECUTED");
 
   // Use real-time ETH price — NOT the hardcoded $3200
   const ethPrice = await getEthPriceUsd();
@@ -35,7 +35,7 @@ router.get("/trades/summary", async (req, res) => {
   const totalBribesPaid = executed.reduce((sum: number, t: any) => sum + parseFloat(t.bribePaid || "0"), 0);
 
   const sessionCutoff = new Date(Date.now() - 3600 * 1000);
-  const sessionTrades = executed.filter(t => t.timestamp && new Date(t.timestamp) >= sessionCutoff);
+  const sessionTrades = executed.filter((t: any) => t.timestamp && new Date(t.timestamp) >= sessionCutoff);
   const sessionProfitEth = sessionTrades.reduce((sum: number, t: any) => sum + parseFloat(t.profit || "0"), 0);
   const sessionProfitUsd = sessionProfitEth * ethPrice;
   const tradesPerHour = sessionTrades.length;
