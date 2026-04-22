@@ -1,32 +1,18 @@
 # syntax=docker/dockerfile:1
-# ─── STAGE 1: Rust Builder (Stable 1.85, with cargo-chef) ────────────────────────
-FROM rust:1.86-slim AS rust-builder
-
-# Install cargo-chef for dependency caching
-RUN cargo install cargo-chef
-
-# Install all deps for ethers-rs v2 abigen + crypto/web3 build
-RUN apt-get update && apt-get install -y \
-    pkg-config \
-    libssl-dev \
-    libclang-dev \
-    protobuf-compiler \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-
-# Prepare recipe for dependency caching
+# ─── STAGE 1: Planner for cargo-chef ────────────────────────────────────────────────
 FROM rust:1.86-slim AS planner
 RUN cargo install cargo-chef
+WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
 RUN cargo chef prepare --recipe-path recipe.json
 
+# ─── STAGE 2: Cache dependencies ────────────────────────────────────────────────
 FROM rust:1.86-slim AS cacher
 RUN cargo install cargo-chef
 COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 
-# Build stage
+# ─── STAGE 3: Rust Builder ────────────────────────────────────────────────
 FROM rust:1.86-slim AS builder
 RUN apt-get update && apt-get install -y \
     pkg-config \
@@ -45,51 +31,30 @@ COPY src ./src
 COPY bss_*.rs ./
 RUN cargo build --release --bin brightsky-solver
 
-# ─── STAGE 3: Node Frontend Build ────────────────────────
+# ─── STAGE 4: Node Frontend Build ────────────────────────
 FROM node:22-bookworm-slim AS node-builder
 
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY artifacts/brightsky/package.json artifacts/brightsky/
 COPY lib/api-client-react/package.json lib/api-client-react/
-# Add other workspace packages if needed
 
 RUN corepack enable && pnpm install --frozen-lockfile
 
 COPY artifacts/brightsky ./artifacts/brightsky
 COPY lib/api-client-react ./lib/api-client-react
-# Pre-built API types
 COPY lib/api-zod ./lib/api-zod
 
 WORKDIR /app/artifacts/brightsky
 RUN pnpm build
 
-# ─── STAGE 3: Node Frontend Build ────────────────────────
-FROM node:22-bookworm-slim AS node-builder
-
-WORKDIR /app
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY artifacts/brightsky/package.json artifacts/brightsky/
-COPY lib/api-client-react/package.json lib/api-client-react/
-# Add other workspace packages if needed
-
-RUN corepack enable && pnpm install --frozen-lockfile
-
-COPY artifacts/brightsky ./artifacts/brightsky
-COPY lib/api-client-react ./lib/api-client-react
-# Pre-built API types
-COPY lib/api-zod ./lib/api-zod
-
-WORKDIR /app/artifacts/brightsky
-RUN pnpm build
-
-# ─── STAGE 4: Final Multi-Service Image ──────────────────
+# ─── STAGE 5: Final Multi-Service Image ──────────────────
 FROM debian:bookworm-slim
 
-# Install runtime deps
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     libssl3 \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -115,4 +80,3 @@ CMD ["sh", "-c", "\
     cd artifacts/brightsky && \
     npx serve -s dist -l 3000 && \
     wait"]
-
