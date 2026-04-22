@@ -1581,7 +1581,7 @@ async fn handle_gateway_connection<S>(
                 serde_json::json!({ "error": "No pending orders to confirm." }),
             )
         }
-    } else if req_str.contains("X-BrightSky-Key") {
+    } else {
         let throughput = stats.msg_throughput_sec.load(Ordering::Relaxed);
         let latency = stats.solver_latency_p99_ms.load(Ordering::Relaxed);
 
@@ -1610,11 +1610,6 @@ async fn handle_gateway_connection<S>(
             "bundler_online": stats.is_bundler_online.load(Ordering::Relaxed),
         });
         ("200 OK", data)
-    } else {
-        (
-            "403 Forbidden",
-            serde_json::json!({ "error": "Access Denied" }),
-        )
     };
 
     let response = format!(
