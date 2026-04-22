@@ -26,28 +26,18 @@ COPY Cargo.toml Cargo.lock ./
 COPY --from=cacher /app/target target
 COPY --from=cacher $CARGO_HOME $CARGO_HOME
 
-# Copy real source from root
 COPY main.rs ./
 COPY bss_*.rs ./
 RUN cargo build --release --bin brightsky-solver
 
-# ─── STAGE 4: Node.js API Server Build ────────────────────────────────────────
-FROM node:22-bookworm-slim AS node-builder
+# ─── STAGE 4: Node Runtime ──────────────────────────────────────────────────
+FROM node:22-bookworm-slim AS node-runtime
 
+# Copy pre-built API server from host (built locally)
 WORKDIR /app
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY artifacts/api-server/package.json artifacts/api-server/
-COPY lib/db/package.json lib/db/
-COPY lib/api-zod/package.json lib/api-zod/
-
-RUN corepack enable && pnpm install --frozen-lockfile
-
-COPY artifacts/api-server ./artifacts/api-server
-COPY lib/db ./lib/db
-COPY lib/api-zod ./lib/api-zod
-
-WORKDIR /app/artifacts/api-server
-RUN node ./build.mjs
+COPY artifacts/api-server/dist ./artifacts/api-server/dist
+COPY artifacts/api-server/package.json ./artifacts/api-server/
+COPY artifacts/api-server/node_modules ./artifacts/api-server/node_modules
 
 # ─── STAGE 5: Final Image ────────────────────────────────────────────────────
 FROM debian:bookworm-slim
@@ -60,26 +50,24 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Copy Rust solver binary
+# Copy Rust solver
 COPY --from=builder /app/target/release/brightsky-solver ./brightsky
 
-# Copy Node.js API server
-COPY --from=node-builder /app/artifacts/api-server/dist ./artifacts/api-server/dist
-COPY --from=node-builder /app/artifacts/api-server/package.json ./artifacts/api-server/
+# Copy Node runtime from node stage
+COPY --from=node-runtime /usr/local/bin/node /usr/local/bin/
+COPY --from=node-runtime /usr/local/bin/npm /usr/local/bin/
+COPY --from=node-runtime /usr/local/lib/node_modules /usr/local/lib/node_modules/
+COPY --from=node-runtime /app/artifacts /app/artifacts
 
-# Install Node.js for running the API server
-COPY --from=node-builder /usr/local/bin/node /usr/local/bin/
-COPY --from=node-builder /usr/local/lib/node_modules /usr/local/lib/
 ENV NODE_PATH=/usr/local/lib/node_modules
+ENV PORT=3000
 
 # Expose API port
 EXPOSE 3000
 
-# Healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD curl -f http://localhost:3000/api/health || exit 1
 
-# Start both services: Rust solver first, then Node.js API
 CMD ["sh", "-c", "\
     echo 'Starting BrightSky Solver...' && \
     ./brightsky & \
