@@ -34,11 +34,12 @@ minimumReleaseAgeExclude:
   - openai
 
 packages:
-  - api
-  - ui
-  - lib/*
-  - lib/integrations/*
-  - scripts
+  - 'api'
+  - 'ui'
+  - '@brightsky/ui'
+  - 'lib/*'
+  - 'lib/integrations/*'
+  - 'scripts'
 
 catalog:
   openai: ^4.52.7

@@ -157,15 +157,16 @@
 }
 
 .glass-panel {
-  background: rgba(26, 29, 36, 0.6);
+  background: hsl(220 20% 12% / 0.6);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid hsl(220 15% 15%);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
 }
 
 .text-electric {
-  color: hsl(var(--primary));
-  text-shadow: 0 0 10px rgba(50, 240, 139, 0.4);
+  color: hsl(148 100% 60%);
+  text-shadow: 0 0 10px hsla(148 100% 60% / 0.4);
 }
 
 @keyframes pulse-ring {

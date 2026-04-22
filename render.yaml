@@ -4,7 +4,7 @@ services:
     buildCommand: >
       npm install -g pnpm@9 &&
       pnpm install --frozen-lockfile &&
-      pnpm --filter @workspace/brightsky run build
+      pnpm --filter @brightsky/ui run build
     staticPublishPath: ./dist/public
     headers:
       - path: /*

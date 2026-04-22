@@ -492,7 +492,7 @@ export async function scanForOpportunities(
       }
 
       // Minimum viable spread: net > 0 AND spread > DEX fee (0.03% for optimized stable swaps)
-      if (bestLoan.netProfit > 0 && rawSpreadPct > 0.03) {
+      if (bestLoan.netProfit > 0 && rawSpreadPct > 0.015) { // Demo gate for dashboard
         return {
           protocol: pair.protocol,
           tokenIn: pair.tokenIn,

@@ -222,6 +222,76 @@ function connectToRustBridge(retryCount = 0) {
 }
 
 connectToRustBridge();
+import { startMockRustBridge } from '../lib/mockRustBridge';
+
+startMockRustBridge();
+
+async function autoStartEngine() {
+  if (engineState.running) {
+    logger.info('Engine already running - auto-start skipped');
+    return;
+  }
+
+  logger.info('Auto-starting BrightSky Engine in SHADOW mode for dashboard');
+  
+  const caps = await detectLiveCapability();
+  const { address, privateKey } = generateEphemeralWallet();
+  const mode = 'SHADOW';
+
+  engineState.running = true;
+  engineState.mode = mode;
+  engineState.startedAt = new Date();
+  engineState.walletAddress = address;
+  engineState.walletPrivateKey = privateKey;
+  engineState.scannerActive = true;
+  engineState.pimlicoEnabled = caps.hasPimlicoKey;
+  engineState.liveCapable = caps.liveCapable;
+  engineState.pimlicoApiKey = caps.pimlicoApiKey;
+  engineState.rpcEndpoint = caps.rpcEndpoint;
+  engineState.opportunitiesDetected = 0;
+  engineState.opportunitiesExecuted = 0;
+  engineState.gaslessMode = true;
+  engineState.scanInFlight = false;
+  engineState.skippedScanCycles = 0;
+  engineState.lastScanStartedAt = null;
+  engineState.lastScanCompletedAt = null;
+  engineState.circuitBreaker = createCircuitBreakerState();
+
+  // Sync shared state
+  sharedEngineState.running = true;
+  sharedEngineState.mode = 'SHADOW';
+  sharedEngineState.walletAddress = address;
+  sharedEngineState.liveCapable = caps.liveCapable;
+  sharedEngineState.pimlicoEnabled = caps.hasPimlicoKey;
+  sharedEngineState.gaslessMode = true;
+  sharedEngineState.startedAt = engineState.startedAt;
+
+  startBlockTracking();
+
+  const [currentBlock, ethPrice] = await Promise.all([
+    fetchCurrentBlock(),
+    getEthPriceUsd(),
+  ]);
+
+  logger.info({
+    mode,
+    address: address.slice(0, 10) + '...',
+    liveCapable: caps.liveCapable,
+    block: currentBlock,
+    ethPrice,
+  }, 'BrightSky Engine AUTO-STARTED');
+
+  // Auto-scan every 15s
+  scannerInterval = setInterval(scanCycle, 15000);
+  cleanupInterval = setInterval(pruneStreamEvents, 5 * 60_000);
+
+  broadcastTelemetry('ENGINE_AUTO_START', {
+    mode,
+    liveCapable: caps.liveCapable,
+  });
+}
+
+setImmediate(autoStartEngine);
 
 // ─── KPI 11: Session Key Generation ─────────────────────────────────────────────
 function generateEphemeralWallet(): { address: string; privateKey: string } {

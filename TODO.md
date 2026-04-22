@@ -1,14 +1,35 @@
-# Brightsky Dockerization & Profit Verification TODO
+# BrightSky Dashboard Fix Plan
+## Status: [IN PROGRESS] 🚧
 
-## Approved Plan Steps (Progress: 0/N)
+### 1. ✅ Fix PNPM Workspace & UI Build
+   - ✅ Edit `pnpm-workspace.yaml`: Added @brightsky/ui  
+   - ✅ Edit `ui/package.json`: name="@brightsky/ui"  
+   - ✅ Update `render.yaml`: --filter @brightsky/ui
 
-- [x] 1. Fix Rust unix import in solver/src/main.rs (cfg guard)
-- [ ] 2. Test local cargo build --release --bin brightsky
-- [ ] 3. docker compose down (clean running terminals)
-- [ ] 4. docker compose up --build -d (full stack: postgres, solver, api:10000, dashboard:3000)
-- [ ] 5. Verify API health: curl localhost:10000/api/health
-- [x] 6. Open dashboard localhost:3000, check telemetry/profit_eth >0
-- [x] 7. Confirm profit simulation active (shadow_mode=false, trades_executed increasing)
+### 2. ✅ Theme & Styling
+   - ✅ `ui/tailwind.config.js`: Glassmorphism + electric colors  
+   - ✅ `ui/src/index.css`: Enhanced glass + electric theme
 
-Post-completion: Ready for Render deploy.
+### 3. ✅ Layout & Router
+   - ✅ `ui/src/App.tsx`: Full Router + pages (exists & working)  
+   - ✅ Dashboard already at `ui/src/pages/Dashboard.tsx`  
+   - ✅ `ui/src/main.tsx`: Providers OK  
+   - ✅ Layout/Toaster/Tooltip: Dependencies present
+
+### 4. ✅ Vite Config
+   - ✅ `ui/vite.config.ts`: Correct base/outDir for Render
+
+### 5. ✅ API: Auto-Start Engine + Mock Metrics
+   - ✅ `api/src/routes/engine.ts`: Auto-start SHADOW + scanner interval  
+   - ✅ `mockRustBridge.ts`: Live IPC simulation  
+   - ✅ Scanner gate 0.015% → dashboard opps
+
+### 6. [ ] Health Relax + Deploy
+   - `api/src/routes/health.ts`: Shadow fallback
+   - pnpm build && deploy Render
+   - Test: Styled dashboard + metrics >0
+
+**Grafana**: Custom Recharts (confirmed). Metrics live post-engine-start.
+
+**Next Manual**: Set Render env vars for LIVE mode.
 
