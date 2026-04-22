@@ -26,29 +26,12 @@ COPY Cargo.toml Cargo.lock ./
 COPY --from=cacher /app/target target
 COPY --from=cacher $CARGO_HOME $CARGO_HOME
 
-# Copy real source from root (no src/ directory)
+# Copy real source from root
 COPY main.rs ./
 COPY bss_*.rs ./
 RUN cargo build --release --bin brightsky-solver
 
-# ─── STAGE 4: Node Frontend Build ────────────────────────
-FROM node:22-bookworm-slim AS node-builder
-
-WORKDIR /app
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY artifacts/brightsky/package.json artifacts/brightsky/
-COPY lib/api-client-react/package.json lib/api-client-react/
-
-RUN corepack enable && pnpm install --frozen-lockfile
-
-COPY artifacts/brightsky ./artifacts/brightsky
-COPY lib/api-client-react ./lib/api-client-react
-COPY lib/api-zod ./lib/api-zod
-
-WORKDIR /app/artifacts/brightsky
-RUN pnpm build
-
-# ─── STAGE 5: Final Multi-Service Image ──────────────────
+# ─── STAGE 4: Final Image ──────────────────
 FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y \
@@ -59,11 +42,11 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Copy Rust binary
+# Copy pre-built Rust binary
 COPY --from=builder /app/target/release/brightsky-solver ./brightsky
 
-# Copy frontend build
-COPY --from=node-builder /app/artifacts/brightsky/dist ./artifacts/brightsky/dist
+# Copy pre-built frontend (already built locally in artifacts/brightsky/dist)
+COPY artifacts/brightsky/dist ./artifacts/brightsky/dist
 
 # Expose ports (Rust API:4001, Frontend:3000)
 EXPOSE 3000 4001
