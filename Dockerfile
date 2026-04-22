@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-COPY solver/Cargo.toml solver/Cargo.lock ./
+COPY solver/Cargo.toml ./
 COPY solver/src/main.rs ./main.rs
 COPY solver/src/bss_*.rs ./
 COPY solver/src/subsystems/*.rs ./
