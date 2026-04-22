@@ -1,10 +1,9 @@
 // BSS-40: Mempool Intelligence Subsystem
-use crate::WatchtowerStats;
-use crate::HealthStatus;
-use crate::bss_04_graph::{GraphPersistence, PoolState};
-use std::sync::Arc;
-use std::sync::atomic::Ordering;
+use super::bss_04_graph::{GraphPersistence, PoolState};
+use crate::{HealthStatus, SubsystemSpecialist, WatchtowerStats};
 use serde_json::Value;
+use std::sync::atomic::Ordering;
+use std::sync::Arc;
 use tokio::sync::mpsc;
 
 pub struct MempoolIntelligenceSpecialist {
@@ -12,25 +11,35 @@ pub struct MempoolIntelligenceSpecialist {
     pub graph: Arc<GraphPersistence>,
 }
 
-impl crate::SubsystemSpecialist for MempoolIntelligenceSpecialist {
-    fn subsystem_id(&self) -> &'static str { "BSS-40" }
+impl SubsystemSpecialist for MempoolIntelligenceSpecialist {
+    fn subsystem_id(&self) -> &'static str {
+        "BSS-40"
+    }
     fn check_health(&self) -> HealthStatus {
         let events = self.stats.mempool_events_per_sec.load(Ordering::Relaxed);
         if events == 0 && self.stats.is_bundler_online.load(Ordering::Relaxed) {
-            return HealthStatus::Degraded("Mempool stream silent despite bundler connectivity".into());
+            return HealthStatus::Degraded(
+                "Mempool stream silent despite bundler connectivity".into(),
+            );
         }
         HealthStatus::Optimal
     }
-    fn upgrade_strategy(&self) -> &'static str { "Streaming: Using Reth/Geth IPC for 0-latency mempool access." }
-    fn testing_strategy(&self) -> &'static str { "Parity: Predicted state vs Actual block state delta." }
-    fn run_diagnostic(&self) -> Value { 
-        serde_json::json!({ 
-            "decoders": ["UniswapV2", "UniswapV3", "Curve"], 
+    fn upgrade_strategy(&self) -> &'static str {
+        "Streaming: Using Reth/Geth IPC for 0-latency mempool access."
+    }
+    fn testing_strategy(&self) -> &'static str {
+        "Parity: Predicted state vs Actual block state delta."
+    }
+    fn run_diagnostic(&self) -> Value {
+        serde_json::json!({
+            "decoders": ["UniswapV2", "UniswapV3", "Curve"],
             "prediction_depth": 1,
             "events_sec": self.stats.mempool_events_per_sec.load(Ordering::Relaxed)
-        }) 
+        })
     }
-    fn execute_remediation(&self, _cmd: &str) -> Result<(), String> { Ok(()) }
+    fn execute_remediation(&self, _cmd: &str) -> Result<(), String> {
+        Ok(())
+    }
     fn ai_insight(&self) -> Option<String> {
         Some("BSS-40: Mempool ingestion is active; providing predictive state overlays to the BSS-13 Solver.".into())
     }
@@ -48,20 +57,22 @@ impl MempoolEngine {
         solver_trigger: Arc<tokio::sync::Notify>,
     ) {
         println!("[BSS-40] Mempool Intelligence Worker Active");
-        
+
         while let Some((token_a, token_b, state)) = rx.recv().await {
             let is_mempool_update = state.last_updated_block == 0;
-            
+
             // BSS-40: Mark stats for the UI
             if is_mempool_update {
                 stats.mempool_events_per_sec.fetch_add(1, Ordering::Relaxed);
-                stats.mempool_state_prediction_ready.store(true, Ordering::SeqCst);
+                stats
+                    .mempool_state_prediction_ready
+                    .store(true, Ordering::SeqCst);
             }
 
             // BSS-04/BSS-40: Atomically update the persistent graph edge.
             // If last_updated_block is 0, this is a predictive overlay.
             graph.update_edge(token_a, token_b, state);
-            
+
             // BSS-13: Notify solver to wake up.
             // Elite Grade: In mempool mode, we solve for every single relevant swap.
             solver_trigger.notify_one();

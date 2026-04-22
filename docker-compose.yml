@@ -3,7 +3,6 @@ services:
   brightsky:
     build: .
     ports:
-      - "4001:4001"
       - "3000:3000"
     environment:
       - NODE_ENV=development
@@ -11,7 +10,7 @@ services:
       - INTERNAL_BRIDGE_PORT=4001
       # Add other env vars as needed
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4001/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       interval: 30s
       timeout: 10s
       retries: 3

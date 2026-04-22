@@ -4,6 +4,10 @@
 use ethers::prelude::*;
 use ethers::providers::{Provider, Ws};
 use std::sync::Arc;
+use tokio::sync::mpsc;
+
+use super::bss_04_graph::PoolState;
+use crate::WatchtowerStats;
 
 // subscribe_chain function from original bss_05_sync.rs
 pub async fn subscribe_chain(

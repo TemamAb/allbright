@@ -44,7 +44,7 @@ impl GraphPersistence {
 
         let mut tokens = self.index_to_token.write().unwrap();
         let mut adj = self.adjacency_list.write().unwrap();
-        
+
         // Double check after lock to avoid race conditions
         if let Some(idx) = self.token_to_index.get(token) {
             return *idx;
@@ -62,7 +62,7 @@ impl GraphPersistence {
         let idx_b = self.get_or_create_index(&token_b);
 
         let mut adj = self.adjacency_list.write().unwrap();
-        
+
         // Edge A -> B (reserve_0 is in, reserve_1 is out)
         let edge_ab = PoolEdge {
             from: idx_a,
@@ -72,9 +72,12 @@ impl GraphPersistence {
             fee_bps: state.fee_bps,
             pool_address: state.pool_address.clone(),
         };
-        
+
         let list_a = &mut adj[idx_a];
-        if let Some(pos) = list_a.iter().position(|e| e.pool_address == state.pool_address) {
+        if let Some(pos) = list_a
+            .iter()
+            .position(|e| e.pool_address == state.pool_address)
+        {
             list_a[pos] = edge_ab;
         } else {
             list_a.push(edge_ab);
@@ -89,9 +92,12 @@ impl GraphPersistence {
             fee_bps: state.fee_bps,
             pool_address: state.pool_address,
         };
-        
+
         let list_b = &mut adj[idx_b];
-        if let Some(pos) = list_b.iter().position(|e| e.pool_address == edge_ba.pool_address) {
+        if let Some(pos) = list_b
+            .iter()
+            .position(|e| e.pool_address == edge_ba.pool_address)
+        {
             list_b[pos] = edge_ba;
         } else {
             list_b.push(edge_ba);
@@ -109,10 +115,16 @@ impl GraphPersistence {
         for edges in adj.iter() {
             for edge in edges {
                 if edge.reserve_in == 0 || edge.reserve_out == 0 {
-                    return Some(format!("Zero reserve detected in pool {}", edge.pool_address));
+                    return Some(format!(
+                        "Zero reserve detected in pool {}",
+                        edge.pool_address
+                    ));
                 }
                 if edge.fee_bps > 10000 {
-                    return Some(format!("Invalid fee ({} bps) in pool {}", edge.fee_bps, edge.pool_address));
+                    return Some(format!(
+                        "Invalid fee ({} bps) in pool {}",
+                        edge.fee_bps, edge.pool_address
+                    ));
                 }
             }
         }

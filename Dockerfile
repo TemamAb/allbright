@@ -1,29 +1,31 @@
 # syntax=docker/dockerfile:1
-FROM rust:1.88-slim AS builder
+FROM rust:1.88-slim-bookworm AS builder
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     pkg-config \
     libssl-dev \
-    libclang-dev \
+    clang \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# COPY workspace Cargo + solver
-COPY Cargo.toml Cargo.lock* ./
-COPY solver/Cargo.toml solver/
-COPY solver/src solver/src
+COPY Cargo.toml Cargo.lock rust-toolchain.toml ./
+COPY solver ./solver
 
-RUN cargo build --release --bin brightsky
+RUN cargo build --locked --release --bin brightsky
 
-# Final image
-FROM debian:bookworm-slim
+FROM debian:bookworm-slim AS runtime
 
-RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
 
 COPY --from=builder /app/target/release/brightsky /usr/local/bin/brightsky
 
-EXPOSE 4001
+ENV PORT=10000
+EXPOSE 10000
 
 CMD ["brightsky"]
-

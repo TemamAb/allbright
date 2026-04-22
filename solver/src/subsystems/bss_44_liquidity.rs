@@ -1,19 +1,26 @@
 // BSS-44: Liquidity & Slippage Engine
-use crate::bss_04_graph::PoolEdge;
+use super::bss_04_graph::PoolEdge;
 
 pub struct LiquidityEngine;
 
 impl LiquidityEngine {
     /// BSS-44: Standard Uniswap V2 Constant Product Formula
     /// out = (in * 997 * reserve_out) / (reserve_in * 1000 + in * 997)
-    pub fn get_amount_out(amount_in: u128, reserve_in: u128, reserve_out: u128, fee_bps: u32) -> u128 {
-        if amount_in == 0 || reserve_in == 0 || reserve_out == 0 { return 0; }
-        
+    pub fn get_amount_out(
+        amount_in: u128,
+        reserve_in: u128,
+        reserve_out: u128,
+        fee_bps: u32,
+    ) -> u128 {
+        if amount_in == 0 || reserve_in == 0 || reserve_out == 0 {
+            return 0;
+        }
+
         let fee_multiplier = 10000 - fee_bps;
         let amount_in_with_fee = amount_in * fee_multiplier as u128;
         let numerator = amount_in_with_fee * reserve_out;
         let denominator = (reserve_in * 10000) + amount_in_with_fee;
-        
+
         numerator / denominator
     }
 
@@ -25,16 +32,22 @@ impl LiquidityEngine {
                 current_amount,
                 edge.reserve_in,
                 edge.reserve_out,
-                edge.fee_bps
+                edge.fee_bps,
             );
-            if current_amount == 0 { break; }
+            if current_amount == 0 {
+                break;
+            }
         }
         current_amount
     }
 
     /// BSS-44: Calculates the Optimal Input Amount for a cycle.
     /// Uses a binary search approach to find the peak of the profit curve.
-    pub fn compute_optimal_input(path_edges: &[PoolEdge], min_input: u128, max_input: u128) -> u128 {
+    pub fn compute_optimal_input(
+        path_edges: &[PoolEdge],
+        min_input: u128,
+        max_input: u128,
+    ) -> u128 {
         let mut low = min_input;
         let mut high = max_input;
         let mut best_input = low;
@@ -63,11 +76,17 @@ impl LiquidityEngine {
             }
         }
 
-        if max_profit <= 0 { 0 } else { best_input }
+        if max_profit <= 0 {
+            0
+        } else {
+            best_input
+        }
     }
 
     fn calculate_profit(amount_in: u128, path_edges: &[PoolEdge]) -> i128 {
-        if amount_in == 0 { return 0; }
+        if amount_in == 0 {
+            return 0;
+        }
         let amount_out = Self::simulate_path(amount_in, path_edges);
         amount_out as i128 - amount_in as i128
     }
