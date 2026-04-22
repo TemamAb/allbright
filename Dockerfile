@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # ─── STAGE 1: Rust Builder (Stable 1.85, with cargo-chef) ────────────────────────
-FROM rust:1.85-slim AS rust-builder
+FROM rust:1.86-slim AS rust-builder
 
 # Install cargo-chef for dependency caching
 RUN cargo install cargo-chef
@@ -16,18 +16,18 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Prepare recipe for dependency caching
-FROM rust:1.85-slim AS planner
+FROM rust:1.86-slim AS planner
 RUN cargo install cargo-chef
 COPY Cargo.toml Cargo.lock ./
 RUN cargo chef prepare --recipe-path recipe.json
 
-FROM rust:1.85-slim AS cacher
+FROM rust:1.86-slim AS cacher
 RUN cargo install cargo-chef
 COPY --from=planner /app/recipe.json recipe.json
 RUN cargo chef cook --release --recipe-path recipe.json
 
 # Build stage
-FROM rust:1.85-slim AS builder
+FROM rust:1.86-slim AS builder
 RUN apt-get update && apt-get install -y \
     pkg-config \
     libssl-dev \
