@@ -34,7 +34,8 @@ minimumReleaseAgeExclude:
   - openai
 
 packages:
-  - artifacts/*
+  - api
+  - ui
   - lib/*
   - lib/integrations/*
   - scripts

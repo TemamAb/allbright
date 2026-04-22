@@ -10,19 +10,12 @@ services:
     # CRITICAL: Wait for database to be fully provisioned before starting
     dependsOn:
       - database: brightlight-db
-    # Build: install deps, then compile ONLY the api-server bundle.
-    # @workspace/db, @workspace/api-zod are consumed as TypeScript source —
-    # esbuild bundles them in. No separate build step needed for those packages.
-    # CRITICAL: Run Drizzle migrations BEFORE the server starts.
-    # On a fresh Render Postgres, tables don't exist — every API call fails
-    # with "relation does not exist" without this step.
-    # This command executes inside the built Docker container image (BSS-37).
+    # Build handled by Dockerfile (Rust + Node API bundle)
+    # CRITICAL: Run Drizzle migrations BEFORE server starts
     preDeployCommand: |
-  echo "[BSS-38] Pre-deployment validation..."
-  cargo clippy --release -- -D warnings 2>&1 || echo "Clippy warnings detected"
-  cargo build --release --bin brightsky
-  echo "[BSS-38] Build successful ✓"
-  pnpm --filter @workspace/db run migrate
+      echo "[BSS-38] Pre-deployment validation..."
+      pnpm --filter @workspace/db run migrate
+      echo "[BSS-38] Migrations complete ✓"
     # Render polls this path to know when the service is ready.
     # Without a matching route, Render marks the service as unhealthy → restart loop.
     healthCheckPath: /api/health
@@ -119,14 +112,12 @@ services:
   # Must be type: static (not type: web) — web type expects a running server.
   - type: static
     name: brightlight-dashboard
-    # Build: install deps, then build ONLY the brightsky Vite app.
-    # @workspace/api-client-react and @workspace/api-zod are TypeScript source
-    # consumed directly by Vite — no separate compilation needed.
+    # Build Vite UI app at ui/
     buildCommand: >
       npm install -g pnpm@9 &&
       pnpm install --frozen-lockfile &&
-      pnpm --filter @workspace/brightsky run build
-    staticPublishPath: ./artifacts/dist/public
+      pnpm --filter ui run build
+    staticPublishPath: ./ui/dist
     headers:
       # HTML entry point — never cache (picks up new deploy immediately)
       - path: /*

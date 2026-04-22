@@ -30,8 +30,8 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 COPY --from=builder /app/target/release/brightsky ./brightsky
-COPY artifacts/api-server/dist ./artifacts/api-server/dist
-COPY artifacts/api-server/package.json ./artifacts/api-server/package.json
+COPY api/dist ./api/dist
+COPY api/package.json ./api/package.json
 
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y nodejs \
@@ -44,6 +44,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
 
 CMD ["sh", "-c", "\
     ./brightsky & \
-    cd artifacts/api-server && npm install --omit=dev --ignore-scripts && \
+    cd api && npm install --omit=dev --ignore-scripts && \
     node ./dist/index.mjs && \
     wait"]
