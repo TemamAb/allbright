@@ -1443,13 +1443,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let policy = policy_rx.borrow().clone();
             let target_chain_id = std::env::var("CHAIN_ID").unwrap_or_default().parse::<u64>().unwrap_or(8453);
             
-            let start_token: Arc<str> = Arc::from("WETH");
+            let start_token = "WETH".to_string();
             
             // BSS-13 SPFA (Shortest Path Faster Algorithm) Implementation
-            let mut distances: HashMap<Arc<str>, f64> = HashMap::new();
-            let mut predecessors: HashMap<Arc<str>, Arc<str>> = HashMap::new();
-            let mut in_queue: std::collections::HashSet<Arc<str>> = std::collections::HashSet::new();
-            let mut queue: std::collections::VecDeque<Arc<str>> = std::collections::VecDeque::new();
+            let mut distances: HashMap<String, f64> = HashMap::new();
+            let mut predecessors: HashMap<String, String> = HashMap::new();
+            let mut in_queue: std::collections::HashSet<String> = std::collections::HashSet::new();
+            let mut queue: std::collections::VecDeque<String> = std::collections::VecDeque::new();
 
             distances.insert(start_token.clone(), 0.0);
             queue.push_back(start_token.clone());
