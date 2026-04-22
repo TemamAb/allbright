@@ -26,8 +26,8 @@ COPY Cargo.toml Cargo.lock ./
 COPY --from=cacher /app/target target
 COPY --from=cacher $CARGO_HOME $CARGO_HOME
 
-# Copy real source
-COPY src ./src
+# Copy real source from root (no src/ directory)
+COPY main.rs ./
 COPY bss_*.rs ./
 RUN cargo build --release --bin brightsky-solver
 
