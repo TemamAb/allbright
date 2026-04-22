@@ -8,7 +8,7 @@ echo "[MISSION CONTROL] Initializing BrightSky 38-Subsystem Simulation..."
 if [ -f .env ]; then
   export $(grep -v '^#' .env | xargs)
 fi
-export PAPER_TRADING_MODE=true
+export PAPER_TRADING_MODE=false
 export DATABASE_URL=${DATABASE_URL_FALLBACK}
 export PORT=3000
 
