@@ -1,4 +1,5 @@
 # syntax=docker/dockerfile:1
+# BrightSky Flash Loan Arbitrage Engine v0.1.0
 # ─── STAGE 1: Rust Builder ────────────────────────────────────────────────
 FROM rust:1.88-slim AS builder
 
