@@ -6,7 +6,7 @@ use bss_04_graph::{GraphPersistence, PoolState};
 use serde::{Serialize, Deserialize};
 use std::sync::Arc;
 use serde_json::{Value, json};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::time::{Instant, Duration};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
@@ -925,7 +925,7 @@ mod tests {
 /// Serves high-frequency KPI data to the brightsky-dashboard service.
 async fn run_api_gateway(
     stats: Arc<WatchtowerStats>, 
-    mut opp_rx: tokio::sync::broadcast::Receiver<String>,
+    opp_rx: tokio::sync::broadcast::Receiver<String>,
     debug_tx: mpsc::Sender<DebuggingOrder>,
 ) {
     // BSS-03/06: Elite Optimization - Unix Domain Sockets
@@ -1283,7 +1283,7 @@ async fn run_watchtower(
         // 2. Performance Gap Auditing: Aggregate specialist KPIs for Telemetry
         // Integrated into BSS-36 for 24/7 Auto-Optimization
         for specialist in &specialists {
-            let kpi = specialist.get_performance_kpi();
+            let _kpi = specialist.get_performance_kpi();
             // BSS-36: Continuous tuning logic consumes these values here
             let _ = auto_optimizer.execute_remediation("CONTINUOUS_TUNE");
         }
@@ -1354,7 +1354,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (opp_tx, _) = broadcast::channel::<String>(100);
     
     // BSS-26 Control Channel: System-wide Policy
-    let (policy_tx, mut policy_rx) = watch::channel(SystemPolicy {
+    let (policy_tx, policy_rx) = watch::channel(SystemPolicy {
         max_hops: 3,
         min_profit_bps: 1.0,
         shadow_mode: false,
@@ -1427,7 +1427,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let strategy_graph = Arc::clone(&graph);
     let solver_stats = wt_stats_for_solver;
     let solver_opp_tx = opp_tx.clone();
-    let solver_watchtower_stats = Arc::clone(&watchtower_stats);
+    let _solver_watchtower_stats = Arc::clone(&watchtower_stats);
     let solver_wait_trigger = Arc::clone(&solver_trigger);
 
     std::thread::Builder::new()
