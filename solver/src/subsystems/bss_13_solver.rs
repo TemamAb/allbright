@@ -1,12 +1,12 @@
 // BSS-13: Shortest Path Faster Algorithm (SPFA) Weaponized Solver
 use super::bss_04_graph::GraphPersistence;
 use crate::{HealthStatus, SubsystemSpecialist, WatchtowerStats};
+use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::VecDeque;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
-use rayon::prelude::*;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ArbitrageOpportunity {
@@ -58,62 +58,69 @@ impl SolverSpecialist {
         max_hops: usize,
     ) -> Vec<ArbitrageOpportunity> {
         let node_count = self.graph.token_to_index.len();
-        if node_count == 0 { return vec![]; }
+        if node_count == 0 {
+            return vec![];
+        }
 
-        entry_tokens.into_par_iter().flat_map(|start_token_idx| {
-        let mut dist = vec![f64::INFINITY; node_count];
-        let mut parent = vec![None; node_count];
-        let mut in_queue = vec![false; node_count];
-        let mut count = vec![0; node_count];
-        let mut queue = VecDeque::with_capacity(node_count);
+        entry_tokens
+            .into_par_iter()
+            .flat_map(|start_token_idx| {
+                let mut dist = vec![f64::INFINITY; node_count];
+                let mut parent = vec![None; node_count];
+                let mut in_queue = vec![false; node_count];
+                let mut count = vec![0; node_count];
+                let mut queue = VecDeque::with_capacity(node_count);
 
-        dist[start_token_idx] = 0.0;
-        queue.push_back(start_token_idx);
-        in_queue[start_token_idx] = true;
+                dist[start_token_idx] = 0.0;
+                queue.push_back(start_token_idx);
+                in_queue[start_token_idx] = true;
 
-        let mut results = Vec::new();
+                let mut results = Vec::new();
 
-        while let Some(u) = queue.pop_front() {
-            in_queue[u] = false;
+                while let Some(u) = queue.pop_front() {
+                    in_queue[u] = false;
 
-            let edges = self.graph.get_edges(u);
-            for edge in edges {
-                let v = edge.to;
+                    let edges = self.graph.get_edges(u);
+                    for edge in edges {
+                        let v = edge.to;
 
-                // weight = -ln(rate_after_fee)
-                let fee_multiplier = 1.0 - (edge.fee_bps as f64 / 10000.0);
-                let weight =
-                    -((edge.reserve_out as f64 / edge.reserve_in as f64) * fee_multiplier).ln();
+                        // weight = -ln(rate_after_fee)
+                        let fee_multiplier = 1.0 - (edge.fee_bps as f64 / 10000.0);
+                        let weight = -((edge.reserve_out as f64 / edge.reserve_in as f64)
+                            * fee_multiplier)
+                            .ln();
 
-                if dist[u] + weight < dist[v] {
-                    dist[v] = dist[u] + weight;
-                    parent[v] = Some(u);
+                        if dist[u] + weight < dist[v] {
+                            dist[v] = dist[u] + weight;
+                            parent[v] = Some(u);
 
-                    if !in_queue[v] {
-                        count[v] += 1;
-                        if count[v] > max_hops {
-                            // Negative cycle detected
-                            if let Some(path) = self.extract_cycle(v, &parent) {
-                                results.push(ArbitrageOpportunity {
-                                    path,
-                                    log_weight: dist[v],
-                                });
-                                return results; // Return first found for immediate simulation
+                            if !in_queue[v] {
+                                count[v] += 1;
+                                if count[v] > max_hops {
+                                    // Negative cycle detected
+                                    if let Some(path) = self.extract_cycle(v, &parent) {
+                                        results.push(ArbitrageOpportunity {
+                                            path,
+                                            log_weight: dist[v],
+                                        });
+                                        return results; // Return first found for immediate simulation
+                                    }
+                                }
+
+                                // SLF (Small Label First) Optimization
+                                if !queue.is_empty() && dist[v] < dist[*queue.front().unwrap()] {
+                                    queue.push_front(v);
+                                } else {
+                                    queue.push_back(v);
+                                }
+                                in_queue[v] = true;
                             }
                         }
-
-                        // SLF (Small Label First) Optimization
-                        if !queue.is_empty() && dist[v] < dist[*queue.front().unwrap()] {
-                            queue.push_front(v);
-                        } else {
-                            queue.push_back(v);
-                        }
-                        in_queue[v] = true;
                     }
                 }
-            }
-        }
-        results }).collect()
+                results
+            })
+            .collect()
     }
 
     /// BSS-13: Extracts the path of the negative cycle starting from a node.

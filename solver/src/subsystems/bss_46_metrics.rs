@@ -43,8 +43,7 @@ impl SubsystemSpecialist for MetricsSpecialist {
     fn ai_insight(&self) -> Option<String> {
         let profit = self.stats.total_profit_milli_eth.load(Ordering::Relaxed) as f64 / 1000.0;
         Some(format!(
-            "BSS-46: Cumulative system profit is {:.4} ETH. Monitoring conversion efficiency.",
-            profit
-        ))
+             "BSS-46: Cumulative system profit is {profit:.4} ETH. Monitoring conversion efficiency."
+         ))
     }
 }

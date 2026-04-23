@@ -680,7 +680,7 @@ impl SubsystemSpecialist for RpcSwitch {
     fn check_health(&self) -> HealthStatus {
         let p = self.primary_latency.load(Ordering::Relaxed);
         if p > 500 {
-            return HealthStatus::Degraded(format!("Primary RPC Latency Critical: {}ms", p));
+            return HealthStatus::Degraded(format!("Primary RPC Latency Critical: {p}ms"));
         }
         HealthStatus::Optimal
     }
@@ -1322,7 +1322,7 @@ async fn run_api_gateway(
         let listener = tokio::net::TcpListener::bind(&addr)
             .await
             .expect("[BSS-06] Render TCP listener active");
-        println!("[BSS-06] Telemetry Gateway active on TCP: {}", addr);
+        println!("[BSS-06] Telemetry Gateway active on TCP: {addr}");
 
         loop {
             if let Ok((socket, _)) = listener.accept().await {
@@ -1368,7 +1368,7 @@ async fn run_api_gateway(
         let listener = tokio::net::TcpListener::bind(addr)
             .await
             .expect("[BSS-06] TCP fallback active");
-        println!("[BSS-06] Telemetry Gateway active on TCP: {}", addr);
+        println!("[BSS-06] Telemetry Gateway active on TCP: {addr}");
 
         loop {
             if let Ok((socket, _)) = listener.accept().await {
@@ -1401,12 +1401,14 @@ async fn handle_gateway_connection<S>(
             let _ = socket.write_all(b"{\"status\":\"order_queued\"}").await;
             return;
         }
-        
+
         // BSS-27: Handle UI Connectivity Sync from the Node.js bridge
         if let Ok(val) = serde_json::from_str::<Value>(&req_str) {
             if val["type"] == "UI_SYNC" {
                 if let Some(count) = val["count"].as_u64() {
-                    stats.connected_ui_clients.store(count as usize, Ordering::Relaxed);
+                    stats
+                        .connected_ui_clients
+                        .store(count as usize, Ordering::Relaxed);
                 }
             }
         }
@@ -1470,10 +1472,9 @@ async fn handle_gateway_connection<S>(
         ("200 OK", data)
     };
 
-    let response = format!(
-        "HTTP/1.1 {}\r\nContent-Type: application/json\r\nAccess-Control-Allow-Origin: *\r\n\r\n{}",
-        status, report
-    );
+     let response = format!(
+          "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nAccess-Control-Allow-Origin: *\r\n\r\n{report}"
+      );
     let _ = socket.write_all(response.as_bytes()).await;
 }
 
@@ -1557,9 +1558,9 @@ async fn run_watchtower(
     policy_tx: watch::Sender<SystemPolicy>,
     mut debug_rx: mpsc::Receiver<DebuggingOrder>,
 ) {
-     println!(
-         "[BSS-26] Nexus Orchestrator ACTIVE: Managing 46 Subsystems across 9 Specialist Agents."
-     );
+    println!(
+        "[BSS-26] Nexus Orchestrator ACTIVE: Managing 46 Subsystems across 9 Specialist Agents."
+    );
 
     let registry: HashMap<&str, BssLevel> = [
         ("BSS-01", BssLevel::Production),
@@ -1721,7 +1722,7 @@ async fn run_watchtower(
                 match order.intent {
                     DebugIntent::Audit => {
                         let report = AlphaCopilot.process_command(order, &stats);
-                        println!("[BSS-26] {}", report);
+                        println!("[BSS-26] {report}");
                     }
                     DebugIntent::ConfirmOptimization => {
                         let _ = s.execute_remediation("COMMIT_OPTIMIZATION");
@@ -1749,11 +1750,11 @@ async fn run_watchtower(
 
             // BSS-21: Generate mission insights and bottleneck report
             let report = AlphaCopilot::generate_insight(&stats);
-            println!("[ALPHA-COPILOT] {}", report);
+            println!("[ALPHA-COPILOT] {report}");
 
             let bottleneck_json = AlphaCopilot::generate_bottleneck_report(&specialists);
             if let Ok(json_str) = serde_json::to_string(&bottleneck_json) {
-                println!("[BSS-21] BOTTLENECK_REPORT: {}", json_str);
+                println!("[BSS-21] BOTTLENECK_REPORT: {json_str}");
             }
 
             // Auto-remediation based on learning (BSS-28)
@@ -1797,8 +1798,7 @@ async fn run_watchtower(
                 HealthStatus::Degraded(msg) if specialist.subsystem_id() == "BSS-38" => {
                     // BSS-38 Workflow Integration: If pre-flight is degraded, force Shadow Mode.
                     println!(
-                        "[BSS-26] PRE-FLIGHT WARNING: {}. Forcing Shadow Mode for safety.",
-                        msg
+                         "[BSS-26] PRE-FLIGHT WARNING: {msg}. Forcing Shadow Mode for safety."
                     );
                     current_policy.shadow_mode = true;
                     stats.is_shadow_mode_active.store(true, Ordering::SeqCst);
@@ -1998,16 +1998,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tokio::spawn(async move {
         loop {
             tokio::time::sleep(Duration::from_secs(5)).await;
-            
+
             // BSS-06: Efficient Binary Pulse (TLV Frame)
             // [Type: 0x02][Length: u32][Payload...]
             let mut payload = Vec::with_capacity(64);
             payload.push(0x02); // Type: Heartbeat
-            payload.extend_from_slice(&std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs().to_be_bytes());
-            payload.extend_from_slice(&(heartbeat_stats.msg_throughput_sec.load(Ordering::Relaxed) as u64).to_be_bytes());
-            payload.push(heartbeat_stats.is_shadow_mode_active.load(Ordering::Relaxed) as u8);
+            payload.extend_from_slice(
+                &std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_secs()
+                    .to_be_bytes(),
+            );
+            payload.extend_from_slice(
+                &(heartbeat_stats.msg_throughput_sec.load(Ordering::Relaxed) as u64).to_be_bytes(),
+            );
+            payload.push(
+                heartbeat_stats
+                    .is_shadow_mode_active
+                    .load(Ordering::Relaxed) as u8,
+            );
             payload.push(CircuitBreaker::is_tripped(&heartbeat_stats) as u8);
-            
+
             let addr = heartbeat_stats.flashloan_contract_address.read().unwrap();
             if let Some(s) = addr.as_ref() {
                 payload.extend_from_slice(&(s.len() as u16).to_be_bytes());
@@ -2103,9 +2115,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         // BSS-45 Hardening: Anti-Hijack Delta Check
                         // Compare simulation profit vs. raw log-weight math
                         let oracle_profit = (opp.log_weight.abs().exp() - 1.0) * (optimal_wei as f64 / 1e18);
-                        let delta = (sim_result.profit_eth - oracle_profit).abs();
-                        
-                        if delta > (oracle_profit * 0.2) {
+                         let delta = (sim_result.profit_eth - oracle_profit).abs();
+                         if delta > (oracle_profit * 0.2) {
                             println!("[BSS-45] REJECTION: Simulation anomaly. Delta: {} ETH", delta);
                             solver_stats.signals_rejected_risk.fetch_add(1, Ordering::Relaxed);
                             continue;

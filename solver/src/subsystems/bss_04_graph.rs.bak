@@ -27,12 +27,6 @@ pub struct GraphPersistence {
     pub adjacency_list: RwLock<Vec<Vec<PoolEdge>>>,
 }
 
-impl Default for GraphPersistence {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl GraphPersistence {
     pub fn new() -> Self {
         Self {
