@@ -8,6 +8,7 @@ pub mod bss_41_executor;
 pub mod bss_42_mev_guard;
 pub mod bss_43_simulator;
 pub mod bss_44_liquidity;
+pub mod bss_45_risk;
 pub mod bss_46_metrics;
 
 pub use bss_04_graph::*;
@@ -18,4 +19,5 @@ pub use bss_41_executor::*;
 pub use bss_42_mev_guard::*;
 pub use bss_43_simulator::*;
 pub use bss_44_liquidity::*;
+pub use bss_45_risk::*;
 pub use bss_46_metrics::*;

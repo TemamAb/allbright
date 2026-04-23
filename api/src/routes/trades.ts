@@ -1,59 +1,108 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { tradesTable, streamEventsTable } from "@workspace/db";
-import { desc, eq, sql } from "drizzle-orm";
+import { desc, eq, sql, and, or, gte, count, sum, avg, inArray } from "drizzle-orm";
 import { getEthPriceUsd } from "../lib/priceOracle";
+import { sharedEngineState } from "../lib/engineState";
+import { z } from "zod";
 
 const router = Router();
 
+// BSS-06: Schema for trade list pagination and filtering
+const tradesQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+  status: z.string().optional(),
+});
+
 router.get("/trades", async (req, res) => {
-  const limit = parseInt(req.query.limit as string) || 50;
-  const status = req.query.status as string | undefined;
+  // Validate incoming query parameters using Zod
+  const validation = tradesQuerySchema.safeParse(req.query);
+  
+  if (!validation.success) {
+    return res.status(400).json({ 
+      success: false, 
+      error: validation.error.flatten().fieldErrors 
+    });
+  }
 
-  let query = db.select().from(tradesTable).orderBy(desc(tradesTable.timestamp)).limit(limit);
+  const { limit, offset, status } = validation.data;
+  const filters = status ? eq(tradesTable.status, status) : undefined;
 
-  const trades = status
-    ? await db.select().from(tradesTable).where(eq(tradesTable.status, status)).orderBy(desc(tradesTable.timestamp)).limit(limit)
-    : await db.select().from(tradesTable).orderBy(desc(tradesTable.timestamp)).limit(limit);
+  const [trades, totalRes] = await Promise.all([
+    db.select()
+      .from(tradesTable)
+      .where(filters)
+      .orderBy(desc(tradesTable.timestamp))
+      .limit(limit)
+      .offset(offset),
+    db.select({ count: count() })
+      .from(tradesTable)
+      .where(filters)
+  ]);
 
-  const total = await db.select({ count: sql<number>`count(*)` }).from(tradesTable);
-
-  res.json({ trades, total: Number(total[0].count) });
+  res.json({ 
+    trades, 
+    total: Number(totalRes[0]?.count ?? 0),
+    limit,
+    offset 
+  });
 });
 
 router.get("/trades/summary", async (req, res) => {
-  const allTrades = await db.select().from(tradesTable);
-  const executed = allTrades.filter((t: any) => t.status === "EXECUTED");
-
-  // Use real-time ETH price — NOT the hardcoded $3200
-  const ethPrice = await getEthPriceUsd();
-
-  const totalProfitEth = executed.reduce((sum: number, t: any) => sum + parseFloat(t.profit || "0"), 0);
-  const totalProfitUsd = totalProfitEth * ethPrice;
-  const successRate = allTrades.length > 0 ? (executed.length / allTrades.length) * 100 : 0;
-  const avgProfitPerTrade = executed.length > 0 ? totalProfitEth / executed.length : 0;
-  const totalBribesPaid = executed.reduce((sum: number, t: any) => sum + parseFloat(t.bribePaid || "0"), 0);
-
+  // Aligned with telemetry.ts: Prioritize backbone price for consistency
+  const ethPrice = sharedEngineState.lastBackbonePrice || (await getEthPriceUsd());
   const sessionCutoff = new Date(Date.now() - 3600 * 1000);
-  const sessionTrades = executed.filter((t: any) => t.timestamp && new Date(t.timestamp) >= sessionCutoff);
-  const sessionProfitEth = sessionTrades.reduce((sum: number, t: any) => sum + parseFloat(t.profit || "0"), 0);
-  const sessionProfitUsd = sessionProfitEth * ethPrice;
-  const tradesPerHour = sessionTrades.length;
 
-  const protocolCounts: Record<string, number> = {};
-  executed.forEach((t: any) => { if (t.protocol) protocolCounts[t.protocol] = (protocolCounts[t.protocol] || 0) + 1; });
-  const topProtocol = Object.entries(protocolCounts).sort(([, a], [, b]) => b - a)[0]?.[0] ?? null;
+  const [allTimeStats, sessionStats, topProtocolRes] = await Promise.all([
+    db.select({
+      totalTrades: count(),
+      executedCount: sql<number>`count(*) filter (where ${tradesTable.status} = 'EXECUTED')`,
+      totalProfitEth: sql<string>`sum(cast(${tradesTable.profit} as numeric))`,
+      totalBribesPaid: sql<string>`sum(cast(${tradesTable.bribePaid} as numeric))`,
+      avgProfit: sql<string>`avg(cast(${tradesTable.profit} as numeric)) filter (where ${tradesTable.status} = 'EXECUTED')`
+    }).from(tradesTable),
+    
+    db.select({
+      sessionProfitEth: sql<string>`sum(cast(${tradesTable.profit} as numeric))`,
+      sessionCount: count()
+    })
+    .from(tradesTable)
+    .where(
+      and(
+        // Optimized to utilize composite index on (status, timestamp)
+        inArray(tradesTable.status, ["EXECUTED", "SHADOW"]),
+        gte(tradesTable.timestamp, sessionCutoff)
+      )
+    ),
+
+    db.select({ protocol: tradesTable.protocol, count: count() })
+      .from(tradesTable)
+      .where(eq(tradesTable.status, "EXECUTED"))
+      .groupBy(tradesTable.protocol)
+      .orderBy(desc(count()))
+      .limit(1)
+  ]);
+
+  const totalProfitEth = parseFloat(allTimeStats[0].totalProfitEth || "0");
+  const totalBribesPaid = parseFloat(allTimeStats[0].totalBribesPaid || "0");
+  const totalProfitUsd = totalProfitEth * ethPrice;
+  const successRate = allTimeStats[0].totalTrades > 0 
+    ? (allTimeStats[0].executedCount / allTimeStats[0].totalTrades) * 100 
+    : 0;
+
+  const sessionProfitEthVal = parseFloat(sessionStats[0].sessionProfitEth || "0");
 
   res.json({
     totalProfitEth,
     totalProfitUsd,
-    totalTrades: allTrades.length,
+    totalTrades: allTimeStats[0].totalTrades,
     successRate,
-    avgProfitPerTrade,
-    sessionProfitEth,
-    sessionProfitUsd,
-    tradesPerHour,
-    topProtocol,
+    avgProfitPerTrade: parseFloat(allTimeStats[0].avgProfit || "0"),
+    sessionProfitEth: sessionProfitEthVal,
+    sessionProfitUsd: sessionProfitEthVal * ethPrice,
+    tradesPerHour: sessionStats[0].sessionCount,
+    topProtocol: topProtocolRes[0]?.protocol ?? null,
     totalBribesPaid,
   });
 });

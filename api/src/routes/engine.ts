@@ -161,64 +161,126 @@ function connectToRustBridge(retryCount = 0) {
     sharedEngineState.ipcConnected = true;
   });
 
-  let buffer = "";
+  // BSS-27: UI Connectivity Heartbeat
+  const syncInterval = setInterval(() => {
+    const io = (global as any).io;
+    if (io && socket.writable) {
+      const count = io.engine.clientsCount;
+      socket.write(JSON.stringify({ type: "UI_SYNC", count }) + "\n");
+    }
+  }, 5000);
+
+  let buffer = Buffer.alloc(0);
   socket.on("data", (data) => {
-    buffer += data.toString();
-    let boundary = buffer.indexOf("\n");
-    while (boundary !== -1) {
-      const line = buffer.substring(0, boundary).trim();
-      buffer = buffer.substring(boundary + 1);
-      if (line) {
+    buffer = Buffer.concat([buffer, data]);
+
+    // BSS-03: Throughput Tracking
+    if (data.length > 0) {
+      sharedEngineState.msgThroughputCount = (sharedEngineState.msgThroughputCount || 0) + 1;
+    }
+
+    while (buffer.length > 0) {
+      const type = buffer[0];
+      
+      if (type === 0x01) { // JSON FRAME (Legacy/Standard)
+        const newlineIdx = buffer.indexOf(10); // \n
+        if (newlineIdx === -1) break;
+        
         try {
-          const opp = JSON.parse(line);
-          if (opp.ref_price)
-            sharedEngineState.lastBackbonePrice = opp.ref_price;
-          if (typeof opp.shadow_mode_active === "boolean")
-            sharedEngineState.shadowModeActive = opp.shadow_mode_active;
-          if (opp.flashloan_contract_address)
-            sharedEngineState.flashloanContractAddress =
-              opp.flashloan_contract_address;
-
-          const hops = opp.path ? opp.path.length : 2;
-          sharedEngineState.pathComplexity[hops] =
-            (sharedEngineState.pathComplexity[hops] || 0) + 1;
-          sharedEngineState.chainLatencies[opp.chain_id] =
-            Date.now() - opp.timestamp * 1000;
-
-          if (opp.spreadPct > 0.1) {
-            broadcastTelemetry("RUST_OPPORTUNITY", {
-              ...opp,
-              latency_ms: Date.now() - opp.timestamp * 1000,
-            });
+          const line = buffer.subarray(1, newlineIdx).toString().trim();
+          if (line) {
+            const opp = JSON.parse(line);
+            handleRustMessage(opp);
           }
-        } catch (e) {
-          /* silent parse error */
+        } catch (e) {}
+        buffer = buffer.subarray(newlineIdx + 1);
+      } else if (type === 0x02) { // BINARY HEARTBEAT
+        if (buffer.length < 21) break; // Incomplete header
+        
+        const timestamp = buffer.readBigUInt64BE(1);
+        const throughput = buffer.readBigUInt64BE(9);
+        const shadowModeActive = buffer[17] === 1;
+        const circuitBreakerTripped = buffer[18] === 1;
+        const addrLen = buffer.readUInt16BE(19);
+        
+        if (buffer.length < 21 + addrLen) break; // Incomplete payload
+        
+        const flashloanContractAddress = addrLen > 0 ? buffer.subarray(21, 21 + addrLen).toString() : null;
+        
+        const opp = {
+          type: "HEARTBEAT",
+          timestamp: Number(timestamp),
+          throughput: Number(throughput),
+          shadowModeActive,
+          circuitBreakerTripped,
+          flashloanContractAddress
+        };
+
+        handleRustMessage(opp);
+        
+        // BSS-31: Critical Alert Logic
+        if (circuitBreakerTripped) {
+          broadcastTelemetry("SYSTEM_ALERT", {
+            level: "CRITICAL",
+            message: "BSS-31: Circuit Breaker Tripped. Emergency Lockdown Active.",
+            code: "CIRCUIT_TRIPPED"
+          });
         }
+        
+        buffer = buffer.subarray(21 + addrLen);
+      } else {
+        // Unknown frame type - consume and continue
+        buffer = buffer.subarray(1);
       }
-      boundary = buffer.indexOf("\n");
     }
   });
 
   socket.on("error", (err) => {
+    clearInterval(syncInterval);
     sharedEngineState.ipcConnected = false;
+    logger.error({ err, socketPath }, "[BSS-03] IPC Bridge Socket Error");
     if (retryCount < maxRetries) {
       const delay = Math.min(1000 * Math.pow(2, retryCount), 30000);
-      logger.warn(`[BSS-03] IPC Bridge unavailable, retrying in ${delay}ms...`);
       setTimeout(() => connectToRustBridge(retryCount + 1), delay);
     } else {
-      logger.error(
+      logger.fatal(
         "[BSS-03] IPC Bridge critical failure: Max retries exceeded.",
       );
     }
   });
 
   socket.on("end", () => {
+    clearInterval(syncInterval);
     sharedEngineState.ipcConnected = false;
     logger.warn(
       "[BSS-03] Rust IPC Bridge disconnected. Attempting reconnect...",
     );
     connectToRustBridge(0);
   });
+}
+
+function handleRustMessage(opp: any) {
+  if (opp.ref_price)
+    sharedEngineState.lastBackbonePrice = opp.ref_price;
+  
+  // Elite Case Mapping: Supporting all backbone serialization flavors
+  const shadowActive = opp.shadowModeActive ?? opp.shadow_mode_active ?? opp.shadow_mode;
+  if (typeof shadowActive === "boolean") sharedEngineState.shadowModeActive = shadowActive;
+  
+  const executorAddr = opp.flashloanContractAddress ?? opp.flashloan_contract_address;
+  if (executorAddr !== undefined) sharedEngineState.flashloanContractAddress = executorAddr;
+
+  if (opp.type === "HEARTBEAT") {
+    broadcastTelemetry("BRIDGE_HEARTBEAT", { ...opp });
+  } else {
+    const hops = opp.path ? opp.path.length : 2;
+    sharedEngineState.pathComplexity[hops] = (sharedEngineState.pathComplexity[hops] || 0) + 1;
+    sharedEngineState.chainLatencies[opp.chain_id] = Date.now() - opp.timestamp * 1000;
+
+    if (opp.spreadPct > 0.1) {
+      broadcastTelemetry("RUST_OPPORTUNITY", { ...opp, latency_ms: Date.now() - opp.timestamp * 1000 });
+    }
+  }
 }
 
 connectToRustBridge();
@@ -256,12 +318,16 @@ async function autoStartEngine() {
   engineState.lastScanStartedAt = null;
   engineState.lastScanCompletedAt = null;
   engineState.circuitBreaker = createCircuitBreakerState();
+  
+  const envAddress = process.env["FLASH_EXECUTOR_ADDRESS"] || null;
+  engineState.flashloanContractAddress = sharedEngineState.flashloanContractAddress || envAddress;
 
   // Sync shared state
   sharedEngineState.running = true;
   sharedEngineState.mode = 'SHADOW';
   sharedEngineState.walletAddress = address;
   sharedEngineState.liveCapable = caps.liveCapable;
+  sharedEngineState.flashloanContractAddress = engineState.flashloanContractAddress;
   sharedEngineState.pimlicoEnabled = caps.hasPimlicoKey;
   sharedEngineState.gaslessMode = true;
   sharedEngineState.startedAt = engineState.startedAt;
@@ -994,14 +1060,21 @@ router.post("/engine/start", async (req, res) => {
 
   const defaultMode =
     process.env.PAPER_TRADING_MODE === "false" ? "LIVE" : "SHADOW";
-  const mode = req.body.mode ?? defaultMode;
+  const targetMode = req.body.mode ?? defaultMode;
+
+  // Validate mode transitions
+  const caps = await detectLiveCapability();
+  if (targetMode === "LIVE" && !caps.liveCapable) {
+    return res.status(400).json({
+      success: false,
+      message: "Cannot start in LIVE mode: Pimlico API Key, Private RPC, or Executor Address missing.",
+      caps
+    });
+  }
   const { address, privateKey } = generateEphemeralWallet();
 
-  // Detect live capability — reads from env vars first, then DB
-  const caps = await detectLiveCapability();
-
   engineState.running = true;
-  engineState.mode = mode;
+  engineState.mode = targetMode;
   engineState.startedAt = new Date();
   engineState.walletAddress = address;
   engineState.walletPrivateKey = privateKey;
@@ -1012,7 +1085,7 @@ router.post("/engine/start", async (req, res) => {
   engineState.rpcEndpoint = caps.rpcEndpoint;
   engineState.opportunitiesDetected = 0;
   engineState.flashloanContractAddress =
-    sharedEngineState.flashloanContractAddress; // Sync from shared state
+    sharedEngineState.flashloanContractAddress || process.env["FLASH_EXECUTOR_ADDRESS"] || null;
   engineState.opportunitiesExecuted = 0;
   engineState.gaslessMode = true;
   engineState.scanInFlight = false;
@@ -1023,7 +1096,7 @@ router.post("/engine/start", async (req, res) => {
 
   // Sync to shared state (used by wallet + telemetry routes)
   sharedEngineState.running = true;
-  sharedEngineState.mode = mode as "SHADOW" | "LIVE" | "STOPPED";
+  sharedEngineState.mode = targetMode as "SHADOW" | "LIVE" | "STOPPED";
   sharedEngineState.walletAddress = address;
   sharedEngineState.liveCapable = caps.liveCapable;
   sharedEngineState.flashloanContractAddress =
@@ -1048,7 +1121,7 @@ router.post("/engine/start", async (req, res) => {
   await db.insert(streamEventsTable).values({
     id: genId("evt"),
     type: "SCANNING",
-    message: `Engine [${mode}] | Wallet: ${address.slice(0, 10)}... | Block: #${currentBlock.toLocaleString()} | ETH: $${ethPrice.toFixed(0)} | ${capabilityMsg}`,
+    message: `Engine [${targetMode}] | Wallet: ${address.slice(0, 10)}... | Block: #${currentBlock.toLocaleString()} | ETH: $${ethPrice.toFixed(0)} | ${capabilityMsg}`,
     blockNumber: currentBlock,
     protocol: null,
   });
@@ -1060,8 +1133,8 @@ router.post("/engine/start", async (req, res) => {
 
   res.json({
     success: true,
-    message: `Engine started in ${mode} mode. Wallet: ${address}`,
-    mode,
+    message: `Engine started in ${targetMode} mode. Wallet: ${address}`,
+    mode: targetMode,
     walletAddress: address,
     liveCapable: caps.liveCapable,
     pimlicoReady: caps.hasPimlicoKey,

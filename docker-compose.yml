@@ -22,6 +22,8 @@ services:
     environment:
       PRE_FLIGHT_STRICT: "false"
       INTERNAL_BRIDGE_PORT: "4001"
+      FLASH_EXECUTOR_ADDRESS: "0x6f2a4c10da345e0d48f2b1c93a9b1e7f3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f"
+      BASE_WS_URL: "wss://base-rpc.publicnode.com" 
       BRIGHTSKY_SOCKET_PATH: /ipc/brightsky_bridge.sock
       EXECUTOR_CODE_HASH: "0x6f2a4c10da345e0d48f2b1c93a9b1e7f3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f"
       CHAIN_ID: "8453"

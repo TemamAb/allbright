@@ -8,12 +8,18 @@ import { useQueryClient } from "@tanstack/react-query";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Zap, Activity, Clock, TrendingUp, Shield, Power } from "lucide-react";
 
-function MetricCard({ label, value, sub, accent = false }: { label: string; value: string; sub?: string; accent?: boolean }) {
+function MetricCard({ label, value, sub, accent = false, isShadow = false }: { label: string; value: string; sub?: string; accent?: boolean; isShadow?: boolean }) {
+  const accentColor = isShadow ? "text-amber-400" : (accent ? "text-cyan-400" : "text-white");
+  const glowColor = isShadow ? "bg-amber-500/5" : "bg-cyan-500/5";
+  const hoverGlow = isShadow ? "group-hover:bg-amber-500/10" : "group-hover:bg-cyan-500/10";
+  const shadowEffect = isShadow ? "shadow-[0_0_20px_rgba(245,158,11,0.05)]" : (accent ? "shadow-[0_0_20px_rgba(6,182,212,0.05)]" : "");
+
   return (
-    <div className={`glass-panel rounded border p-4 ${accent ? "border-primary/30 bg-primary/5" : "border-border"}`}>
-      <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">{label}</div>
-      <div className={`text-2xl font-bold ${accent ? "text-electric" : "text-foreground"}`}>{value}</div>
-      {sub && <div className="text-[10px] text-muted-foreground mt-1">{sub}</div>}
+    <div className={`bg-[#111112] border border-zinc-800/50 rounded-xl p-6 relative overflow-hidden group transition-all duration-300 hover:border-cyan-500/30 ${shadowEffect}`}>
+      <div className={`absolute top-0 right-0 w-24 h-24 ${glowColor} blur-[40px] rounded-full -mr-12 -mt-12 ${hoverGlow} transition-all`} />
+      <div className="text-[10px] uppercase tracking-[0.2em] font-bold text-zinc-500 mb-2">{label}</div>
+      <div className={`text-2xl font-bold tracking-tighter ${accentColor}`}>{value}</div>
+      {sub && <div className="text-[10px] text-zinc-600 font-medium mt-2 flex items-center gap-1.5 uppercase tracking-wider">{sub}</div>}
     </div>
   );
 }
@@ -50,6 +56,7 @@ export default function Dashboard() {
 
   const isRunning = status?.running ?? false;
   const engineMode = status?.mode ?? "STOPPED";
+  const shadowActive = status?.shadowModeActive ?? false;
 
   function handleEngineToggle() {
     if (isRunning) {
@@ -122,8 +129,10 @@ export default function Dashboard() {
             {isRunning ? "Stop Engine" : "Start Engine"}
           </button>
           <div className="flex items-center gap-1.5">
-            <div className={`w-2 h-2 rounded-full ${isRunning ? "bg-primary animate-pulse" : "bg-muted-foreground"}`} />
-            <span className="text-[10px] text-muted-foreground uppercase">{engineMode}</span>
+            <div className={`w-2 h-2 rounded-full ${isRunning ? (shadowActive ? "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]" : "bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]") : "bg-zinc-600"} ${isRunning ? "animate-pulse" : ""}`} />
+            <span className={`text-[10px] font-bold uppercase tracking-widest ${isRunning ? (shadowActive ? "text-amber-400" : "text-cyan-400") : "text-zinc-500"}`}>
+              {isRunning ? (shadowActive ? "SHADOW" : engineMode) : "OFFLINE"}
+            </span>
           </div>
         </div>
       </div>
@@ -151,23 +160,28 @@ export default function Dashboard() {
         <MetricCard
           label="Session Profit"
           value={`${sessionEth} ETH`}
-          sub={`$${sessionUsd} USD`}
+          sub={shadowActive ? "SIMULATED PROFIT" : `$${sessionUsd} USD`}
           accent
+          isShadow={shadowActive}
+          tooltip={shadowActive ? "Shadow Mode Validation: Gross Profit reflects raw market capture. Net Profit factors in theoretical gas and builder tips to ensure strategy feasibility before live deployment." : undefined}
         />
         <MetricCard
           label="Trades / Hour"
           value={String(tph)}
           sub={`${summary?.totalTrades ?? 0} total`}
+          isShadow={shadowActive}
         />
         <MetricCard
           label="P99 Latency"
           value={p99 !== "—" ? `${p99}ms` : "—"}
           sub={avgLatency !== "—" ? `avg ${avgLatency}ms` : "real measured"}
+          isShadow={shadowActive}
         />
         <MetricCard
           label="Win Rate"
           value={successRate === "—" ? "—" : `${successRate}%`}
           sub={summary?.topProtocol ?? "—"}
+          isShadow={shadowActive}
         />
       </div>
 
@@ -189,7 +203,7 @@ export default function Dashboard() {
             </defs>
             <XAxis dataKey="time" tick={{ fontSize: 9, fill: "hsl(220 15% 60%)" }} axisLine={false} tickLine={false} />
             <YAxis tick={{ fontSize: 9, fill: "hsl(220 15% 60%)" }} axisLine={false} tickLine={false} width={40} />
-            <Tooltip
+            <RechartsTooltip
               contentStyle={{ background: "hsl(220 20% 8%)", border: "1px solid hsl(220 15% 15%)", borderRadius: 4, fontSize: 10 }}
               labelStyle={{ color: "hsl(220 15% 60%)" }}
               itemStyle={{ color: "hsl(148 87% 57%)" }}

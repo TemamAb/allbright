@@ -144,6 +144,7 @@ pub(crate) struct WatchtowerStats {
     wallet_balance_milli_eth: AtomicU64,
     is_executor_deployed: AtomicBool,
     nonce_tracker: AtomicU64,
+    connected_ui_clients: AtomicUsize,
     flashloan_contract_address: Arc<RwLock<Option<Arc<str>>>>, // Dynamically managed by BSS-34
     is_shadow_mode_active: AtomicBool,
     is_bundler_online: AtomicBool,
@@ -152,7 +153,9 @@ pub(crate) struct WatchtowerStats {
 
 /// BSS-27: Dashboard Lifecycle Specialist
 /// Monitors the connectivity and health of the visualization layer.
-pub struct DashboardSpecialist;
+pub struct DashboardSpecialist {
+    pub stats: Arc<WatchtowerStats>,
+}
 impl SubsystemSpecialist for DashboardSpecialist {
     fn subsystem_id(&self) -> &'static str {
         "BSS-27"
@@ -164,10 +167,14 @@ impl SubsystemSpecialist for DashboardSpecialist {
         "End-to-End: Browser simulation"
     }
     fn check_health(&self) -> HealthStatus {
+        let clients = self.stats.connected_ui_clients.load(Ordering::Relaxed);
+        if clients == 0 {
+            return HealthStatus::Degraded("No active UI clients connected to Gateway".into());
+        }
         HealthStatus::Optimal
     }
     fn run_diagnostic(&self) -> Value {
-        serde_json::json!({ "ui_version": "2.0.0", "connected_clients": 1 })
+        serde_json::json!({ "ui_version": "2.0.0", "connected_clients": self.stats.connected_ui_clients.load(Ordering::Relaxed) })
     }
     fn execute_remediation(&self, _command: &str) -> Result<(), String> {
         Ok(())
@@ -532,33 +539,6 @@ impl SubsystemSpecialist for InvariantSpecialist {
     }
 }
 
-/// BSS-40: Mempool Intelligence Specialist
-/// Decodes pending transactions to predict the next-block pool state.
-pub struct MempoolIntelligenceSpecialist;
-impl SubsystemSpecialist for MempoolIntelligenceSpecialist {
-    fn subsystem_id(&self) -> &'static str {
-        "BSS-40"
-    }
-    fn check_health(&self) -> HealthStatus {
-        HealthStatus::Optimal
-    }
-    fn upgrade_strategy(&self) -> &'static str {
-        "Streaming: Using Reth/Geth IPC for 0-latency mempool access."
-    }
-    fn testing_strategy(&self) -> &'static str {
-        "Parity: Predicted state vs Actual block state delta."
-    }
-    fn run_diagnostic(&self) -> Value {
-        serde_json::json!({ "decoders": ["UniswapV2", "UniswapV3", "Curve"], "prediction_depth": 1 })
-    }
-    fn execute_remediation(&self, _cmd: &str) -> Result<(), String> {
-        Ok(())
-    }
-    fn ai_insight(&self) -> Option<String> {
-        Some("BSS-40: Detected 12 pending swaps targeting WETH/USDC; predicting 0.5% price shift in block N+1.".into())
-    }
-}
-
 /// BSS-22: Strategy Tuner
 /// Dynamically adjusts SystemPolicy parameters based on solver performance.
 pub struct StrategyTuner;
@@ -638,29 +618,7 @@ impl SubsystemSpecialist for SignalBacktester {
     }
 }
 
-/// BSS-09: EV Risk Engine
-/// Hard filtering of unprofitable or risky trade signals based on GWEI and volatility.
 pub struct RiskEngine;
-impl SubsystemSpecialist for RiskEngine {
-    fn subsystem_id(&self) -> &'static str {
-        "BSS-09"
-    }
-    fn check_health(&self) -> HealthStatus {
-        HealthStatus::Optimal
-    }
-    fn upgrade_strategy(&self) -> &'static str {
-        "Algorithmic: Updates EV threshold logic."
-    }
-    fn testing_strategy(&self) -> &'static str {
-        "Monte Carlo: Simulating revert rates."
-    }
-    fn run_diagnostic(&self) -> Value {
-        serde_json::json!({ "model": "Deterministic-EV", "safety_buffer_bps": 2 })
-    }
-    fn execute_remediation(&self, _cmd: &str) -> Result<(), String> {
-        Ok(())
-    }
-}
 
 impl RiskEngine {
     /// BSS-09 Elite: Probabilistic Expected Value (EV) Calculation
@@ -1415,7 +1373,7 @@ mod tests {
 /// Serves high-frequency KPI data to the brightsky-dashboard service.
 async fn run_api_gateway(
     stats: Arc<WatchtowerStats>,
-    opp_rx: tokio::sync::broadcast::Receiver<String>,
+    opp_rx: tokio::sync::broadcast::Receiver<Vec<u8>>,
     debug_tx: mpsc::Sender<DebuggingOrder>,
 ) {
     if let Ok(port) = std::env::var("PORT") {
@@ -1487,7 +1445,7 @@ async fn run_api_gateway(
 async fn handle_gateway_connection<S>(
     mut socket: S,
     stats: Arc<WatchtowerStats>,
-    mut opp_rx: tokio::sync::broadcast::Receiver<String>,
+    mut opp_rx: tokio::sync::broadcast::Receiver<Vec<u8>>,
     debug_tx: mpsc::Sender<DebuggingOrder>,
 ) where
     S: AsyncRead + AsyncWrite + Unpin + Send + 'static,
@@ -1502,9 +1460,18 @@ async fn handle_gateway_connection<S>(
             let _ = socket.write_all(b"{\"status\":\"order_queued\"}").await;
             return;
         }
+        
+        // BSS-27: Handle UI Connectivity Sync from the Node.js bridge
+        if let Ok(val) = serde_json::from_str::<Value>(&req_str) {
+            if val["type"] == "UI_SYNC" {
+                if let Some(count) = val["count"].as_u64() {
+                    stats.connected_ui_clients.store(count as usize, Ordering::Relaxed);
+                }
+            }
+        }
 
         while let Ok(msg) = opp_rx.recv().await {
-            if socket.write_all(msg.as_bytes()).await.is_err() {
+            if socket.write_all(&msg).await.is_err() {
                 break;
             }
         }
@@ -1557,6 +1524,7 @@ async fn handle_gateway_connection<S>(
             "flashloan_contract_address": stats.flashloan_contract_address.read().unwrap().as_ref().map(|s| s.to_string()),
             "shadow_mode_active": stats.is_shadow_mode_active.load(Ordering::Relaxed),
             "bundler_online": stats.is_bundler_online.load(Ordering::Relaxed),
+            "circuit_breaker_tripped": CircuitBreaker::is_tripped(&stats),
         });
         ("200 OK", data)
     };
@@ -1691,6 +1659,7 @@ async fn run_watchtower(
         ("BSS-36", BssLevel::Production), // Auto-Optimizer
         ("BSS-40", BssLevel::Production), // Mempool Intelligence (ACTIVE)
         ("BSS-41", BssLevel::Skeleton),   // Private Executor
+        ("BSS-39", BssLevel::Production), // Compilation Guard
         ("BSS-42", BssLevel::Production), // MEV Guard (ACTIVE)
         ("BSS-43", BssLevel::Skeleton),   // Simulation Engine
         ("BSS-44", BssLevel::Skeleton),   // Liquidity Modeler
@@ -1723,7 +1692,9 @@ async fn run_watchtower(
         Arc::new(InvariantSpecialist {
             graph: Arc::clone(&graph),
         }) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(DashboardSpecialist) as Arc<dyn SubsystemSpecialist>,
+        Arc::new(DashboardSpecialist {
+            stats: Arc::clone(&stats),
+        }) as Arc<dyn SubsystemSpecialist>,
         Arc::new(MetaLearner {
             success_ratio: AtomicUsize::new(95),
         }) as Arc<dyn SubsystemSpecialist>,
@@ -1741,7 +1712,9 @@ async fn run_watchtower(
         Arc::new(CircuitBreakerSpecialist {
             stats: Arc::clone(&stats),
         }) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(RiskEngine) as Arc<dyn SubsystemSpecialist>,
+        Arc::new(subsystems::RiskSpecialist {
+            stats: Arc::clone(&stats),
+        }) as Arc<dyn SubsystemSpecialist>,
         Arc::new(MarginGuard {
             min_margin: AtomicU64::new(100),
         }) as Arc<dyn SubsystemSpecialist>,
@@ -1946,11 +1919,12 @@ async fn run_watchtower(
 
         // 4. Operational Remediation: BSS-05 Heartbeat Check
         let last_sync = stats.last_heartbeat_bss05.load(Ordering::Relaxed);
-        // if now - last_sync > 10 {
-        //     println!("[BSS-26] CRITICAL: BSS-05 Stalled. Forcing Shadow Mode.");
-        //     current_policy.shadow_mode = true;
-        //     stats.total_errors_fixed.fetch_add(1, Ordering::SeqCst);
-        // }
+        if last_sync > 0 && now > last_sync + 10 {
+            println!("[BSS-26] CRITICAL: BSS-05 Sync Staleness Detected (>10s). Forcing Safety Shadow Mode.");
+            current_policy.shadow_mode = true;
+            stats.is_shadow_mode_active.store(true, Ordering::SeqCst);
+            stats.total_errors_fixed.fetch_add(1, Ordering::SeqCst);
+        }
 
         let _ = policy_tx.send(current_policy);
         sleep(Duration::from_secs(5)).await;
@@ -1960,6 +1934,10 @@ async fn run_watchtower(
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("BrightSky Deployment Audit: Bootstrapping Watchtower...");
+    dotenv::dotenv().ok();
+
+    let chain_id_str = std::env::var("CHAIN_ID").unwrap_or_else(|_| "1".to_string());
+    let chain_id = chain_id_str.parse::<u64>().unwrap_or(1);
 
     // High-Priority Debugging Bus
     // Channels for BSS-26 to receive DebuggingOrders from the User (API/CLI)
@@ -1992,7 +1970,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // BSS-20: Broadcast channel for Node.js IPC Bridge Telemetry
-    let (opp_tx, _) = broadcast::channel::<String>(100);
+    let (opp_tx, _) = broadcast::channel::<Vec<u8>>(100);
 
     // BSS-26 Control Channel: System-wide Policy
     let (policy_tx, policy_rx) = watch::channel(SystemPolicy {
@@ -2036,6 +2014,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         });
     }
 
+    // --- SUBSYSTEM BSS-40: Mempool Intelligence Ingestion ---
+    let mp_tx = tx.clone();
+    let mp_stats_sync = Arc::clone(&watchtower_stats);
+    tokio::spawn(async move {
+        // BSS-40 Elite: Listen to the mempool of the configured target chain
+        subsystems::subscribe_mempool(chain_id, mp_tx, mp_stats_sync).await;
+    });
+
     // Simulation: User issues a Debugging Order (Audit BSS-04)
     let mock_user_tx = debug_tx.clone();
     tokio::spawn(async move {
@@ -2062,6 +2048,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let api_debug_tx = debug_tx.clone();
     tokio::spawn(async move {
         run_api_gateway(api_stats, gateway_rx, api_debug_tx).await;
+    });
+
+    // BSS-06: Heartbeat Emitter for Live Listening Verification
+    let heartbeat_stats = Arc::clone(&watchtower_stats);
+    let heartbeat_tx = opp_tx.clone();
+    tokio::spawn(async move {
+        loop {
+            tokio::time::sleep(Duration::from_secs(5)).await;
+            
+            // BSS-06: Efficient Binary Pulse (TLV Frame)
+            // [Type: 0x02][Length: u32][Payload...]
+            let mut payload = Vec::with_capacity(64);
+            payload.push(0x02); // Type: Heartbeat
+            payload.extend_from_slice(&std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs().to_be_bytes());
+            payload.extend_from_slice(&(heartbeat_stats.msg_throughput_sec.load(Ordering::Relaxed) as u64).to_be_bytes());
+            payload.push(heartbeat_stats.is_shadow_mode_active.load(Ordering::Relaxed) as u8);
+            payload.push(CircuitBreaker::is_tripped(&heartbeat_stats) as u8);
+            
+            let addr = heartbeat_stats.flashloan_contract_address.read().unwrap();
+            if let Some(s) = addr.as_ref() {
+                payload.extend_from_slice(&(s.len() as u16).to_be_bytes());
+                payload.extend_from_slice(s.as_bytes());
+            } else {
+                payload.extend_from_slice(&0u16.to_be_bytes());
+            }
+            let _ = heartbeat_tx.send(payload);
+        }
     });
 
     // --- SUBSYSTEM BSS-40: Mempool & State Persistence Task ---
@@ -2108,10 +2121,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             };
 
             let start_token = "WETH";
-            let start_idx = strategy_graph.get_or_create_index(start_token);
+            let entry_tokens = vec![strategy_graph.get_or_create_index(start_token), strategy_graph.get_or_create_index("USDC")];
 
             // Task 7: Execution Pipeline Integration
-            let opportunities = solver.detect_arbitrage(start_idx, policy.max_hops);
+            let opportunities = solver.detect_arbitrage(entry_tokens, policy.max_hops);
             solver_stats.opportunities_found_count.fetch_add(opportunities.len() as u64, Ordering::Relaxed);
 
             for opp in opportunities {
@@ -2145,6 +2158,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if RiskEngine::validate(&opp, &sim_result, &policy, &solver_stats)
                     && MEVGuardEngine::is_safe_to_execute(&opp, &sim_result, &solver_stats)
                 {
+                        // BSS-45 Hardening: Anti-Hijack Delta Check
+                        // Compare simulation profit vs. raw log-weight math
+                        let oracle_profit = (opp.log_weight.abs().exp() - 1.0) * (optimal_wei as f64 / 1e18);
+                        let delta = (sim_result.profit_eth - oracle_profit).abs();
+                        
+                        if delta > (oracle_profit * 0.2) {
+                            println!("[BSS-45] REJECTION: Simulation anomaly. Delta: {} ETH", delta);
+                            solver_stats.signals_rejected_risk.fetch_add(1, Ordering::Relaxed);
+                            continue;
+                        }
+
                         // 5. Execution Orchestration (BSS-41)
                         solver_stats.executed_trades_count.fetch_add(1, Ordering::Relaxed);
                         let profit_milli = (sim_result.profit_eth * 1000.0) as u64;
@@ -2162,7 +2186,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         });
 
                         if let Ok(msg) = serde_json::to_string(&telemetry) {
-                            let _ = solver_opp_tx.send(msg);
+                            let mut frame = Vec::with_capacity(msg.len() + 2);
+                            frame.push(0x01); // Type: JSON
+                            frame.extend_from_slice(msg.as_bytes());
+                            frame.push(b'\n'); // Delimiter for Node.js IPC parser
+                            let _ = solver_opp_tx.send(frame);
                         }
                 }
             }

@@ -6,6 +6,7 @@ use serde_json::Value;
 use std::collections::VecDeque;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
+use rayon::prelude::*;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ArbitrageOpportunity {
@@ -53,14 +54,13 @@ impl SolverSpecialist {
     /// Uses indexed nodes for sub-millisecond execution.
     pub fn detect_arbitrage(
         &self,
-        start_token_idx: usize,
+        entry_tokens: Vec<usize>,
         max_hops: usize,
     ) -> Vec<ArbitrageOpportunity> {
         let node_count = self.graph.token_to_index.len();
-        if node_count == 0 || start_token_idx >= node_count {
-            return vec![];
-        }
+        if node_count == 0 { return vec![]; }
 
+        entry_tokens.into_par_iter().flat_map(|start_token_idx| {
         let mut dist = vec![f64::INFINITY; node_count];
         let mut parent = vec![None; node_count];
         let mut in_queue = vec![false; node_count];
@@ -113,7 +113,7 @@ impl SolverSpecialist {
                 }
             }
         }
-        results
+        results }).collect()
     }
 
     /// BSS-13: Extracts the path of the negative cycle starting from a node.

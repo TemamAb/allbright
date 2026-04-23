@@ -15,7 +15,12 @@ pub async fn subscribe_mempool(
     tx: mpsc::Sender<(String, String, PoolState)>,
     stats: Arc<WatchtowerStats>,
 ) {
-    let ws_url = if chain_id == 1 { "wss://ethereum-rpc.publicnode.com" } else { return };
+    // BSS-40 Elite: Support environment-driven WebSocket URLs for different chains
+    let ws_url = match chain_id {
+        1 => std::env::var("ETH_WS_URL").unwrap_or_else(|_| "wss://ethereum-rpc.publicnode.com".to_string()),
+        8453 => std::env::var("BASE_WS_URL").unwrap_or_else(|_| "wss://base-rpc.publicnode.com".to_string()),
+        _ => return,
+    };
 
     let provider = match Provider::<Ws>::connect(ws_url).await {
         Ok(p) => Arc::new(p),

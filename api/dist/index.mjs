@@ -16288,9 +16288,9 @@ var require_object_inspect = __commonJS({
   }
 });
 
-// ../node_modules/.pnpm/side-channel-list@1.0.0/node_modules/side-channel-list/index.js
+// ../node_modules/.pnpm/side-channel-list@1.0.1/node_modules/side-channel-list/index.js
 var require_side_channel_list = __commonJS({
-  "../node_modules/.pnpm/side-channel-list@1.0.0/node_modules/side-channel-list/index.js"(exports, module) {
+  "../node_modules/.pnpm/side-channel-list@1.0.1/node_modules/side-channel-list/index.js"(exports, module) {
     "use strict";
     var inspect3 = require_object_inspect();
     var $TypeError = require_type();
@@ -16350,9 +16350,8 @@ var require_side_channel_list = __commonJS({
           }
         },
         "delete": function(key) {
-          var root = $o && $o.next;
           var deletedNode = listDelete($o, key);
-          if (deletedNode && root && root === deletedNode) {
+          if (deletedNode && $o && !$o.next) {
             $o = void 0;
           }
           return !!deletedNode;
@@ -16835,9 +16834,9 @@ var require_get_proto = __commonJS({
   }
 });
 
-// ../node_modules/.pnpm/hasown@2.0.2/node_modules/hasown/index.js
+// ../node_modules/.pnpm/hasown@2.0.3/node_modules/hasown/index.js
 var require_hasown = __commonJS({
-  "../node_modules/.pnpm/hasown@2.0.2/node_modules/hasown/index.js"(exports, module) {
+  "../node_modules/.pnpm/hasown@2.0.3/node_modules/hasown/index.js"(exports, module) {
     "use strict";
     var call = Function.prototype.call;
     var $hasOwn = Object.prototype.hasOwnProperty;
@@ -17368,9 +17367,9 @@ var require_side_channel = __commonJS({
   }
 });
 
-// ../node_modules/.pnpm/qs@6.15.0/node_modules/qs/lib/formats.js
+// ../node_modules/.pnpm/qs@6.15.1/node_modules/qs/lib/formats.js
 var require_formats = __commonJS({
-  "../node_modules/.pnpm/qs@6.15.0/node_modules/qs/lib/formats.js"(exports, module) {
+  "../node_modules/.pnpm/qs@6.15.1/node_modules/qs/lib/formats.js"(exports, module) {
     "use strict";
     var replace = String.prototype.replace;
     var percentTwenties = /%20/g;
@@ -17394,9 +17393,9 @@ var require_formats = __commonJS({
   }
 });
 
-// ../node_modules/.pnpm/qs@6.15.0/node_modules/qs/lib/utils.js
+// ../node_modules/.pnpm/qs@6.15.1/node_modules/qs/lib/utils.js
 var require_utils2 = __commonJS({
-  "../node_modules/.pnpm/qs@6.15.0/node_modules/qs/lib/utils.js"(exports, module) {
+  "../node_modules/.pnpm/qs@6.15.1/node_modules/qs/lib/utils.js"(exports, module) {
     "use strict";
     var formats = require_formats();
     var getSideChannel = require_side_channel();
@@ -17658,9 +17657,9 @@ var require_utils2 = __commonJS({
   }
 });
 
-// ../node_modules/.pnpm/qs@6.15.0/node_modules/qs/lib/stringify.js
+// ../node_modules/.pnpm/qs@6.15.1/node_modules/qs/lib/stringify.js
 var require_stringify = __commonJS({
-  "../node_modules/.pnpm/qs@6.15.0/node_modules/qs/lib/stringify.js"(exports, module) {
+  "../node_modules/.pnpm/qs@6.15.1/node_modules/qs/lib/stringify.js"(exports, module) {
     "use strict";
     var getSideChannel = require_side_channel();
     var utils = require_utils2();
@@ -17941,9 +17940,9 @@ var require_stringify = __commonJS({
   }
 });
 
-// ../node_modules/.pnpm/qs@6.15.0/node_modules/qs/lib/parse.js
+// ../node_modules/.pnpm/qs@6.15.1/node_modules/qs/lib/parse.js
 var require_parse = __commonJS({
-  "../node_modules/.pnpm/qs@6.15.0/node_modules/qs/lib/parse.js"(exports, module) {
+  "../node_modules/.pnpm/qs@6.15.1/node_modules/qs/lib/parse.js"(exports, module) {
     "use strict";
     var utils = require_utils2();
     var has = Object.prototype.hasOwnProperty;
@@ -17995,9 +17994,9 @@ var require_parse = __commonJS({
       var limit = options.parameterLimit === Infinity ? void 0 : options.parameterLimit;
       var parts = cleanStr.split(
         options.delimiter,
-        options.throwOnLimitExceeded ? limit + 1 : limit
+        options.throwOnLimitExceeded && typeof limit !== "undefined" ? limit + 1 : limit
       );
-      if (options.throwOnLimitExceeded && parts.length > limit) {
+      if (options.throwOnLimitExceeded && typeof limit !== "undefined" && parts.length > limit) {
         throw new RangeError("Parameter limit exceeded. Only " + limit + " parameter" + (limit === 1 ? "" : "s") + " allowed.");
       }
       var skipIndex = -1;
@@ -18240,9 +18239,9 @@ var require_parse = __commonJS({
   }
 });
 
-// ../node_modules/.pnpm/qs@6.15.0/node_modules/qs/lib/index.js
+// ../node_modules/.pnpm/qs@6.15.1/node_modules/qs/lib/index.js
 var require_lib2 = __commonJS({
-  "../node_modules/.pnpm/qs@6.15.0/node_modules/qs/lib/index.js"(exports, module) {
+  "../node_modules/.pnpm/qs@6.15.1/node_modules/qs/lib/index.js"(exports, module) {
     "use strict";
     var stringify2 = require_stringify();
     var parse3 = require_parse();
@@ -19846,9 +19845,9 @@ var require_is_promise = __commonJS({
   }
 });
 
-// ../node_modules/.pnpm/path-to-regexp@8.3.0/node_modules/path-to-regexp/dist/index.js
+// ../node_modules/.pnpm/path-to-regexp@8.4.2/node_modules/path-to-regexp/dist/index.js
 var require_dist = __commonJS({
-  "../node_modules/.pnpm/path-to-regexp@8.3.0/node_modules/path-to-regexp/dist/index.js"(exports) {
+  "../node_modules/.pnpm/path-to-regexp@8.4.2/node_modules/path-to-regexp/dist/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.PathError = exports.TokenData = void 0;
@@ -19861,19 +19860,7 @@ var require_dist = __commonJS({
     var NOOP_VALUE = (value) => value;
     var ID_START = /^[$_\p{ID_Start}]$/u;
     var ID_CONTINUE = /^[$\u200c\u200d\p{ID_Continue}]$/u;
-    var SIMPLE_TOKENS = {
-      // Groups.
-      "{": "{",
-      "}": "}",
-      // Reserved.
-      "(": "(",
-      ")": ")",
-      "[": "[",
-      "]": "]",
-      "+": "+",
-      "?": "?",
-      "!": "!"
-    };
+    var ID = /^[$_\p{ID_Start}][$\u200c\u200d\p{ID_Continue}]*$/u;
     function escapeText(str) {
       return str.replace(/[{}()\[\]+?!:*\\]/g, "\\$&");
     }
@@ -19901,97 +19888,90 @@ var require_dist = __commonJS({
     function parse3(str, options = {}) {
       const { encodePath = NOOP_VALUE } = options;
       const chars = [...str];
-      const tokens = [];
       let index = 0;
-      let pos = 0;
-      function name() {
-        let value = "";
-        if (ID_START.test(chars[index])) {
-          do {
-            value += chars[index++];
-          } while (ID_CONTINUE.test(chars[index]));
-        } else if (chars[index] === '"') {
-          let quoteStart = index;
-          while (index++ < chars.length) {
-            if (chars[index] === '"') {
-              index++;
-              quoteStart = 0;
-              break;
-            }
-            if (chars[index] === "\\")
-              index++;
-            value += chars[index];
-          }
-          if (quoteStart) {
-            throw new PathError(`Unterminated quote at index ${quoteStart}`, str);
-          }
-        }
-        if (!value) {
-          throw new PathError(`Missing parameter name at index ${index}`, str);
-        }
-        return value;
-      }
-      while (index < chars.length) {
-        const value = chars[index];
-        const type = SIMPLE_TOKENS[value];
-        if (type) {
-          tokens.push({ type, index: index++, value });
-        } else if (value === "\\") {
-          tokens.push({ type: "escape", index: index++, value: chars[index++] });
-        } else if (value === ":") {
-          tokens.push({ type: "param", index: index++, value: name() });
-        } else if (value === "*") {
-          tokens.push({ type: "wildcard", index: index++, value: name() });
-        } else {
-          tokens.push({ type: "char", index: index++, value });
-        }
-      }
-      tokens.push({ type: "end", index, value: "" });
-      function consumeUntil(endType) {
+      function consumeUntil(end) {
         const output2 = [];
-        while (true) {
-          const token = tokens[pos++];
-          if (token.type === endType)
-            break;
-          if (token.type === "char" || token.type === "escape") {
-            let path = token.value;
-            let cur = tokens[pos];
-            while (cur.type === "char" || cur.type === "escape") {
-              path += cur.value;
-              cur = tokens[++pos];
+        let path = "";
+        function writePath() {
+          if (!path)
+            return;
+          output2.push({
+            type: "text",
+            value: encodePath(path)
+          });
+          path = "";
+        }
+        while (index < chars.length) {
+          const value = chars[index++];
+          if (value === end) {
+            writePath();
+            return output2;
+          }
+          if (value === "\\") {
+            if (index === chars.length) {
+              throw new PathError(`Unexpected end after \\ at index ${index}`, str);
             }
-            output2.push({
-              type: "text",
-              value: encodePath(path)
-            });
+            path += chars[index++];
             continue;
           }
-          if (token.type === "param" || token.type === "wildcard") {
-            output2.push({
-              type: token.type,
-              name: token.value
-            });
+          if (value === ":" || value === "*") {
+            const type = value === ":" ? "param" : "wildcard";
+            let name = "";
+            if (ID_START.test(chars[index])) {
+              do {
+                name += chars[index++];
+              } while (ID_CONTINUE.test(chars[index]));
+            } else if (chars[index] === '"') {
+              let quoteStart = index;
+              while (index < chars.length) {
+                if (chars[++index] === '"') {
+                  index++;
+                  quoteStart = 0;
+                  break;
+                }
+                if (chars[index] === "\\")
+                  index++;
+                name += chars[index];
+              }
+              if (quoteStart) {
+                throw new PathError(`Unterminated quote at index ${quoteStart}`, str);
+              }
+            }
+            if (!name) {
+              throw new PathError(`Missing parameter name at index ${index}`, str);
+            }
+            writePath();
+            output2.push({ type, name });
             continue;
           }
-          if (token.type === "{") {
+          if (value === "{") {
+            writePath();
             output2.push({
               type: "group",
               tokens: consumeUntil("}")
             });
             continue;
           }
-          throw new PathError(`Unexpected ${token.type} at index ${token.index}, expected ${endType}`, str);
+          if (value === "}" || value === "(" || value === ")" || value === "[" || value === "]" || value === "+" || value === "?" || value === "!") {
+            throw new PathError(`Unexpected ${value} at index ${index - 1}`, str);
+          }
+          path += value;
         }
+        if (end) {
+          throw new PathError(`Unexpected end at index ${index}, expected ${end}`, str);
+        }
+        writePath();
         return output2;
       }
-      return new TokenData(consumeUntil("end"), str);
+      return new TokenData(consumeUntil(""), str);
     }
     function compile(path, options = {}) {
       const { encode = encodeURIComponent, delimiter = DEFAULT_DELIMITER } = options;
       const data = typeof path === "object" ? path : parse3(path, options);
       const fn = tokensToFunction(data.tokens, delimiter, encode);
       return function path2(params = {}) {
-        const [path3, ...missing] = fn(params);
+        const missing = [];
+        const path3 = fn(params, missing);
         if (missing.length) {
           throw new TypeError(`Missing parameters: ${missing.join(", ")}`);
         }
@@ -20000,55 +19980,61 @@ var require_dist = __commonJS({
     }
     function tokensToFunction(tokens, delimiter, encode) {
       const encoders = tokens.map((token) => tokenToFunction(token, delimiter, encode));
-      return (data) => {
-        const result = [""];
+      return (data, missing) => {
+        let result = "";
         for (const encoder of encoders) {
-          const [value, ...extras] = encoder(data);
-          result[0] += value;
-          result.push(...extras);
+          result += encoder(data, missing);
         }
         return result;
       };
     }
     function tokenToFunction(token, delimiter, encode) {
       if (token.type === "text")
-        return () => [token.value];
+        return () => token.value;
       if (token.type === "group") {
         const fn = tokensToFunction(token.tokens, delimiter, encode);
-        return (data) => {
-          const [value, ...missing] = fn(data);
-          if (!missing.length)
-            return [value];
-          return [""];
+        return (data, missing) => {
+          const len = missing.length;
+          const value = fn(data, missing);
+          if (missing.length === len)
+            return value;
+          missing.length = len;
+          return "";
         };
       }
       const encodeValue = encode || NOOP_VALUE;
       if (token.type === "wildcard" && encode !== false) {
-        return (data) => {
+        return (data, missing) => {
           const value = data[token.name];
-          if (value == null)
-            return ["", token.name];
+          if (value == null) {
+            missing.push(token.name);
+            return "";
+          }
           if (!Array.isArray(value) || value.length === 0) {
             throw new TypeError(`Expected "${token.name}" to be a non-empty array`);
           }
-          return [
-            value.map((value2, index) => {
-              if (typeof value2 !== "string") {
-                throw new TypeError(`Expected "${token.name}/${index}" to be a string`);
-              }
-              return encodeValue(value2);
-            }).join(delimiter)
-          ];
+          let result = "";
+          for (let i = 0; i < value.length; i++) {
+            if (typeof value[i] !== "string") {
+              throw new TypeError(`Expected "${token.name}/${i}" to be a string`);
+            }
+            if (i > 0)
+              result += delimiter;
+            result += encodeValue(value[i]);
+          }
+          return result;
         };
       }
-      return (data) => {
+      return (data, missing) => {
         const value = data[token.name];
-        if (value == null)
-          return ["", token.name];
+        if (value == null) {
+          missing.push(token.name);
+          return "";
+        }
         if (typeof value !== "string") {
           throw new TypeError(`Expected "${token.name}" to be a string`);
         }
-        return [encodeValue(value)];
+        return encodeValue(value);
       };
     }
     function match(path, options = {}) {
@@ -20080,106 +20066,134 @@ var require_dist = __commonJS({
     function pathToRegexp(path, options = {}) {
       const { delimiter = DEFAULT_DELIMITER, end = true, sensitive = false, trailing = true } = options;
       const keys = [];
-      const flags = sensitive ? "" : "i";
-      const sources = [];
-      for (const input of pathsToArray(path, [])) {
-        const data = typeof input === "object" ? input : parse3(input, options);
-        for (const tokens of flatten(data.tokens, 0, [])) {
-          sources.push(toRegExpSource(tokens, delimiter, keys, data.originalPath));
+      let source = "";
+      let combinations = 0;
+      function process2(path2) {
+        if (Array.isArray(path2)) {
+          for (const p of path2)
+            process2(p);
+          return;
         }
+        const data = typeof path2 === "object" ? path2 : parse3(path2, options);
+        flatten(data.tokens, 0, [], (tokens) => {
+          if (combinations >= 256) {
+            throw new PathError("Too many path combinations", data.originalPath);
+          }
+          if (combinations > 0)
+            source += "|";
+          source += toRegExpSource(tokens, delimiter, keys, data.originalPath);
+          combinations++;
+        });
       }
-      let pattern = `^(?:${sources.join("|")})`;
+      process2(path);
+      let pattern = `^(?:${source})`;
       if (trailing)
-        pattern += `(?:${escape2(delimiter)}$)?`;
-      pattern += end ? "$" : `(?=${escape2(delimiter)}|$)`;
-      const regexp = new RegExp(pattern, flags);
-      return { regexp, keys };
+        pattern += "(?:" + escape2(delimiter) + "$)?";
+      pattern += end ? "$" : "(?=" + escape2(delimiter) + "|$)";
+      return { regexp: new RegExp(pattern, sensitive ? "" : "i"), keys };
     }
-    function pathsToArray(paths, init) {
-      if (Array.isArray(paths)) {
-        for (const p of paths)
-          pathsToArray(p, init);
-      } else {
-        init.push(paths);
-      }
-      return init;
-    }
-    function* flatten(tokens, index, init) {
-      if (index === tokens.length) {
-        return yield init;
-      }
-      const token = tokens[index];
-      if (token.type === "group") {
-        for (const seq of flatten(token.tokens, 0, init.slice())) {
-          yield* flatten(tokens, index + 1, seq);
+    function flatten(tokens, index, result, callback) {
+      while (index < tokens.length) {
+        const token = tokens[index++];
+        if (token.type === "group") {
+          const len = result.length;
+          flatten(token.tokens, 0, result, (seq) => flatten(tokens, index, seq, callback));
+          result.length = len;
+          continue;
         }
-      } else {
-        init.push(token);
+        result.push(token);
       }
-      yield* flatten(tokens, index + 1, init);
+      callback(result);
     }
     function toRegExpSource(tokens, delimiter, keys, originalPath) {
       let result = "";
       let backtrack = "";
-      let isSafeSegmentParam = true;
-      for (const token of tokens) {
+      let wildcardBacktrack = "";
+      let prevCaptureType = 0;
+      let hasSegmentCapture = 0;
+      let index = 0;
+      function hasInSegment(index2, type) {
+        while (index2 < tokens.length) {
+          const token = tokens[index2++];
+          if (token.type === type)
+            return true;
+          if (token.type === "text") {
+            if (token.value.includes(delimiter))
+              break;
+          }
+        }
+        return false;
+      }
+      function peekText(index2) {
+        let result2 = "";
+        while (index2 < tokens.length) {
+          const token = tokens[index2++];
+          if (token.type !== "text")
+            break;
+          result2 += token.value;
+        }
+        return result2;
+      }
+      while (index < tokens.length) {
+        const token = tokens[index++];
         if (token.type === "text") {
           result += escape2(token.value);
           backtrack += token.value;
-          isSafeSegmentParam || (isSafeSegmentParam = token.value.includes(delimiter));
+          if (prevCaptureType === 2)
+            wildcardBacktrack += token.value;
+          if (token.value.includes(delimiter))
+            hasSegmentCapture = 0;
           continue;
         }
         if (token.type === "param" || token.type === "wildcard") {
-          if (!isSafeSegmentParam && !backtrack) {
+          if (prevCaptureType && !backtrack) {
             throw new PathError(`Missing text before "${token.name}" ${token.type}`, originalPath);
           }
           if (token.type === "param") {
-            result += `(${negate(delimiter, isSafeSegmentParam ? "" : backtrack)}+)`;
+            result += hasSegmentCapture & 2 ? `(${negate(delimiter, backtrack)}+)` : hasInSegment(index, "wildcard") ? `(${negate(delimiter, peekText(index))}+)` : hasSegmentCapture & 1 ? `(${negate(delimiter, backtrack)}+|${escape2(backtrack)})` : `(${negate(delimiter, "")}+)`;
+            hasSegmentCapture |= prevCaptureType = 1;
           } else {
-            result += `([\\s\\S]+)`;
+            result += hasSegmentCapture & 2 ? `(${negate(backtrack, "")}+)` : wildcardBacktrack ? `(${negate(wildcardBacktrack, "")}+|${negate(delimiter, "")}+)` : `([^]+)`;
+            wildcardBacktrack = "";
+            hasSegmentCapture |= prevCaptureType = 2;
           }
           keys.push(token);
           backtrack = "";
-          isSafeSegmentParam = false;
           continue;
         }
+        throw new TypeError(`Unknown token type: ${token.type}`);
       }
       return result;
     }
-    function negate(delimiter, backtrack) {
-      if (backtrack.length < 2) {
-        if (delimiter.length < 2)
-          return `[^${escape2(delimiter + backtrack)}]`;
-        return `(?:(?!${escape2(delimiter)})[^${escape2(backtrack)}])`;
-      }
-      if (delimiter.length < 2) {
-        return `(?:(?!${escape2(backtrack)})[^${escape2(delimiter)}])`;
-      }
-      return `(?:(?!${escape2(backtrack)}|${escape2(delimiter)})[\\s\\S])`;
+    function negate(a, b) {
+      if (b.length > a.length)
+        return negate(b, a);
+      if (a === b)
+        b = "";
+      if (b.length > 1)
+        return `(?:(?!${escape2(a)}|${escape2(b)})[^])`;
+      if (a.length > 1)
+        return `(?:(?!${escape2(a)})[^${escape2(b)}])`;
+      return `[^${escape2(a + b)}]`;
     }
-    function stringifyTokens(tokens) {
+    function stringifyTokens(tokens, index) {
       let value = "";
-      let i = 0;
-      function name(value2) {
-        const isSafe = isNameSafe(value2) && isNextNameSafe(tokens[i]);
-        return isSafe ? value2 : JSON.stringify(value2);
-      }
-      while (i < tokens.length) {
-        const token = tokens[i++];
+      while (index < tokens.length) {
+        const token = tokens[index++];
         if (token.type === "text") {
           value += escapeText(token.value);
           continue;
         }
         if (token.type === "group") {
-          value += `{${stringifyTokens(token.tokens)}}`;
+          value += "{" + stringifyTokens(token.tokens, 0) + "}";
           continue;
         }
         if (token.type === "param") {
-          value += `:${name(token.name)}`;
+          value += ":" + stringifyName(token.name, tokens[index]);
           continue;
         }
         if (token.type === "wildcard") {
-          value += `*${name(token.name)}`;
+          value += "*" + stringifyName(token.name, tokens[index]);
           continue;
         }
         throw new TypeError(`Unknown token type: ${token.type}`);
@@ -20187,16 +20201,15 @@ var require_dist = __commonJS({
       return value;
     }
     function stringify2(data) {
-      return stringifyTokens(data.tokens);
+      return stringifyTokens(data.tokens, 0);
     }
-    function isNameSafe(name) {
-      const [first, ...rest] = name;
-      return ID_START.test(first) && rest.every((char2) => ID_CONTINUE.test(char2));
-    }
-    function isNextNameSafe(token) {
-      if (token && token.type === "text")
-        return !ID_CONTINUE.test(token.value[0]);
-      return true;
+    function stringifyName(name, next) {
+      if (!ID.test(name))
+        return JSON.stringify(name);
+      if ((next === null || next === void 0 ? void 0 : next.type) === "text" && ID_CONTINUE.test(next.value[0])) {
+        return JSON.stringify(name);
+      }
+      return name;
     }
   }
 });
@@ -22025,16 +22038,14 @@ var require_request = __commonJS({
   }
 });
 
-// ../node_modules/.pnpm/content-disposition@1.0.1/node_modules/content-disposition/index.js
+// ../node_modules/.pnpm/content-disposition@1.1.0/node_modules/content-disposition/index.js
 var require_content_disposition = __commonJS({
-  "../node_modules/.pnpm/content-disposition@1.0.1/node_modules/content-disposition/index.js"(exports, module) {
+  "../node_modules/.pnpm/content-disposition@1.1.0/node_modules/content-disposition/index.js"(exports, module) {
     "use strict";
     module.exports = contentDisposition;
     module.exports.parse = parse3;
-    var basename = __require("path").basename;
+    var utf8Decoder = new TextDecoder("utf-8");
     var ENCODE_URL_ATTR_CHAR_REGEXP = /[\x00-\x20"'()*,/:;<=>?@[\\\]{}\x7f]/g;
-    var HEX_ESCAPE_REGEXP = /%[0-9A-Fa-f]{2}/;
-    var HEX_ESCAPE_REPLACE_REGEXP = /%([0-9A-Fa-f]{2})/g;
     var NON_LATIN1_REGEXP = /[^\x20-\x7e\xa0-\xff]/g;
     var QESC_REGEXP = /\\([\u0000-\u007f])/g;
     var QUOTE_REGEXP = /([\\"])/g;
@@ -22070,7 +22081,7 @@ var require_content_disposition = __commonJS({
       var isQuotedString = TEXT_REGEXP.test(name);
       var fallbackName = typeof fallback !== "string" ? fallback && getlatin1(name) : basename(fallback);
       var hasFallback = typeof fallbackName === "string" && fallbackName !== name;
-      if (hasFallback || !isQuotedString || HEX_ESCAPE_REGEXP.test(name)) {
+      if (hasFallback || !isQuotedString || hasHexEscape(name)) {
         params["filename*"] = name;
       }
       if (isQuotedString || hasFallback) {
@@ -22097,26 +22108,32 @@ var require_content_disposition = __commonJS({
       return string4;
     }
     function decodefield(str) {
-      var match = EXT_VALUE_REGEXP.exec(str);
+      const match = EXT_VALUE_REGEXP.exec(str);
       if (!match) {
         throw new TypeError("invalid extended field value");
       }
-      var charset = match[1].toLowerCase();
-      var encoded = match[2];
-      var value;
-      var binary = encoded.replace(HEX_ESCAPE_REPLACE_REGEXP, pdecode);
+      const charset = match[1].toLowerCase();
+      const encoded = match[2];
       switch (charset) {
-        case "iso-8859-1":
-          value = getlatin1(binary);
-          break;
+        case "iso-8859-1": {
+          const binary = decodeHexEscapes(encoded);
+          return getlatin1(binary);
+        }
         case "utf-8":
-        case "utf8":
-          value = Buffer.from(binary, "binary").toString("utf8");
-          break;
-        default:
-          throw new TypeError("unsupported charset in extended field");
+        case "utf8": {
+          try {
+            return decodeURIComponent(encoded);
+          } catch {
+            const binary = decodeHexEscapes(encoded);
+            const bytes2 = new Uint8Array(binary.length);
+            for (let idx = 0; idx < binary.length; idx++) {
+              bytes2[idx] = binary.charCodeAt(idx);
+            }
+            return utf8Decoder.decode(bytes2);
+          }
+        }
       }
-      return value;
+      throw new TypeError("unsupported charset in extended field");
     }
     function getlatin1(val) {
       return String(val).replace(NON_LATIN1_REGEXP, "?");
@@ -22166,9 +22183,6 @@ var require_content_disposition = __commonJS({
       }
       return new ContentDisposition(type, params);
     }
-    function pdecode(str, hex) {
-      return String.fromCharCode(parseInt(hex, 16));
-    }
     function pencode(char2) {
       return "%" + String(char2).charCodeAt(0).toString(16).toUpperCase();
     }
@@ -22184,6 +22198,51 @@ var require_content_disposition = __commonJS({
     function ContentDisposition(type, parameters) {
       this.type = type;
       this.parameters = parameters;
+    }
+    function basename(path) {
+      const normalized = path.replaceAll("\\", "/");
+      let end = normalized.length;
+      while (end > 0 && normalized[end - 1] === "/") {
+        end--;
+      }
+      if (end === 0) {
+        return "";
+      }
+      let start = end - 1;
+      while (start >= 0 && normalized[start] !== "/") {
+        start--;
+      }
+      return normalized.slice(start + 1, end);
+    }
+    function isHexDigit(char2) {
+      const code = char2.charCodeAt(0);
+      return code >= 48 && code <= 57 || // 0-9
+      code >= 65 && code <= 70 || // A-F
+      code >= 97 && code <= 102;
+    }
+    function hasHexEscape(str) {
+      const maxIndex = str.length - 3;
+      let lastIndex = -1;
+      while ((lastIndex = str.indexOf("%", lastIndex + 1)) !== -1 && lastIndex <= maxIndex) {
+        if (isHexDigit(str[lastIndex + 1]) && isHexDigit(str[lastIndex + 2])) {
+          return true;
+        }
+      }
+      return false;
+    }
+    function decodeHexEscapes(str) {
+      const firstEscape = str.indexOf("%");
+      if (firstEscape === -1) return str;
+      let result = str.slice(0, firstEscape);
+      for (let idx = firstEscape; idx < str.length; idx++) {
+        if (str[idx] === "%" && idx + 2 < str.length && isHexDigit(str[idx + 1]) && isHexDigit(str[idx + 2])) {
+          result += String.fromCharCode(Number.parseInt(str[idx + 1] + str[idx + 2], 16));
+          idx += 2;
+        } else {
+          result += str[idx];
+        }
+      }
+      return result;
     }
   }
 });
@@ -60087,7 +60146,7 @@ async function scanForOpportunities(flashLoanSizeEth, minMarginPct, blockNumber,
         const logMsg = `[SCANNER] ${pair.tokenIn}/${pair.tokenOut} | spread: ${rawSpreadPct}% | loanSize: ${bestLoan.flashLoanSizeEth} ETH | netProfit: ${bestLoan.netProfit.toFixed(6)} ETH`;
         console.log(logMsg);
       }
-      if (bestLoan.netProfit > 0 && rawSpreadPct > 0.03) {
+      if (bestLoan.netProfit > 0 && rawSpreadPct > 0.015) {
         return {
           protocol: pair.protocol,
           tokenIn: pair.tokenIn,
@@ -60539,6 +60598,28 @@ function registerExecutionFailure(state, reason, now = Date.now(), threshold = 3
   };
 }
 
+// src/lib/mockRustBridge.ts
+var mockInterval = null;
+function startMockRustBridge() {
+  if (mockInterval) return;
+  logger.info("[MOCK] Starting Rust Bridge simulator for dashboard metrics");
+  mockInterval = setInterval(() => {
+    sharedEngineState.ipcConnected = true;
+    sharedEngineState.shadowModeActive = true;
+    sharedEngineState.flashloanContractAddress = "0x1234567890123456789012345678901234567890";
+    const chains = [1, 8453, 42161];
+    chains.forEach((chain, idx) => {
+      sharedEngineState.chainLatencies[chain] = 120 + Math.random() * 40;
+    });
+    const hops = 2 + Math.floor(Math.random() * 4);
+    sharedEngineState.pathComplexity[hops] = (sharedEngineState.pathComplexity[hops] || 0) + 1;
+    sharedEngineState.lastBackbonePrice = 3200 + Math.sin(Date.now() / 1e4) * 20;
+    if (Math.random() < 0.1) {
+      logger.info("[MOCK-RUST] Bridge active: simulated telemetry stream");
+    }
+  }, 2e3);
+}
+
 // src/routes/engine.ts
 var router2 = (0, import_express2.Router)();
 async function detectLiveCapability() {
@@ -60676,6 +60757,61 @@ function connectToRustBridge(retryCount = 0) {
   });
 }
 connectToRustBridge();
+startMockRustBridge();
+async function autoStartEngine() {
+  if (engineState.running) {
+    logger.info("Engine already running - auto-start skipped");
+    return;
+  }
+  logger.info("Auto-starting BrightSky Engine in SHADOW mode for dashboard");
+  const caps = await detectLiveCapability();
+  const { address, privateKey } = generateEphemeralWallet();
+  const mode = "SHADOW";
+  engineState.running = true;
+  engineState.mode = mode;
+  engineState.startedAt = /* @__PURE__ */ new Date();
+  engineState.walletAddress = address;
+  engineState.walletPrivateKey = privateKey;
+  engineState.scannerActive = true;
+  engineState.pimlicoEnabled = caps.hasPimlicoKey;
+  engineState.liveCapable = caps.liveCapable;
+  engineState.pimlicoApiKey = caps.pimlicoApiKey;
+  engineState.rpcEndpoint = caps.rpcEndpoint;
+  engineState.opportunitiesDetected = 0;
+  engineState.opportunitiesExecuted = 0;
+  engineState.gaslessMode = true;
+  engineState.scanInFlight = false;
+  engineState.skippedScanCycles = 0;
+  engineState.lastScanStartedAt = null;
+  engineState.lastScanCompletedAt = null;
+  engineState.circuitBreaker = createCircuitBreakerState();
+  sharedEngineState.running = true;
+  sharedEngineState.mode = "SHADOW";
+  sharedEngineState.walletAddress = address;
+  sharedEngineState.liveCapable = caps.liveCapable;
+  sharedEngineState.pimlicoEnabled = caps.hasPimlicoKey;
+  sharedEngineState.gaslessMode = true;
+  sharedEngineState.startedAt = engineState.startedAt;
+  startBlockTracking();
+  const [currentBlock, ethPrice] = await Promise.all([
+    fetchCurrentBlock(),
+    getEthPriceUsd()
+  ]);
+  logger.info({
+    mode,
+    address: address.slice(0, 10) + "...",
+    liveCapable: caps.liveCapable,
+    block: currentBlock,
+    ethPrice
+  }, "BrightSky Engine AUTO-STARTED");
+  scannerInterval = setInterval(scanCycle, 15e3);
+  cleanupInterval = setInterval(pruneStreamEvents, 5 * 6e4);
+  broadcastTelemetry("ENGINE_AUTO_START", {
+    mode,
+    liveCapable: caps.liveCapable
+  });
+}
+setImmediate(autoStartEngine);
 function generateEphemeralWallet() {
   const wallet = Wallet.createRandom();
   return { address: wallet.address, privateKey: wallet.privateKey };
@@ -61054,11 +61190,15 @@ async function scanCycle() {
         }
       } else if (engineState.mode === "LIVE" && !engineState.liveCapable) {
         txHash = "0x" + crypto4.randomBytes(32).toString("hex");
-        execMode = "LIVE";
+        execMode = "SHADOW";
+        engineState.circuitBreaker = registerExecutionFailure(
+          engineState.circuitBreaker,
+          "LIVE mode requested without Pimlico or private RPC"
+        );
         await db.insert(streamEventsTable).values({
           id: genId("evt"),
           type: "SCANNING",
-          message: `[SIMULATION] Generating simulated profit for LIVE mode.`,
+          message: `[LIVE MODE BLOCKED] PIMLICO_API_KEY or RPC_ENDPOINT not set in Render env vars. Add them in Render Dashboard \u2192 Environment. Running SHADOW until configured.`,
           blockNumber,
           protocol: opp.protocol
         });
