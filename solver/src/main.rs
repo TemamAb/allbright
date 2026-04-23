@@ -92,7 +92,7 @@ lazy_static::lazy_static! {
 
 /// BSS-26 Global System Policy
 #[derive(Debug, Clone)]
-pub(crate) struct SystemPolicy {
+pub struct SystemPolicy {
     pub max_hops: usize,
     pub min_profit_bps: f64,
     pub shadow_mode: bool,
@@ -104,7 +104,7 @@ const TARGET_LATENCY_MS: u64 = 10; // p99 ms
 const TARGET_CYCLES_PER_HOUR: u64 = 120;
 
 #[derive(Default)]
-pub(crate) struct WatchtowerStats {
+pub struct WatchtowerStats {
     // BSS-01 & BSS-05 Metrics
     msg_throughput_sec: AtomicUsize,
     last_heartbeat_bss05: AtomicU64,
@@ -135,10 +135,7 @@ pub(crate) struct WatchtowerStats {
     // BSS-40/43: Predictive Metrics
     mempool_events_per_sec: AtomicUsize,
     simulated_tx_success_rate: AtomicUsize, // Percentage
-    bundle_inclusion_rate: AtomicUsize,
-    optimal_input_size_eth: AtomicU64, // BSS-44 result
     mempool_state_prediction_ready: AtomicBool,
-    last_mempool_latency_ms: AtomicU64,
 
     // BSS-33 & BSS-34 Metrics
     wallet_balance_milli_eth: AtomicU64,
