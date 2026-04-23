@@ -306,16 +306,184 @@ Profit:  ETH | Trades:  | Success: %
 
 ---
 
+## 🚫 ALL Things BLOCKING Profit Generation
+
+### Tier 1: CRITICAL (Must fix immediately - nothing works without these)
+
+#### 1. ❌ Rust Solver Not Running
+
+- **What**: `http://localhost:4001/health` times out
+- **Impact**: NO arbitrage opportunities detected → NO trades → NO profit
+- **Root Cause**:
+  - Background job `Start-Job` doesn't properly execute long-running binaries
+  - Binary may be crashing immediately after start
+  - Port 4001 may not be the actual listening port
+- **Fix**: Run directly in PowerShell window:
+  ```powershell
+  cd C:\Users\op\Desktop\brightsky\solver
+  $env:INTERNAL_BRIDGE_PORT=4001
+  .\target\release\brightsky.exe
+  ```
+- **Verify**: `curl http://localhost:4001/health` returns "ok"
+
+#### 2. ❌ No Profit Data in API
+
+- **What**: `http://localhost:3000/api/stats` returns empty: `Profit: ETH | Trades: | Success: %`
+- **Impact**: Even if solver works, API can't report or track profit
+- **Root Causes**:
+  - Database empty or not connected
+  - Trades table not created/migrated
+  - API can't reach database (DATABASE_URL wrong)
+- **Fix**:
+  ```powershell
+  # Check DB connection
+  $env:DATABASE_URL
+  # Run migration
+  pnpm --filter @workspace/db run migrate
+  # Check if tables exist
+  ```
+- **Verify**: `curl http://localhost:3000/api/stats` shows numbers
+
+#### 3. ❌ Log Files Empty
+
+- **What**: `logs/rust-solver.log` and `logs/api-server.log` are empty
+- **Impact**: Can't debug why solver isn't finding opportunities or executing trades
+- **Root Cause**: PowerShell `Start-Job` doesn't redirect output to files correctly
+- **Fix**: Use `Start-Process` with `RedirectStandardOutput` OR run interactively
+- **Verify**: Log files have content after restart
+
+---
+
+### Tier 2: HIGH (Profit will be near-zero without these)
+
+#### 4. ❌ RPC Endpoint Issues
+
+- **What**: Solver can't read blockchain state or mempool
+- **Impact**: No arbitrage opportunities detected
+- **Check**:
+  ```powershell
+  # Test RPC endpoint
+  curl -X POST $env:RPC_ENDPOINT -H "Content-Type: application/json" --data "{\"jsonrpc\":\"2.0\",\"method\":\"eth_blockNumber\",\"params\":[],\"id\":1}"
+  ```
+- **Common Issues**:
+  - Wrong RPC_URL in `.env`
+  - Rate limiting (too many requests)
+  - Chain ID mismatch (CHAIN_ID=8453 for Base)
+  - Alchemy/Infura API key invalid
+
+#### 5. ❌ Wallet/Private Key Problems
+
+- **What**: Can't sign or send transactions
+- **Impact**: Opportunities found but trades fail to execute
+- **Check**:
+  ```powershell
+  Write-Host "Address: $env:WALLET_ADDRESS"
+  Write-Host "Private Key length: $($env:PRIVATE_KEY.Length)"
+  ```
+- **Common Issues**:
+  - PRIVATE_KEY malformed (needs 0x prefix?)
+  - Key doesn't match WALLET_ADDRESS
+  - Insufficient ETH balance for gas
+
+#### 6. ❌ Pimlico Bundler Not Working (ERC-4337)
+
+- **What**: Account abstraction UserOperations fail
+- **Impact**: Gasless execution fails, trades don't execute
+- **Check**:
+  ```powershell
+  curl -X POST $env:PIMLICO_BUNDLER_URL -H "Content-Type: application/json" --data "{\"jsonrpc\":\"2.0\",\"method\":\"eth_supportedEntryPoints\",\"params\":[],\"id\":1}"
+  ```
+- **Common Issues**:
+  - PIMLICO_API_KEY invalid
+  - PIMLICO_BUNDLER_URL wrong
+  - CHAIN_ID not supported by Pimlico
+
+---
+
+### Tier 3: MEDIUM (Reduces profit significantly)
+
+#### 7. ⚠️ Solver Parameters Too Strict
+
+- **What**: MIN_PROFIT_BPS too high, missing opportunities
+- **Impact**: Few or no trades execute
+- **Check `.env`**:
+  ```
+  MIN_PROFIT_BPS=10 (0.1% minimum) - Try lowering to 5
+  MAX_PAIRS_TO_SCAN=2500 - Increase to 5000
+  SCAN_CONCURRENCY=8 - Increase to 16
+  ```
+- **Fix**: Edit `.env`, restart solver
+
+#### 8. ⚠️ Flash Loan Contract Issues
+
+- **What**: Executor contract not deployed or wrong address
+- **Impact**: Can't execute multi-hop arbitrage
+- **Check**:
+  ```
+  FLASHLOAN_CONTRACT_ADDRESS=0x...
+  DEPLOYER_ADDRESS=0x...
+  ```
+- **Fix**: Deploy contract, update address
+
+#### 9. ⚠️ MEV Protection Too Aggressive
+
+- **What**: MEV_PROTECTION=true blocks valid trades
+- **Impact**: Reduced trade count
+- **Fix**: Set `MEV_PROTECTION=false` temporarily for testing
+
+#### 10. ⚠️ Paper Trading Mode Enabled
+
+- **What**: PAPER_TRADING_MODE=true
+- **Impact**: Simulates trades but NO REAL profit
+- **Check**: `PAPER_TRADING_MODE=false` in `.env`
+- **Fix**: Set to false for real trading
+
+---
+
+### Tier 4: LOW (Optimization issues)
+
+#### 11. ⚠️ Database Migration Not Run
+
+- **What**: Tables don't exist
+- **Impact**: Trades not recorded, stats empty
+- **Fix**: `pnpm --filter @workspace/db run migrate`
+
+#### 12. ⚠️ Chain ID Mismatch
+
+- **What**: Solver on wrong chain
+- **Impact**: Opportunities on wrong blockchain
+- **Check**: `CHAIN_ID=8453` (Base mainnet)
+
+#### 13. ⚠️ Insufficient Wallet Balance
+
+- **What**: Not enough ETH for gas
+- **Impact**: Transactions fail
+- **Check**: Query ETH balance of WALLET_ADDRESS on Base
+
+#### 14. ⚠️ Browser Dashboard Not Showing Data
+
+- **What**: UI at `http://localhost:5173` shows empty/loading
+- **Impact**: Can't monitor profit visually
+- **Check**: Browser console (F12) for API errors
+
+---
+
 ## 📊 Current Status Summary
 
-| Component           | Status     | Health  | Notes                        |
-| ------------------- | ---------- | ------- | ---------------------------- |
-| Rust Solver (4001)  | ❌ Down    | Timeout | Binary not running correctly |
-| API Server (3000)   | ✅ Up      | OK      | Running as background job    |
-| UI Dashboard (5173) | ✅ Up      | OK      | Vite dev server running      |
-| Database            | ❓ Unknown | -       | Need to verify connectivity  |
-| Profit Generation   | ❌ Zero    | -       | Depends on Rust solver       |
-| Log Files           | ❌ Empty   | -       | Need proper redirection      |
+| Component           | Status     | Health  | BLOCKING Profit?              |
+| ------------------- | ---------- | ------- | ----------------------------- |
+| Rust Solver (4001)  | ❌ Down    | Timeout | ✅ YES - Primary blocker      |
+| API Server (3000)   | ✅ Up      | OK      | No - but no data              |
+| UI Dashboard (5173) | ✅ Up      | OK      | No - but can't show profit    |
+| Database            | ❓ Unknown | -       | ✅ YES - if not connected     |
+| RPC Endpoint        | ❓ Unknown | -       | ✅ YES - if down              |
+| Wallet/Private Key  | ❓ Unknown | -       | ✅ YES - if invalid           |
+| Pimlico Bundler     | ❓ Unknown | -       | ✅ YES - if down              |
+| Flash Loan Contract | ❓ Unknown | -       | ✅ YES - if not deployed      |
+| Profit Generation   | ❌ Zero    | -       | ✅ YES - ALL above block it   |
+| Log Files           | ❌ Empty   | -       | ⚠️ Makes debugging impossible |
+
+**Summary**: **7+ critical issues** must be resolved before ANY profit generates.
 
 ---
 
