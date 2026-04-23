@@ -1,7 +1,7 @@
 // BSS-05: Multi-Chain Sync Module (moved from root)
 // Pure module - SyncSpecialist impl in main.rs
 use ethers::prelude::*;
-use ethers::providers::{Provider, Ws};
+use ethers::providers::{Provider, Ws, SubscriptionStream};
 use ethers::types::Filter;
 use std::sync::Arc;
 use tokio::sync::mpsc;
@@ -24,8 +24,12 @@ pub async fn subscribe_mempool(
     };
 
     if let Ok(provider) = Provider::<Ws>::connect(ws_url).await {
-        let arc_provider = Arc::new(provider);
-        if let Ok(mut stream) = arc_provider.watch_pending_transactions().await {
+        let provider = Arc::new(provider);
+        let mut stream = match provider.watch_pending_transactions().await {
+            Ok(s) => s,
+            Err(_) => return,
+        };
+
             println!("[BSS-40] MEMPOOL INTELLIGENCE ACTIVE: Monitoring Chain {}", chain_id);
             let swap_selector = [0x18, 0xc1, 0x0d, 0x9f];
 
@@ -45,7 +49,6 @@ pub async fn subscribe_mempool(
                     }
                 }
             }
-        }
     }
 }
 
@@ -72,7 +75,7 @@ pub async fn subscribe_chain(
 
 async fn run_subscription_loop(provider: Arc<Provider<Ws>>, chain_id: u64, tx: mpsc::Sender<(String, String, PoolState)>, stats: Arc<WatchtowerStats>) {
     let filter = Filter::new().event("Sync(uint112,uint112)");
-    let mut stream = match provider.subscribe(&filter).await {
+    let mut stream: SubscriptionStream<'_, Ws, Log> = match provider.subscribe(filter).await {
         Ok(s) => s,
         Err(_) => return,
     };

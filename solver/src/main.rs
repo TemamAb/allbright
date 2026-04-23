@@ -1940,7 +1940,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // BSS-01/BSS-03: Multi-threaded message bus & IPC integration
     // Channel for receiving raw pool updates from BSS-05 (Sync Layer)
-    let (tx, mut rx) = mpsc::channel::<(String, String, PoolState)>(1000);
+    let (tx, rx) = mpsc::channel::<(String, String, PoolState)>(1000);
 
     // BSS-13: Solver Trigger
     // Elite Grade: Replaces the 10ms sleep loop with a reactive notify trigger.
