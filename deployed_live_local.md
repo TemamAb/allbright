@@ -564,8 +564,8 @@ Write-Host "Paper Trading: $env:PAPER_TRADING_MODE"
 
    ```powershell
    cd C:\Users\op\Desktop\brightsky\solver
-   set INTERNAL_BRIDGE_PORT=4001
-   .\target\release\brightsky.exe
+   $env:INTERNAL_BRIDGE_PORT=4001
+   cargo run --release
    ```
 
 2. **In original window**, check if it's running:
@@ -588,7 +588,107 @@ Write-Host "Paper Trading: $env:PAPER_TRADING_MODE"
    .\monitor.ps1
    ```
 
-5. **Iterate**: Fix issues as they emerge, adjust parameters, monitor profit growth
+5. **Iterate**: Fix issues as they emerge, adjust parameters, monitor profit growth.
+
+---
+
+## 🔮 Future Implementation Tasks (Roadmap to 14.7 ETH/Day)
+
+### Phase 1: Fix Core Infrastructure (Week 1)
+
+#### Task 1: Rebuild Rust Solver (P0 - Critical)
+
+**Goal**: Get `brightsky.exe` built and running on port 4001.
+**Steps**:
+
+1. Verify `solver/Cargo.toml` exists and is valid.
+2. Clean build: `cd solver; cargo clean; cargo build --release`
+3. Verify binary: `Get-ChildItem solver\target\release\brightsky.exe`
+4. Run interactively: `cd solver; $env:INTERNAL_BRIDGE_PORT=4001; cargo run --release`
+5. Test: `curl http://localhost:4001/health`
+
+#### Task 2: Fix Database Connectivity (P0 - Critical)
+
+**Goal**: Ensure API can read/write to PostgreSQL.
+**Steps**:
+
+1. Run migration: `pnpm --filter @workspace/db run migrate`
+2. Verify tables: Connect to DB and run `SELECT COUNT(*) FROM trades;`
+3. If empty, verify solver is running to populate it.
+4. Fix connection string if `DATABASE_URL` is wrong.
+
+#### Task 3: Fix Logging & Monitoring (P1 - High)
+
+**Goal**: Capture output from all services to diagnose issues.
+**Steps**:
+
+1. Update `deploy-local.ps1` to use `Start-Process` with `RedirectStandardOutput`.
+2. Create simple batch file for Rust: `start-solver.bat`.
+3. Test monitor script encoding: `[Console]::OutputEncoding = [System.Text.Encoding]::UTF8`
+
+---
+
+### Phase 2: Enable Profit Generation (Week 2)
+
+#### Task 4: Configure Pimlico AA (P0 - Critical)
+
+**Goal**: Enable Account Abstraction for gasless execution.
+**Steps**:
+
+1. Verify `PIMLICO_API_KEY` is valid (check dashboard).
+2. Set `CHAIN_ID=8453` (Base mainnet).
+3. Set `PAPER_TRADING_MODE=false` for real execution.
+4. Test bundler: `curl -X POST $PIMLICO_BUNDLER_URL -d '{"jsonrpc":"2.0","method":"eth_supportedEntryPoints","params":[],"id":1}'`
+
+#### Task 5: Adjust Solver Parameters (P1 - High)
+
+**Goal**: Increase opportunity detection.
+**Steps**:
+
+1. Lower `MIN_PROFIT_BPS` to 5 (0.05%) from current.
+2. Increase `MAX_PAIRS_TO_SCAN` to 5000.
+3. Increase `SCAN_CONCURRENCY` to 16.
+4. Restart solver and monitor `/api/stats` for trades.
+
+#### Task 6: Test UI Dashboard (P1 - Medium)
+
+**Goal**: Ensure operators can monitor profit.
+**Steps**:
+
+1. Open `http://localhost:5173`.
+2. Check browser console (F12) for API errors.
+3. Verify "Profit" widget shows data (not NaN).
+4. Confirm WebSocket connection for real-time updates.
+
+---
+
+### Phase 3: Optimize Performance (Week 3-4)
+
+#### Task 7: Performance Tuning (P2 - Medium)
+
+**Goal**: Hit 14.7 ETH/day target.
+**Steps**:
+
+1. Monitor latency: Target <10ms p99.
+2. Increase throughput: Target 500 msgs/sec.
+3. Enable BSS-36 AutoOptimizer for continuous tuning.
+4. Analyze failed trades: `SELECT * FROM trades WHERE status='failed' ORDER BY timestamp DESC LIMIT 10;`
+
+#### Task 8: Security & Hardening (P2 - Medium)
+
+**Goal**: Protect production funds.
+**Steps**:
+
+1. Enable `MEV_PROTECTION=true`.
+2. Set `SUDO_CONFIRMATION_ENABLED=true` for Copilot terminal.
+3. Rotate `DASHBOARD_PASS` and `SESSION_SECRET`.
+4. Audit `FLASHLOAN_CONTRACT_ADDRESS` on Etherscan.
+
+---
+
+### Phase 4: Cloud Migration (Future)
+
+**Tasks**: Move from local to Vercel/Railway for 24/7 operation.
 
 ---
 
