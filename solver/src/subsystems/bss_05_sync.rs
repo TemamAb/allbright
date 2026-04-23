@@ -23,8 +23,8 @@ pub async fn subscribe_mempool(
         _ => return,
     };
 
-    if let Ok(provider) = Provider::<Ws>::connect(ws_url).await {
-        let provider = Arc::new(provider);
+    if let Ok(p) = Provider::<Ws>::connect(ws_url).await {
+        let provider = Arc::new(p);
         let mut stream = match provider.watch_pending_transactions().await {
             Ok(s) => s,
             Err(_) => return,
@@ -35,7 +35,7 @@ pub async fn subscribe_mempool(
 
             while let Some(tx_hash) = stream.next().await {
                 stats.mempool_events_per_sec.fetch_add(1, Ordering::Relaxed);
-                if let Ok(Some(pending_tx)) = arc_provider.get_transaction(tx_hash).await {
+                if let Ok(Some(pending_tx)) = provider.get_transaction(tx_hash).await {
                     let data = &pending_tx.input;
                     if data.len() >= 164 && data[0..4] == swap_selector {
                         if let Some(to_addr) = pending_tx.to {
