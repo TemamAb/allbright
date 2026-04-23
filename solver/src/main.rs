@@ -1557,9 +1557,9 @@ async fn run_watchtower(
     policy_tx: watch::Sender<SystemPolicy>,
     mut debug_rx: mpsc::Receiver<DebuggingOrder>,
 ) {
-    println!(
-        "[BSS-26] Nexus Orchestrator ACTIVE: Managing 39 Subsystems across 29 Specialist Agents."
-    );
+     println!(
+         "[BSS-26] Nexus Orchestrator ACTIVE: Managing 46 Subsystems across 9 Specialist Agents."
+     );
 
     let registry: HashMap<&str, BssLevel> = [
         ("BSS-01", BssLevel::Production),

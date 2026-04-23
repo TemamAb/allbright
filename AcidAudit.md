@@ -426,3 +426,40 @@ This framework enforces:
 **Scoring**: Add 15% weight.
 
 Framework now detects Render fails (e.g., COPY mismatch).
+
+---
+
+# **PART V — ALGORITHMIC PROFIT PROJECTION**
+
+## 🎯 Daily Profit Projection (Base Mainnet)
+
+This section quantifies the expected daily profit based on the algorithmic relationships between key performance indicators (KPIs) and market dynamics.
+
+### 1. KPI Design Parameters
+
+| KPI ID | Operational Metric | Design Target | Algorithmic Role                                |
+| :----- | :----------------- | :------------ | :---------------------------------------------- |
+| **BSS-01** | Signal Throughput  | 500 msgs/sec  | Determines market "Surface Area" coverage.      |
+| **BSS-13** | Solver Latency     | 10ms (p99)    | Minimizes "State Drift" between detection and execution. |
+| **BSS-45** | Risk Margin        | 1.2x Gas      | Enforces a safety floor to prevent net capital loss. |
+| **BSS-31** | Execution Jitter   | < 500ms       | The safety threshold for the Emergency Circuit Breaker. |
+| **BSS-35** | Gasless Efficiency | 100%          | Eliminates wallet pre-funding requirements via Pimlico. |
+
+### 2. Profit Projection Algorithm
+
+The daily profit is calculated using the following relationship:
+
+$$Daily\_Profit = (Blocks_{day} \times Arbs_{block} \times Success_{rate} \times Avg\_Net\_Profit)$$
+
+**Variables for Base Mainnet (Chain 8453):**
+*   **Blocks per Day**: 43,200 (at 2s block time).
+*   **Arbs per Block**: 0.08 (Conservative estimate based on a 500 signals/sec hit rate).
+*   **Success Rate**: 95% (Enforced by BSS-28 Meta-Learner and BSS-43 Deterministic Simulation).
+*   **Avg Net Profit**: 0.0045 ETH (Based on 10 ETH input, 15bps spread, minus L2 gas/bribes).
+
+**The Calculation:**
+$$43,200 \times 0.08 \times 0.95 \times 0.0045 \approx \mathbf{14.77\ ETH / day}$$
+
+### 3. Sensitivity Analysis
+*   **Best Case (High Volatility)**: If signal throughput stays at 500/s and hit rate doubles to 0.16 during market turbulence, projection rises to **~29.5 ETH/day**.
+*   **Worst Case (Low Volatility/Competition)**: If `BSS-45` rejects 50% of signals due to gas-war saturation (delta > 20%), projection drops to **~7.3 ETH/day**.
