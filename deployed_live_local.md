@@ -371,19 +371,22 @@ Profit:  ETH | Trades:  | Success: %
   - Chain ID mismatch (CHAIN_ID=8453 for Base)
   - Alchemy/Infura API key invalid
 
-#### 5. ❌ Wallet/Private Key Problems
+#### 5. ❌ Pimlico/Account Abstraction Issues
 
-- **What**: Can't sign or send transactions
-- **Impact**: Opportunities found but trades fail to execute
+- **What**: ERC-4337 UserOperations fail via Pimlico bundler
+- **Impact**: Account abstraction mode requires bundler, not pre-funded wallet
 - **Check**:
   ```powershell
-  Write-Host "Address: $env:WALLET_ADDRESS"
-  Write-Host "Private Key length: $($env:PRIVATE_KEY.Length)"
+  # Test bundler connection
+  curl -X POST $env:PIMLICO_BUNDLER_URL -H "Content-Type: application/json" --data "{\"jsonrpc\":\"2.0\",\"method\":\"eth_supportedEntryPoints\",\"params\":[],\"id\":1}"
+  Write-Host "PIMLICO_API_KEY set: $($env:PIMLICO_API_KEY.Length -gt 0)"
+  Write-Host "CHAIN_ID (Base): $env:CHAIN_ID"
   ```
 - **Common Issues**:
-  - PRIVATE_KEY malformed (needs 0x prefix?)
-  - Key doesn't match WALLET_ADDRESS
-  - Insufficient ETH balance for gas
+  - PIMLICO_API_KEY invalid or expired
+  - PIMLICO_BUNDLER_URL wrong for chain ID 8453
+  - Bundler not accepting UserOperations
+  - PAPER_TRADING_MODE=true (simulates only, no real execution)
 
 #### 6. ❌ Pimlico Bundler Not Working (ERC-4337)
 
@@ -454,11 +457,15 @@ Profit:  ETH | Trades:  | Success: %
 - **Impact**: Opportunities on wrong blockchain
 - **Check**: `CHAIN_ID=8453` (Base mainnet)
 
-#### 13. ⚠️ Insufficient Wallet Balance
+#### 13. ⚠️ Account Abstraction Misunderstood
 
-- **What**: Not enough ETH for gas
-- **Impact**: Transactions fail
-- **Check**: Query ETH balance of WALLET_ADDRESS on Base
+- **What**: App uses Pimlico AA (ERC-4337), NOT pre-funded wallet model
+- **Impact**: Report previously gave wrong advice about wallet balance
+- **Correct Info**:
+  - No pre-funded wallet needed for gas (bundler handles it)
+  - Pimlico pays gas, gets reimbursed from UserOperation
+  - WALLET_ADDRESS is signer, not gas payer
+  - Only need minimal ETH for emergency fallback
 
 #### 14. ⚠️ Browser Dashboard Not Showing Data
 
@@ -470,18 +477,18 @@ Profit:  ETH | Trades:  | Success: %
 
 ## 📊 Current Status Summary
 
-| Component           | Status     | Health  | BLOCKING Profit?              |
-| ------------------- | ---------- | ------- | ----------------------------- |
-| Rust Solver (4001)  | ❌ Down    | Timeout | ✅ YES - Primary blocker      |
-| API Server (3000)   | ✅ Up      | OK      | No - but no data              |
-| UI Dashboard (5173) | ✅ Up      | OK      | No - but can't show profit    |
-| Database            | ❓ Unknown | -       | ✅ YES - if not connected     |
-| RPC Endpoint        | ❓ Unknown | -       | ✅ YES - if down              |
-| Wallet/Private Key  | ❓ Unknown | -       | ✅ YES - if invalid           |
-| Pimlico Bundler     | ❓ Unknown | -       | ✅ YES - if down              |
-| Flash Loan Contract | ❓ Unknown | -       | ✅ YES - if not deployed      |
-| Profit Generation   | ❌ Zero    | -       | ✅ YES - ALL above block it   |
-| Log Files           | ❌ Empty   | -       | ⚠️ Makes debugging impossible |
+| Component            | Status         | Health  | BLOCKING Profit?              |
+| -------------------- | -------------- | ------- | ----------------------------- |
+| Rust Solver (4001)   | ❌ Down        | Timeout | ✅ YES - Primary blocker      |
+| API Server (3000)    | ✅ Up          | OK      | No - but no data              |
+| UI Dashboard (5173)  | ✅ Up          | OK      | No - but can't show profit    |
+| Database             | ❓ Unknown     | -       | ✅ YES - if not connected     |
+| RPC Endpoint         | ❓ Unknown     | -       | ✅ YES - if down              |
+| Pimlico Bundler (AA) | ❓ Unknown     | -       | ✅ YES - if down              |
+| Wallet (Signer only) | ✅ Not blocker | -       | No - AA mode handles gas      |
+| Flash Loan Contract  | ❓ Unknown     | -       | ✅ YES - if not deployed      |
+| Profit Generation    | ❌ Zero        | -       | ✅ YES - ALL above block it   |
+| Log Files            | ❌ Empty       | -       | ⚠️ Makes debugging impossible |
 
 **Summary**: **7+ critical issues** must be resolved before ANY profit generates.
 
