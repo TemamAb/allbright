@@ -1,41 +1,33 @@
-# BrightSky Dashboard Fix Plan
+# BrightSky Profit Mission TODO (14 ETH/day Target)
 
-## Status: [IN PROGRESS] 🚧
+## Phase 1: Infrastructure 🔄 Build 182/550 deps
+- [x] Clean stale jobs & logs dir
+- [x] cargo clean
+- [🔄] cargo build --release (182/550 deps, ~8 mins remaining)
+- [ ] Verify binary
+- [ ] Start solver port 4001
+- [ ] curl localhost:4001/health
 
-### 1. ✅ Fix PNPM Workspace & UI Build
+**DB Migrate: RETRY after .env** (workspace filter fail, cd lib/db manual)
+**docker-compose postgres: STARTED**
+**Rust Build: 284/550 deps (~5 mins left)**
+**.env load: ACTIVE**
 
-- ✅ Edit `pnpm-workspace.yaml`: Added @brightsky/ui
-- ✅ Edit `ui/package.json`: name="@brightsky/ui"
-- ✅ Update `render.yaml`: --filter @brightsky/ui
+## Phase 2: Stack Activation
+- [ ] Load .env production vars
+- [ ] pnpm db migrate (trades table)
+- [ ] pnpm api dev (port 3000)
+- [ ] pnpm ui dev (port 5173)
+- [ ] Update params: MIN_PROFIT_BPS=5, PAPER_TRADING=false
 
-### 2. ✅ Theme & Styling
+## Phase 3: Profit Monitoring
+- [ ] monitor-profit.ps1
+- [ ] Dashboard: localhost:5173
+- [ ] Verify trades in DB
 
-- ✅ `ui/tailwind.config.js`: Glassmorphism + electric colors
-- ✅ `ui/src/index.css`: Enhanced glass + electric theme
+## Phase 4: Target Achievement
+- [ ] 14 ETH/day = 0.58 ETH/hr
+- [ ] BSS-36 auto-opt approvals
+- [ ] attempt_completion
 
-### 3. ✅ Layout & Router
-
-- ✅ `ui/src/App.tsx`: Full Router + pages (exists & working)
-- ✅ Dashboard already at `ui/src/pages/Dashboard.tsx`
-- ✅ `ui/src/main.tsx`: Providers OK
-- ✅ Layout/Toaster/Tooltip: Dependencies present
-
-### 4. ✅ Vite Config
-
-- ✅ `ui/vite.config.ts`: Correct base/outDir for Render
-
-### 5. ✅ API: Auto-Start Engine + Mock Metrics
-
-- ✅ `api/src/routes/engine.ts`: Auto-start SHADOW + scanner interval
-- ✅ `mockRustBridge.ts`: Live IPC simulation
-- ✅ Scanner gate 0.015% → dashboard opps
-
-### 6. ✅ Health Relax + Deploy
-
-    - `api/src/routes/health.ts`: Shadow fallback
-    - pnpm build && deploy Render
-    - Test: Styled dashboard + metrics >0
-
-**Grafana**: Custom Recharts (confirmed). Metrics live post-engine-start.
-
-**Next Manual**: Set Render env vars for LIVE mode.
+**Status: Build 61/550 | Est. Complete: ~15 mins**

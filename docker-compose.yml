@@ -22,8 +22,8 @@ services:
     environment:
       PRE_FLIGHT_STRICT: "false"
       INTERNAL_BRIDGE_PORT: "4001"
-      FLASH_EXECUTOR_ADDRESS: "0x6f2a4c10da345e0d48f2b1c93a9b1e7f3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f"
-      BASE_WS_URL: "wss://base-rpc.publicnode.com" 
+      FLASH_EXECUTOR_ADDRESS: ${FLASH_EXECUTOR_ADDRESS}
+      BASE_WS_URL: "wss://base-rpc.publicnode.com"
       BRIGHTSKY_SOCKET_PATH: /ipc/brightsky_bridge.sock
       EXECUTOR_CODE_HASH: "0x6f2a4c10da345e0d48f2b1c93a9b1e7f3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f"
       CHAIN_ID: "8453"
@@ -32,6 +32,8 @@ services:
       SCAN_CONCURRENCY: "8"
       MEV_PROTECTION: "true"
       FLASH_LOAN_MAX: "100000000"
+      PIMLICO_API_KEY: ${PIMLICO_API_KEY}
+      RPC_ENDPOINT: ${RPC_ENDPOINT}
     volumes:
       - brightsky-ipc:/ipc
 
@@ -57,6 +59,13 @@ services:
       SCAN_CONCURRENCY: "8"
       MEV_PROTECTION: "true"
       FLASH_LOAN_MAX: "100000000"
+      PIMLICO_API_KEY: ${PIMLICO_API_KEY}
+      RPC_ENDPOINT: ${RPC_ENDPOINT}
+      PRIVATE_KEY: ${PRIVATE_KEY}
+      WALLET_ADDRESS: ${WALLET_ADDRESS}
+      FLASH_EXECUTOR_ADDRESS: ${FLASH_EXECUTOR_ADDRESS}
+      ETH_RPC_URL: ${ETH_RPC_URL}
+      BASE_RPC_URL: ${BASE_RPC_URL}
     depends_on:
       postgres:
         condition: service_healthy

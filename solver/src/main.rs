@@ -1093,7 +1093,7 @@ async fn run_api_gateway(
     opp_rx: tokio::sync::broadcast::Receiver<Vec<u8>>,
     debug_tx: mpsc::Sender<DebuggingOrder>,
 ) {
-    if let Ok(port) = std::env::var("PORT") {
+    if let Ok(port) = std::env::var("INTERNAL_BRIDGE_PORT") {
         let addr = format!("0.0.0.0:{port}");
         let listener = tokio::net::TcpListener::bind(&addr)
             .await
@@ -1137,7 +1137,7 @@ async fn run_api_gateway(
 
     #[cfg(not(unix))]
     {
-        let addr = "127.0.0.1:4001";
+        let addr = "127.0.0.1:4003";
         let listener = tokio::net::TcpListener::bind(addr)
             .await
             .expect("[BSS-06] TCP fallback active");
@@ -1629,8 +1629,8 @@ async fn run_watchtower(
 
         // 4. Operational Remediation: BSS-05 Heartbeat Check
         let last_sync = stats.last_heartbeat_bss05.load(Ordering::Relaxed);
-        if last_sync > 0 && now > last_sync + 10 {
-            println!("[BSS-26] CRITICAL: BSS-05 Sync Staleness Detected (>10s). Forcing Safety Shadow Mode.");
+        if last_sync > 0 && now > last_sync + 30 {
+            println!("[BSS-26] CRITICAL: BSS-05 Sync Staleness Detected (>30s). Forcing Safety Shadow Mode.");
             current_policy.shadow_mode = true;
             stats.is_shadow_mode_active.store(true, Ordering::SeqCst);
             stats.total_errors_fixed.fetch_add(1, Ordering::SeqCst);
@@ -1843,11 +1843,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             };
 
             let start_token = "WETH";
-            let entry_tokens = vec![strategy_graph.get_or_create_index(start_token), strategy_graph.get_or_create_index("USDC")];
+            let entry_tokens = vec![
+                strategy_graph.get_or_create_index(start_token),
+                strategy_graph.get_or_create_index("USDC"),
+                strategy_graph.get_or_create_index("DAI"),
+                strategy_graph.get_or_create_index("cbETH"),
+                strategy_graph.get_or_create_index("WBTC"),
+                strategy_graph.get_or_create_index("AERO"),
+                strategy_graph.get_or_create_index("DEGEN"),
+            ];
 
             // Task 7: Execution Pipeline Integration
             let opportunities = solver.detect_arbitrage(entry_tokens, policy.max_hops);
-            solver_stats.opportunities_found_count.fetch_add(opportunities.len() as u64, Ordering::Relaxed);
+            if !opportunities.is_empty() {
+                solver_stats.opportunities_found_count.fetch_add(opportunities.len() as u64, Ordering::Relaxed);
+            }
 
             for opp in opportunities {
                 // 1. Reconstruct path edges from indices

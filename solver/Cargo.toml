@@ -28,6 +28,7 @@ hex = "0.4"
 hmac = "0.12"
 sha2 = "0.10"
 dashmap = "5.5"
+notify = "6.1"  # For desktop notifications
 
 [profile.release]
 opt-level = 3

@@ -9,7 +9,7 @@ export const settingsTable = pgTable("settings", {
     .default("100"),
   minMarginPct: numeric("min_margin_pct", { precision: 6, scale: 2 })
     .notNull()
-    .default("15"),
+    .default("3"),
   maxBribePct: numeric("max_bribe_pct", { precision: 6, scale: 2 })
     .notNull()
     .default("5"),
