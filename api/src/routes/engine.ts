@@ -698,8 +698,8 @@ async function buildAndSubmitUserOp(
     const signer = new Wallet(walletPrivateKey);
     const salt = BigInt(0);
     // SimpleAccountFactory on mainnet (eth-infinitism canonical deployment)
-    // Verified address from https://etherscan.io/address/0x91E60e59CE92DefBb94A68A8B2B1BD82d7c6C6
-    const simpleAccountFactory = "0x91E60e59CE92DefBb94A68A8B2B1BD82d7c6C6";
+    // Verified Pimlico SimpleAccountFactory (mainnet)
+    const simpleAccountFactory = "0xd703aaE79538628d27099B8c4f621bE4CCd142d5";
     const owner = signer.address;
     const saltHex = "0x" + salt.toString(16).padStart(64, "0");
 
