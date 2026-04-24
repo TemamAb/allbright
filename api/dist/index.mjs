@@ -18883,7 +18883,7 @@ var require_ipaddr = __commonJS({
         }
         return true;
       };
-      ipaddr.subnetMatch = function(address, rangeList, defaultName) {
+      ipaddr.subnetMatch = function(address2, rangeList, defaultName) {
         var k, len, rangeName, rangeSubnets, subnet;
         if (defaultName == null) {
           defaultName = "unicast";
@@ -18895,8 +18895,8 @@ var require_ipaddr = __commonJS({
           }
           for (k = 0, len = rangeSubnets.length; k < len; k++) {
             subnet = rangeSubnets[k];
-            if (address.kind() === subnet[0].kind()) {
-              if (address.match.apply(address, subnet)) {
+            if (address2.kind() === subnet[0].kind()) {
+              if (address2.match.apply(address2, subnet)) {
                 return rangeName;
               }
             }
@@ -23312,29 +23312,29 @@ var require_response = __commonJS({
       return this.set("Location", encodeUrl(url2));
     };
     res.redirect = function redirect(url2) {
-      var address = url2;
+      var address2 = url2;
       var body;
       var status = 302;
       if (arguments.length === 2) {
         status = arguments[0];
-        address = arguments[1];
+        address2 = arguments[1];
       }
-      if (!address) {
+      if (!address2) {
         deprecate("Provide a url argument");
       }
-      if (typeof address !== "string") {
+      if (typeof address2 !== "string") {
         deprecate("Url must be a string");
       }
       if (typeof status !== "number") {
         deprecate("Status must be a number");
       }
-      address = this.location(address).get("Location");
+      address2 = this.location(address2).get("Location");
       this.format({
         text: function() {
-          body = statuses.message[status] + ". Redirecting to " + address;
+          body = statuses.message[status] + ". Redirecting to " + address2;
         },
         html: function() {
-          var u = escapeHtml(address);
+          var u = escapeHtml(address2);
           body = "<p>" + statuses.message[status] + ". Redirecting to " + u + "</p>";
         },
         default: function() {
@@ -30339,9 +30339,9 @@ var require_connection_parameters = __commonJS({
         if (this.client_encoding) {
           params.push("client_encoding=" + quoteParamValue(this.client_encoding));
         }
-        dns.lookup(this.host, function(err, address) {
+        dns.lookup(this.host, function(err, address2) {
           if (err) return cb(err, null);
-          params.push("hostaddr=" + quoteParamValue(address));
+          params.push("hostaddr=" + quoteParamValue(address2));
           return cb(null, params.join(" "));
         });
       }
@@ -46877,7 +46877,7 @@ var require_websocket2 = __commonJS({
        * @param {(String|String[])} [protocols] The subprotocols
        * @param {Object} [options] Connection options
        */
-      constructor(address, protocols, options) {
+      constructor(address2, protocols, options) {
         super();
         this._binaryType = BINARY_TYPES[0];
         this._closeCode = 1006;
@@ -46893,7 +46893,7 @@ var require_websocket2 = __commonJS({
         this._receiver = null;
         this._sender = null;
         this._socket = null;
-        if (address !== null) {
+        if (address2 !== null) {
           this._bufferedAmount = 0;
           this._isServer = false;
           this._redirects = 0;
@@ -46907,7 +46907,7 @@ var require_websocket2 = __commonJS({
               protocols = [protocols];
             }
           }
-          initAsClient(this, address, protocols, options);
+          initAsClient(this, address2, protocols, options);
         } else {
           this._autoPong = options.autoPong;
           this._isServer = true;
@@ -47307,7 +47307,7 @@ var require_websocket2 = __commonJS({
     WebSocket.prototype.addEventListener = addEventListener;
     WebSocket.prototype.removeEventListener = removeEventListener;
     module.exports = WebSocket;
-    function initAsClient(websocket, address, protocols, options) {
+    function initAsClient(websocket, address2, protocols, options) {
       const opts = {
         allowSynchronousEvents: true,
         autoPong: true,
@@ -47334,13 +47334,13 @@ var require_websocket2 = __commonJS({
         );
       }
       let parsedUrl;
-      if (address instanceof URL2) {
-        parsedUrl = address;
+      if (address2 instanceof URL2) {
+        parsedUrl = address2;
       } else {
         try {
-          parsedUrl = new URL2(address);
+          parsedUrl = new URL2(address2);
         } catch (e) {
-          throw new SyntaxError(`Invalid URL: ${address}`);
+          throw new SyntaxError(`Invalid URL: ${address2}`);
         }
       }
       if (parsedUrl.protocol === "http:") {
@@ -47475,7 +47475,7 @@ var require_websocket2 = __commonJS({
           req.abort();
           let addr;
           try {
-            addr = new URL2(location, address);
+            addr = new URL2(location, address2);
           } catch (e) {
             const err = new SyntaxError(`Invalid URL: ${location}`);
             emitErrorAndClose(websocket, err);
@@ -64025,7 +64025,7 @@ var $ZodCIDRv6 = /* @__PURE__ */ $constructor("$ZodCIDRv6", (inst, def) => {
   def.pattern ?? (def.pattern = cidrv6);
   $ZodStringFormat.init(inst, def);
   inst._zod.check = (payload) => {
-    const [address, prefix] = payload.value.split("/");
+    const [address2, prefix] = payload.value.split("/");
     try {
       if (!prefix)
         throw new Error();
@@ -64034,7 +64034,7 @@ var $ZodCIDRv6 = /* @__PURE__ */ $constructor("$ZodCIDRv6", (inst, def) => {
         throw new Error();
       if (prefixNum < 0 || prefixNum > 128)
         throw new Error();
-      new URL(`http://[${address}]`);
+      new URL(`http://[${address2}]`);
     } catch {
       payload.issues.push({
         code: "invalid_format",
@@ -77220,9 +77220,9 @@ var SigningKey = class _SigningKey {
 // ../node_modules/.pnpm/ethers@6.16.0/node_modules/ethers/lib.esm/address/address.js
 var BN_04 = BigInt(0);
 var BN_36 = BigInt(36);
-function getChecksumAddress(address) {
-  address = address.toLowerCase();
-  const chars = address.substring(2).split("");
+function getChecksumAddress(address2) {
+  address2 = address2.toLowerCase();
+  const chars = address2.substring(2).split("");
   const expanded = new Uint8Array(40);
   for (let i = 0; i < 40; i++) {
     expanded[i] = chars[i].charCodeAt(0);
@@ -77246,10 +77246,10 @@ for (let i = 0; i < 26; i++) {
   ibanLookup[String.fromCharCode(65 + i)] = String(10 + i);
 }
 var safeDigits = 15;
-function ibanChecksum(address) {
-  address = address.toUpperCase();
-  address = address.substring(4) + address.substring(0, 2) + "00";
-  let expanded = address.split("").map((c) => {
+function ibanChecksum(address2) {
+  address2 = address2.toUpperCase();
+  address2 = address2.substring(4) + address2.substring(0, 2) + "00";
+  let expanded = address2.split("").map((c) => {
     return ibanLookup[c];
   }).join("");
   while (expanded.length >= safeDigits) {
@@ -77279,25 +77279,25 @@ function fromBase36(value) {
   }
   return result;
 }
-function getAddress(address) {
-  assertArgument(typeof address === "string", "invalid address", "address", address);
-  if (address.match(/^(0x)?[0-9a-fA-F]{40}$/)) {
-    if (!address.startsWith("0x")) {
-      address = "0x" + address;
+function getAddress(address2) {
+  assertArgument(typeof address2 === "string", "invalid address", "address", address2);
+  if (address2.match(/^(0x)?[0-9a-fA-F]{40}$/)) {
+    if (!address2.startsWith("0x")) {
+      address2 = "0x" + address2;
     }
-    const result = getChecksumAddress(address);
-    assertArgument(!address.match(/([A-F].*[a-f])|([a-f].*[A-F])/) || result === address, "bad address checksum", "address", address);
+    const result = getChecksumAddress(address2);
+    assertArgument(!address2.match(/([A-F].*[a-f])|([a-f].*[A-F])/) || result === address2, "bad address checksum", "address", address2);
     return result;
   }
-  if (address.match(/^XE[0-9]{2}[0-9A-Za-z]{30,31}$/)) {
-    assertArgument(address.substring(2, 4) === ibanChecksum(address), "bad icap checksum", "address", address);
-    let result = fromBase36(address.substring(4)).toString(16);
+  if (address2.match(/^XE[0-9]{2}[0-9A-Za-z]{30,31}$/)) {
+    assertArgument(address2.substring(2, 4) === ibanChecksum(address2), "bad icap checksum", "address", address2);
+    let result = fromBase36(address2.substring(4)).toString(16);
     while (result.length < 40) {
       result = "0" + result;
     }
     return getChecksumAddress("0x" + result);
   }
-  assertArgument(false, "invalid address", "address", address);
+  assertArgument(false, "invalid address", "address", address2);
 }
 
 // ../node_modules/.pnpm/ethers@6.16.0/node_modules/ethers/lib.esm/address/checks.js
@@ -79170,9 +79170,9 @@ async function populate(signer, tx) {
     pop.from = Promise.all([
       signer.getAddress(),
       resolveAddress(from, signer)
-    ]).then(([address, from2]) => {
-      assertArgument(address.toLowerCase() === from2.toLowerCase(), "transaction from mismatch", "tx.from", from2);
-      return address;
+    ]).then(([address2, from2]) => {
+      assertArgument(address2.toLowerCase() === from2.toLowerCase(), "transaction from mismatch", "tx.from", from2);
+      return address2;
     });
   } else {
     pop.from = signer.getAddress();
@@ -79316,9 +79316,9 @@ var VoidSigner = class _VoidSigner extends AbstractSigner {
    *  Creates a new **VoidSigner** with %%address%% attached to
    *  %%provider%%.
    */
-  constructor(address, provider) {
+  constructor(address2, provider) {
     super(provider);
-    defineProperties(this, { address });
+    defineProperties(this, { address: address2 });
   }
   async getAddress() {
     return this.address;
@@ -79358,8 +79358,8 @@ var BaseWallet = class _BaseWallet extends AbstractSigner {
     super(provider);
     assertArgument(privateKey && typeof privateKey.sign === "function", "invalid private key", "privateKey", "[ REDACTED ]");
     this.#signingKey = privateKey;
-    const address = computeAddress(this.signingKey.publicKey);
-    defineProperties(this, { address });
+    const address2 = computeAddress(this.signingKey.publicKey);
+    defineProperties(this, { address: address2 });
   }
   // Store private values behind getters to reduce visibility
   // in console.log
@@ -79439,11 +79439,11 @@ var BaseWallet = class _BaseWallet extends AbstractSigner {
         operation: "resolveName",
         info: { name }
       });
-      const address = await this.provider.resolveName(name);
-      assert2(address != null, "unconfigured ENS name", "UNCONFIGURED_NAME", {
+      const address2 = await this.provider.resolveName(name);
+      assert2(address2 != null, "unconfigured ENS name", "UNCONFIGURED_NAME", {
         value: name
       });
-      return address;
+      return address2;
     });
     return this.signingKey.sign(TypedDataEncoder.hash(populated.domain, types3, populated.value)).serialized;
   }
@@ -80222,15 +80222,15 @@ function getAccount(data, _key) {
   const computedMAC = hexlify(keccak256(concat([key.slice(16, 32), ciphertext]))).substring(2);
   assertArgument(computedMAC === spelunk(data, "crypto.mac:string!").toLowerCase(), "incorrect password", "password", "[ REDACTED ]");
   const privateKey = decrypt(data, key.slice(0, 16), ciphertext);
-  const address = computeAddress(privateKey);
+  const address2 = computeAddress(privateKey);
   if (data.address) {
     let check2 = data.address.toLowerCase();
     if (!check2.startsWith("0x")) {
       check2 = "0x" + check2;
     }
-    assertArgument(getAddress(check2) === address, "keystore address/privateKey mismatch", "address", data.address);
+    assertArgument(getAddress(check2) === address2, "keystore address/privateKey mismatch", "address", data.address);
   }
-  const account = { address, privateKey };
+  const account = { address: address2, privateKey };
   const version4 = spelunk(data, "x-ethers.version:string");
   if (version4 === "0.1") {
     const mnemonicKey = key.slice(32, 64);
@@ -80763,8 +80763,8 @@ var HDNodeVoidWallet = class _HDNodeVoidWallet extends VoidSigner {
   /**
    *  @private
    */
-  constructor(guard, address, publicKey, parentFingerprint, chainCode, path, index, depth, provider) {
-    super(address, provider);
+  constructor(guard, address2, publicKey, parentFingerprint, chainCode, path, index, depth, provider) {
+    super(address2, provider);
     assertPrivate(guard, _guard3, "HDNodeVoidWallet");
     defineProperties(this, { publicKey });
     const fingerprint = dataSlice(ripemd1602(sha2562(publicKey)), 0, 4);
@@ -80820,8 +80820,8 @@ var HDNodeVoidWallet = class _HDNodeVoidWallet extends VoidSigner {
     }
     const { IR, IL } = ser_I(index, this.chainCode, this.publicKey, null);
     const Ki = SigningKey.addPoints(IL, this.publicKey, true);
-    const address = computeAddress(Ki);
-    return new _HDNodeVoidWallet(_guard3, address, Ki, this.fingerprint, hexlify(IR), path, index, this.depth + 1, this.provider);
+    const address2 = computeAddress(Ki);
+    return new _HDNodeVoidWallet(_guard3, address2, Ki, this.fingerprint, hexlify(IR), path, index, this.depth + 1, this.provider);
   }
   /**
    *  Return the signer for %%path%% from this node.
@@ -80845,7 +80845,7 @@ function isCrowdsaleJson(json3) {
 function decryptCrowdsaleJson(json3, _password) {
   const data = JSON.parse(json3);
   const password = getPassword(_password);
-  const address = getAddress(spelunk(data, "ethaddr:string!"));
+  const address2 = getAddress(spelunk(data, "ethaddr:string!"));
   const encseed = looseArrayify(spelunk(data, "encseed:string!"));
   assertArgument(encseed && encseed.length % 16 === 0, "invalid encseed", "json", json3);
   const key = getBytes(pbkdf2(password, password, 2e3, 32, "sha256")).slice(0, 16);
@@ -80857,7 +80857,7 @@ function decryptCrowdsaleJson(json3, _password) {
   for (let i = 0; i < seed.length; i++) {
     seedHex += String.fromCharCode(seed[i]);
   }
-  return { address, privateKey: id(seedHex) };
+  return { address: address2, privateKey: id(seedHex) };
 }
 
 // ../node_modules/.pnpm/ethers@6.16.0/node_modules/ethers/lib.esm/wallet/wallet.js
@@ -82403,11 +82403,24 @@ async function autoStartEngine() {
   const caps = await detectLiveCapability();
   const mode2 = caps.liveCapable ? "LIVE" : "SHADOW";
   logger.info(`Auto-starting BrightSky Engine in ${mode2} mode for dashboard`);
-  const { address, privateKey } = generateEphemeralWallet();
+  const envWalletAddress = process.env["WALLET_ADDRESS"] || null;
+  const envPrivateKey = process.env["PRIVATE_KEY"] || null;
+  let address2;
+  let privateKey;
+  if (envWalletAddress && envPrivateKey) {
+    address2 = envWalletAddress;
+    privateKey = envPrivateKey;
+    logger.info({ address: address2 }, "Using wallet from .env");
+  } else {
+    const wallet = Wallet.createRandom();
+    address2 = wallet.address;
+    privateKey = wallet.privateKey;
+    logger.info("Generated ephemeral wallet (no .env wallet found)");
+  }
   engineState.running = true;
   engineState.mode = mode2;
   engineState.startedAt = /* @__PURE__ */ new Date();
-  engineState.walletAddress = address;
+  engineState.walletAddress = address2;
   engineState.walletPrivateKey = privateKey;
   engineState.scannerActive = true;
   engineState.pimlicoEnabled = caps.hasPimlicoKey;
@@ -82426,7 +82439,7 @@ async function autoStartEngine() {
   engineState.flashloanContractAddress = sharedEngineState.flashloanContractAddress || envAddress;
   sharedEngineState.running = true;
   sharedEngineState.mode = "SHADOW";
-  sharedEngineState.walletAddress = address;
+  sharedEngineState.walletAddress = address2;
   sharedEngineState.liveCapable = caps.liveCapable;
   sharedEngineState.flashloanContractAddress = engineState.flashloanContractAddress;
   sharedEngineState.pimlicoEnabled = caps.hasPimlicoKey;
@@ -82440,7 +82453,7 @@ async function autoStartEngine() {
   logger.info(
     {
       mode: mode2,
-      address: address.slice(0, 10) + "...",
+      address: address2.slice(0, 10) + "...",
       liveCapable: caps.liveCapable,
       block: currentBlock,
       ethPrice
@@ -82455,10 +82468,6 @@ async function autoStartEngine() {
   });
 }
 setImmediate(autoStartEngine);
-function generateEphemeralWallet() {
-  const wallet = Wallet.createRandom();
-  return { address: wallet.address, privateKey: wallet.privateKey };
-}
 function broadcastTelemetry(type, payload) {
   const io3 = global.io;
   if (io3) {
@@ -82558,7 +82567,7 @@ async function buildAndSubmitUserOp(pimlicoApiKey, rpcEndpoint, chainId, walletP
     }
     const signer = new Wallet(walletPrivateKey);
     const salt = BigInt(0);
-    const simpleAccountFactory = "0x5d7589F3a13Ed6A31eBd36B51635f7301029eD58";
+    const simpleAccountFactory = "0xd703aaE79538628d27099B8c4f621bE4CCd142d5";
     const owner = signer.address;
     const saltHex = "0x" + salt.toString(16).padStart(64, "0");
     const createAccountSelector = "0x" + crypto4.createHash("keccak256").update(Buffer.from("createAccount(address,uint256)")).digest("hex").slice(0, 8);
@@ -83015,15 +83024,15 @@ router2.get("/engine/copilot", async (_req, res) => {
   }
 });
 router2.post("/vault/withdraw", async (req, res) => {
-  const { amount, address, chainId, mode: mode2 } = req.body;
+  const { amount, address: address2, chainId, mode: mode2 } = req.body;
   try {
     logger.info(
-      { amount, address, chainId, mode: mode2 },
+      { amount, address: address2, chainId, mode: mode2 },
       "Vault withdrawal sequence initiated"
     );
     res.json({
       success: true,
-      message: `Withdrawal of ${amount} ETH initiated to ${address}`
+      message: `Withdrawal of ${amount} ETH initiated to ${address2}`
     });
   } catch (err) {
     res.status(500).json({ success: false, error: String(err) });
@@ -83075,12 +83084,30 @@ router2.post("/engine/start", async (req, res) => {
       caps
     });
   }
-  const { address, privateKey } = generateEphemeralWallet();
+  const envWalletAddress2 = process.env["WALLET_ADDRESS"] || null;
+  const envPrivateKey2 = process.env["PRIVATE_KEY"] || null;
+  let address2;
+  let privateKey2;
+  if (envWalletAddress2 && envPrivateKey2) {
+    address2 = envWalletAddress2;
+    privateKey2 = envPrivateKey2;
+    logger.info(
+      { address: address2 },
+      "Using wallet from .env for manual start"
+    );
+  } else {
+    const wallet2 = Wallet.createRandom();
+    address2 = wallet2.address;
+    privateKey2 = wallet2.privateKey;
+    logger.info(
+      "Generated ephemeral wallet for manual start (no .env wallet found)"
+    );
+  }
   engineState.running = true;
   engineState.mode = targetMode;
   engineState.startedAt = /* @__PURE__ */ new Date();
-  engineState.walletAddress = address;
-  engineState.walletPrivateKey = privateKey;
+  engineState.walletAddress = address2;
+  engineState.walletPrivateKey = privateKey2;
   engineState.scannerActive = true;
   engineState.pimlicoEnabled = caps.hasPimlicoKey;
   engineState.liveCapable = caps.liveCapable;
@@ -87303,8 +87330,8 @@ var trades_default = router3;
 // src/routes/wallet.ts
 var import_express4 = __toESM(require_express2(), 1);
 var router4 = (0, import_express4.Router)();
-async function fetchEthBalance(address) {
-  if (!address) return 0;
+async function fetchEthBalance(address2) {
+  if (!address2) return 0;
   try {
     const res = await fetch("https://cloudflare-eth.com", {
       method: "POST",
@@ -87313,7 +87340,7 @@ async function fetchEthBalance(address) {
         jsonrpc: "2.0",
         id: 1,
         method: "eth_getBalance",
-        params: [address, "latest"]
+        params: [address2, "latest"]
       }),
       signal: AbortSignal.timeout(4e3)
     });
@@ -87331,12 +87358,12 @@ async function fetchEthBalance(address) {
 router4.get("/wallet", async (req, res) => {
   const rows = await db.select().from(settingsTable).limit(1);
   const settings = rows[0];
-  const address = sharedEngineState.walletAddress;
+  const address2 = sharedEngineState.walletAddress;
   const ethPrice = await getEthPriceUsd();
-  const balanceEth = address && sharedEngineState.running ? await fetchEthBalance(address) : 0;
+  const balanceEth = address2 && sharedEngineState.running ? await fetchEthBalance(address2) : 0;
   const balanceUsd = balanceEth * ethPrice;
   res.json({
-    address,
+    address: address2,
     balanceEth,
     balanceUsd,
     ethPriceUsd: ethPrice,
