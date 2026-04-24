@@ -8,22 +8,25 @@ RUN corepack enable
 
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY tsconfig.json tsconfig.base.json ./
-COPY ui ./ui
-COPY lib ./lib
-COPY scripts ./scripts
+# Copy entire workspace (context is project root, .dockerignore excludes node_modules, etc.)
+COPY . .
 
 ARG VITE_API_BASE_URL=http://localhost:10000
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 ENV BASE_PATH=/
 
+# Install all workspace dependencies
 RUN pnpm install --no-frozen-lockfile
-RUN pnpm --filter @workspace/brightsky run build
+
+# Build the UI package
+RUN pnpm --filter @brightsky/ui run build
 
 FROM nginx:1.27-alpine
 
 COPY ui/nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=builder /app/ui/dist/public /usr/share/nginx/html
+
+# Vite build output: from ui/vite.config.ts outDir is ../dist/public relative to ui/
+# So builder stage output is at /app/dist/public
+COPY --from=builder /app/dist/public /usr/share/nginx/html
 
 EXPOSE 80
