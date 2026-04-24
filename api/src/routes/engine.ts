@@ -441,7 +441,21 @@ async function autoStartEngine() {
   const mode = caps.liveCapable ? "LIVE" : "SHADOW";
   logger.info(`Auto-starting BrightSky Engine in ${mode} mode for dashboard`);
 
-  const { address, privateKey } = generateEphemeralWallet();
+  // KPI 11: Use env wallet if set, otherwise generate ephemeral
+  const envWalletAddress = process.env["WALLET_ADDRESS"] || null;
+  const envPrivateKey = process.env["PRIVATE_KEY"] || null;
+  let address: string;
+  let privateKey: string;
+  if (envWalletAddress && envPrivateKey) {
+    address = envWalletAddress;
+    privateKey = envPrivateKey;
+    logger.info({ address }, "Using wallet from .env");
+  } else {
+    const wallet = Wallet.createRandom();
+    address = wallet.address;
+    privateKey = wallet.privateKey;
+    logger.info("Generated ephemeral wallet (no .env wallet found)");
+  }
 
   engineState.running = true;
   engineState.mode = mode;
@@ -1353,13 +1367,32 @@ router.post("/engine/start", async (req, res) => {
       caps,
     });
   }
-  const { address, privateKey } = generateEphemeralWallet();
+  // KPI 11: Use env wallet if set, otherwise generate ephemeral
+  const envWalletAddress2 = process.env["WALLET_ADDRESS"] || null;
+  const envPrivateKey2 = process.env["PRIVATE_KEY"] || null;
+  let address2: string;
+  let privateKey2: string;
+  if (envWalletAddress2 && envPrivateKey2) {
+    address2 = envWalletAddress2;
+    privateKey2 = envPrivateKey2;
+    logger.info(
+      { address: address2 },
+      "Using wallet from .env for manual start",
+    );
+  } else {
+    const wallet2 = Wallet.createRandom();
+    address2 = wallet2.address;
+    privateKey2 = wallet2.privateKey;
+    logger.info(
+      "Generated ephemeral wallet for manual start (no .env wallet found)",
+    );
+  }
 
   engineState.running = true;
   engineState.mode = targetMode;
   engineState.startedAt = new Date();
-  engineState.walletAddress = address;
-  engineState.walletPrivateKey = privateKey;
+  engineState.walletAddress = address2;
+  engineState.walletPrivateKey = privateKey2;
   engineState.scannerActive = true;
   engineState.pimlicoEnabled = caps.hasPimlicoKey;
   engineState.liveCapable = caps.liveCapable;
