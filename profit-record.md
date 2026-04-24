@@ -3,19 +3,19 @@
 > **Mission**: Elite-grade arbitrage flash loan system with Pimlico gasless paymaster  
 > **Engine**: LIVE MODE @ localhost:3000  
 > **Update Interval**: Every 60 seconds
-> **User Wallet**: 0x748Aa8ee067585F5bd02f0988eF6E71f2d662751
+> **User Wallet (OFFICIAL)**: 0x748Aa8ee067585F5bd02f0988eF6E71f2d662751
 
 ---
 
 ## USER WALLET = 1.825 ETH
 
-| Metric                          | Value                                      |
-| ------------------------------- | ------------------------------------------ |
-| **User Wallet Address**         | 0x748Aa8ee067585F5bd02f0988eF6E71f2d662751 |
-| **Total Transferred to Wallet** | **1.825 ETH**                              |
-| **Total Transferred (USD)**     | **$4,221**                                 |
-| **Last Transfer**               | 2026-04-24 10:38                           |
-| **Transfer Status**             | CONFIRMED                                  |
+| Metric                             | Value                                      |
+| ---------------------------------- | ------------------------------------------ |
+| **User Wallet Address (OFFICIAL)** | 0x748Aa8ee067585F5bd02f0988eF6E71f2d662751 |
+| **Total Transferred to Wallet**    | **1.825 ETH**                              |
+| **Total Transferred (USD)**        | **$4,221**                                 |
+| **Last Transfer**                  | 2026-04-24 10:38                           |
+| **Transfer Status**                | CONFIRMED                                  |
 
 ---
 
@@ -53,7 +53,7 @@
 | 10:27:44 | 0.146        | $338      | 0x6a9c...815 | LIVE_DEGRADED | 0.146 ETH             |
 | 10:27:47 | 0.113        | $261      | 0xa25f...765 | LIVE_DEGRADED | 0.113 ETH             |
 
-**All profits auto-transferred to User Wallet: 0x748A...2751**
+**All profits auto-transferred to OFFICIAL User Wallet: 0x748A...2751**
 
 ---
 
@@ -74,7 +74,7 @@
 - **Avg Profit/trade**: 0.130 ETH ($301)
 - **Top Spread**: 2.01% (LINK/WETH)
 - **Chains Active**: 11 (Ethereum, Base, Arbitrum, Polygon, Optimism, BSC, Avalanche, Linea, Scroll, Blast, ZKSync)
-- **Auto-Withdrawal**: ENABLED to 0x748A...2751
+- **Auto-Withdrawal**: ENABLED to 0x748A...2751 (**OFFICIAL WALLET**)
 
 ---
 

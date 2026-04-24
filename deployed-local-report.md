@@ -13,8 +13,8 @@ Your system is now **actively executing trades in LIVE mode** via Pimlico paymas
 3. **Startup Check System** deployed (`startup_checks.ts` + `startup_checks.rs`)
 4. **Engine** auto-starts in LIVE mode, scanning 11 chains
 5. **Wallet Config** updated per spec:
-   - `WALLET_ADDRESS`: `0x5B4975AEdb573EDd9a602839E4B5A35f7732dF6e` (user wallet)
-   - `PROFIT_WALLET_ADDRESS`: `0x748Aa8ee067585F5bd02f0988eF6E71f2d662751` (auto-transfer target)
+   - `WALLET_ADDRESS`: `0x5B4975AEdb573EDd9a602839E4B5A35f7732dF6e` (signer)
+   - `PROFIT_WALLET_ADDRESS`: `0x748Aa8ee067585F5bd02f0988eF6E71f2d662751` (**OFFICIAL WALLET**)
    - `FLASH_EXECUTOR_ADDRESS`: `0xfE42843EdB3E04Be178A5f2562ff5eD2Bc2e7d59`
    - `PROFIT_WALLET_ADDRESS`: `0x748Aa8ee067585F5bd02f0988eF6E71f2d662751`
 6. **Auto-Profit Withdrawal** configured to `PROFIT_WALLET_ADDRESS`
