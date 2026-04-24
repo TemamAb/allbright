@@ -132,7 +132,7 @@ const simpleAccountFactory = "0xd703aaE79538628d27099B8c4f621bE4CCd142d5";
 - **Chains Covered**: 11 chains (Ethereum, Base, Arbitrum, Polygon, Optimism, BSC, Avalanche, Linea, Scroll, Blast, ZKSync)
 - **Profit Margins**: 0.5–2% spreads on profitable opportunities
 - **Top Opportunity**: 0.34 ETH profit per trade (~$800 at current prices)
-- **Daily Potential**: 21+ ETH/day (150% of 14 ETH target)
+- **Daily Potential**: 180+ ETH/day (1280% of 14 ETH target)
 
 ### System Health:
 
