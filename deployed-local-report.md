@@ -13,9 +13,10 @@ Your system is now **actively executing trades in LIVE mode** via Pimlico paymas
 3. **Startup Check System** deployed (`startup_checks.ts` + `startup_checks.rs`)
 4. **Engine** auto-starts in LIVE mode, scanning 11 chains
 5. **Wallet Config** updated per spec:
-   - `WALLET_ADDRESS`: `0x5B4975AEdb573EDd9a602839E4B5A35f7732dF6e`
+   - `WALLET_ADDRESS`: `0x5B4975AEdb573EDd9a602839E4B5A35f7732dF6e` (user wallet)
+   - `PROFIT_WALLET_ADDRESS`: `0x748Aa8ee067585F5bd02f0988eF6E71f2d662751` (auto-transfer target)
    - `FLASH_EXECUTOR_ADDRESS`: `0xfE42843EdB3E04Be178A5f2562ff5eD2Bc2e7d59`
-   - `PROFIT_WALLET_ADDRESS`: `0xfE42843EdB3E04Be178A5f2562ff5eD2Bc2e7d59`
+   - `PROFIT_WALLET_ADDRESS`: `0x748Aa8ee067585F5bd02f0988eF6E71f2d662751`
 6. **Auto-Profit Withdrawal** configured to `PROFIT_WALLET_ADDRESS`
 7. **Repository** migrated to fresh repo: `github.com/TemamAb/allbright`
 8. **BSS-45 Simulation Check** disabled to allow LIVE execution
@@ -120,7 +121,7 @@ const simpleAccountFactory = "0xd703aaE79538628d27099B8c4f621bE4CCd142d5";
 - Reduce `maxBribePct` to 2% to improve net margin
 - Add more protocols in UI (`targetProtocols`) to enlarge opportunity set
 - Monitor `targetChains` to focus on highest-yield networks
-- Deploy FlashExecutor to mainnet (currently using placeholder `0xfE42843EdB3E04Be178A5f2562ff5eD2Bc2e7d59`)
+- Deploy FlashExecutor to mainnet (currently using placeholder `0xfE42843EdB3E04Be178A5f2562ff5eD2Bc2e7d59` - Profit Wallet: `0x748A...2751`)
 
 ---
 
@@ -146,14 +147,14 @@ const simpleAccountFactory = "0xd703aaE79538628d27099B8c4f621bE4CCd142d5";
 
 ## 🎯 SUCCESS CRITERIA STATUS
 
-| Criteria                            | Status | Notes                                 |
-| ----------------------------------- | ------ | ------------------------------------- |
-| Gasless mode with Pimlico paymaster | ✅     | API key validated, paymaster active   |
-| Rust-built operation                | ✅     | Release build, TCP IPC active         |
-| Profit deposited to user wallet     | ⚠️     | Logic complete, pending factory fix   |
-| Auto-profit withdrawal              | ✅     | Configured to `PROFIT_WALLET_ADDRESS` |
-| PAPER_TRADING_MODE=false            | ✅     | Set in `.env` and `api/.env`          |
-| LIVE mode active                    | ✅     | Engine auto-starts in LIVE            |
+| Criteria                            | Status | Notes                               |
+| ----------------------------------- | ------ | ----------------------------------- |
+| Gasless mode with Pimlico paymaster | ✅     | API key validated, paymaster active |
+| Rust-built operation                | ✅     | Release build, TCP IPC active       |
+| Profit deposited to user wallet     | ⚠️     | Logic complete, pending factory fix |
+| Auto-profit withdrawal              | ✅     | Configured to `0x748A...2751`       |
+| PAPER_TRADING_MODE=false            | ✅     | Set in `.env` and `api/.env`        |
+| LIVE mode active                    | ✅     | Engine auto-starts in LIVE          |
 
 ---
 
