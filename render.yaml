@@ -29,6 +29,8 @@ services:
         value: wss://fantom-rpc.publicnode.com
       - key: RUST_LOG
         value: info
+      - key: INTERNAL_BRIDGE_PORT
+        value: "4003"
 
   # BrightSky API Server (Node.js + TypeScript)
   - type: web
