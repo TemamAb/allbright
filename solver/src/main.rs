@@ -96,6 +96,10 @@ pub struct SystemPolicy {
     pub max_hops: usize,
     pub min_profit_bps: f64,
     pub shadow_mode: bool,
+    // Risk limits (Milestone 4C.1)
+    pub max_position_size_eth: f64, // Max 10% of wallet per trade
+    pub daily_loss_limit_eth: f64, // Auto-stop at 1 ETH loss
+    pub daily_loss_used_eth: f64, // Track losses used today
 }
 
 /// Design-Time KPI Targets for Performance Gap Analysis
@@ -1687,6 +1691,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         max_hops: 3,
         min_profit_bps: 1.0,
         shadow_mode: false,
+        // Risk limits (Milestone 4C.1)
+        max_position_size_eth: 10.0, // 10 ETH max per trade (adjust based on wallet)
+        daily_loss_limit_eth: 1.0, // Auto-stop at 1 ETH loss
+        daily_loss_used_eth: 0.0, // Track daily losses
     });
 
     // Start Watchtower
@@ -1881,10 +1889,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if optimal_wei == 0 { continue; }
 
                 // 3. Deterministic Simulation (BSS-43)
-                let sim_result = futures::executor::block_on(SimulationEngine::simulate_opportunity(
+                let sim_result = SimulationEngine::simulate_opportunity(
                     &path_edges,
                     optimal_wei as f64 / 1e18
-                ));
+                );
 
                 // 4. Risk Validation Gate (BSS-45) & MEV Guard (BSS-42)
                 if RiskEngine::validate(&opp, &sim_result, &policy, &solver_stats)
