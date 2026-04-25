@@ -444,11 +444,15 @@ async function autoStartEngine() {
   // KPI 11: Use env wallet if set, otherwise generate ephemeral
   const envWalletAddress = process.env["WALLET_ADDRESS"] || null;
   const envPrivateKey = process.env["PRIVATE_KEY"] || null;
+  // Normalize: ensure 0x prefix (handles "0d2a2..." -> "0xd2a2...")
+  const normalizedPrivateKey = envPrivateKey
+    ? (envPrivateKey.startsWith("0x") ? envPrivateKey : "0x" + envPrivateKey.replace(/^x/, ''))
+    : null;
   let address: string;
   let privateKey: string;
-  if (envWalletAddress && envPrivateKey) {
+  if (envWalletAddress && normalizedPrivateKey) {
     address = envWalletAddress;
-    privateKey = envPrivateKey;
+    privateKey = normalizedPrivateKey;
     logger.info({ address }, "Using wallet from .env");
   } else {
     const wallet = Wallet.createRandom();
@@ -1369,7 +1373,10 @@ router.post("/engine/start", async (req, res) => {
   }
   // KPI 11: Use env wallet if set, otherwise generate ephemeral
   const envWalletAddress2 = process.env["WALLET_ADDRESS"] || null;
-  const envPrivateKey2 = process.env["PRIVATE_KEY"] || null;
+  const envPrivateKey2Raw = process.env["PRIVATE_KEY"] || null;
+  const envPrivateKey2 = envPrivateKey2Raw
+    ? (envPrivateKey2Raw.startsWith("0x") ? envPrivateKey2Raw : "0x" + envPrivateKey2Raw.replace(/^x/, ''))
+    : null;
   let address2: string;
   let privateKey2: string;
   if (envWalletAddress2 && envPrivateKey2) {

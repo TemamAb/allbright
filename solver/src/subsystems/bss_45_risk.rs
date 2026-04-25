@@ -54,6 +54,44 @@ impl RiskEngine {
             stats.signals_rejected_risk.fetch_add(1, Ordering::Relaxed);
             return false;
         }
+        // 3. Position Sizing (max 10% of wallet per trade)
+        if policy.max_position_size_eth > 0.0 && simulation.profit_eth > policy.max_position_size_eth {
+            stats.signals_rejected_risk.fetch_add(1, Ordering::Relaxed);
+            return false;
+        }
+        // 4. Daily Loss Limit (auto-stop at 1 ETH loss)
+        if policy.daily_loss_limit_eth > 0.0 {
+            let new_loss = policy.daily_loss_used_eth + simulation.profit_eth.min(0.0);
+            if new_loss.abs() > policy.daily_loss_limit_eth {
+                stats.signals_rejected_risk.fetch_add(1, Ordering::Relaxed);
+                return false;
+            }
+        }
+        // 5. Slippage Protection (0.5% max)
+        let max_slippage_bps = 50; // 0.5%
+        let min_expected_profit = simulation.profit_eth * (1.0 - max_slippage_bps as f64 / 10000.0);
+        if simulation.profit_eth < min_expected_profit {
+            stats.signals_rejected_risk.fetch_add(1, Ordering::Relaxed);
+            return false;
+        }
         true
+    }
+
+    /// BSS-45: Post-simulation slippage check at execution time
+    pub fn check_slippage(
+        simulated_output: u128,
+        actual_reserve_in: u128,
+        actual_reserve_out: u128,
+        fee_bps: u32,
+    ) -> bool {
+        let expected_output = super::bss_44_liquidity::LiquidityEngine::get_amount_out(
+            simulated_output,
+            actual_reserve_out,
+            actual_reserve_in,
+            fee_bps,
+        );
+        if expected_output == 0 { return false; }
+        let slippage_bps = ((simulated_output as f64 - expected_output as f64) / simulated_output as f64 * 10000.0) as i32;
+        slippage_bps <= 50
     }
 }

@@ -1,0 +1,103 @@
+services:
+  # BrightSky Rust Solver (TCP IPC on port 4003)
+  - type: web
+    name: brightsky-solver
+    env: docker
+    plan: starter
+    branch: main
+    rootDir: solver
+    buildCommand: cargo build --release
+    runCommand: ./target/release/brightsky
+    healthCheckPath: /health
+    healthCheckTimeout: 10
+    envVars:
+      - key: ETH_WS_URL
+        value: wss://ethereum-rpc.publicnode.com
+      - key: BASE_WS_URL
+        value: wss://base-rpc.publicnode.com
+      - key: ARBITRUM_WS_URL
+        value: wss://arbitrum-rpc.publicnode.com
+      - key: OPTIMISM_WS_URL
+        value: wss://optimism-rpc.publicnode.com
+      - key: POLYGON_WS_URL
+        value: wss://polygon-rpc.publicnode.com
+      - key: AVALANCHE_WS_URL
+        value: wss://avalanche-rpc.publicnode.com
+      - key: BSC_WS_URL
+        value: wss://bsc-rpc.publicnode.com
+      - key: FANTOM_WS_URL
+        value: wss://fantom-rpc.publicnode.com
+      - key: RUST_LOG
+        value: info
+
+  # BrightSky API Server (Node.js + TypeScript)
+  - type: web
+    name: brightsky-api
+    env: docker
+    plan: starter
+    branch: main
+    rootDir: api
+    buildCommand: pnpm install && pnpm build
+    runCommand: node dist/index.js
+    healthCheckPath: /api/health
+    healthCheckTimeout: 10
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: PIMLICO_API_KEY
+        sync: false
+      - key: WALLET_ADDRESS
+        sync: false
+      - key: PRIVATE_KEY
+        sync: false
+      - key: PROFIT_WALLET_ADDRESS
+        sync: false
+      - key: CHAIN_ID
+        value: "1"
+      - key: RPC_ENDPOINT
+        value: https://base.llamarpc.com
+      - key: ETH_RPC_URL
+        sync: false
+      - key: BASE_RPC_URL
+        sync: false
+      - key: POLYGON_RPC_URL
+        sync: false
+      - key: BSC_RPC_URL
+        sync: false
+      - key: ARBITRUM_RPC_URL
+        sync: false
+      - key: OPTIMISM_RPC_URL
+        sync: false
+      - key: AVALANCHE_RPC_URL
+        sync: false
+      - key: FANTOM_RPC_URL
+        sync: false
+      - key: PAPER_TRADING_MODE
+        value: "false"
+      - key: MEV_PROTECTION
+        value: "true"
+      - key: USE_TCP_BRIDGE
+        value: "true"
+      - key: BRIGHTSKY_TCP_HOST
+        value: brightsky-solver.onrender.com
+      - key: BRIGHTSKY_TCP_PORT
+        value: "4003"
+
+  # BrightSky Dashboard (React/Vite static build)
+  - type: web
+    name: brightsky-dashboard
+    env: docker
+    plan: starter
+    branch: main
+    rootDir: ui
+    buildCommand: pnpm install && pnpm build
+    runCommand: nginx -g "daemon off;"
+    healthCheckPath: /
+    healthCheckTimeout: 10
+    envVars:
+      - key: VITE_API_URL
+        value: https://brightsky-api.onrender.com
+      - key: NODE_ENV
+        value: production

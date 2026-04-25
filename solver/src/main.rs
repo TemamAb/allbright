@@ -1881,10 +1881,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 if optimal_wei == 0 { continue; }
 
                 // 3. Deterministic Simulation (BSS-43)
-                let sim_result = SimulationEngine::simulate_opportunity(
+                let sim_result = futures::executor::block_on(SimulationEngine::simulate_opportunity(
                     &path_edges,
                     optimal_wei as f64 / 1e18
-                );
+                ));
 
                 // 4. Risk Validation Gate (BSS-45) & MEV Guard (BSS-42)
                 if RiskEngine::validate(&opp, &sim_result, &policy, &solver_stats)

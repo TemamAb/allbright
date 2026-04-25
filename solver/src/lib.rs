@@ -89,6 +89,10 @@ pub struct SystemPolicy {
     pub max_hops: usize,
     pub min_profit_bps: f64,
     pub shadow_mode: bool,
+    // Risk limits (Milestone 4C.1)
+    pub max_position_size_eth: f64, // Max 10% of wallet per trade
+    pub daily_loss_limit_eth: f64, // Auto-stop at 1 ETH loss
+    pub daily_loss_used_eth: f64, // Track losses used today
 }
 
 // Design KPIs (kept for documentation, used in SubsystemSpecialist trait)

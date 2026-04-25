@@ -5,6 +5,8 @@ import router from "./routes";
 import { logger } from "./lib/logger";
 import { createServer } from "http";
 import { Server } from "socket.io";
+import { getMetrics } from "./routes/metrics";
+import { rateLimiter } from "./middleware/rateLimiter";
 
 const app: Express = express();
 const httpServer = createServer(app);
@@ -43,7 +45,13 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Phase4C.2: Rate limiting for sensitive endpoints
+app.use(rateLimiter);
+
 app.use("/api", router);
+
+// Prometheus /metrics endpoint (Phase4D.3)
+app.get("/metrics", getMetrics);
 
 app.get("/", (req, res) => {
   res.redirect("/api/health");
