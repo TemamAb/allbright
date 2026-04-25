@@ -38,11 +38,11 @@ export default function SettingsPage() {
   useEffect(() => {
     if (settings) {
       setLocal({
-        flashLoanSizeEth: settings.flashLoanSizeEth,
-        minMarginPct: settings.minMarginPct,
-        maxBribePct: settings.maxBribePct,
-        simulationMode: settings.simulationMode,
-        maxSlippagePct: settings.maxSlippagePct,
+        flashLoanSizeEth: settings.flashLoanSizeEth ?? 100,
+        minMarginPct: settings.minMarginPct ?? 1,
+        maxBribePct: settings.maxBribePct ?? 5,
+        simulationMode: settings.simulationMode ?? true,
+        maxSlippagePct: settings.maxSlippagePct ?? 0.5,
         targetProtocols: settings.targetProtocols ?? [],
         openaiApiKey: "",
         pimlicoApiKey: "",

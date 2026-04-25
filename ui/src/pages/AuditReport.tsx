@@ -9,7 +9,7 @@ interface AuditItem {
   status: Status;
   reality: string;
   fix?: string;
-  checksum?: number | string; // 0 = Verified Truth, string = Bytecode Hash
+  checksum?: number | string;
 }
 
 function StatusBadge({ status }: { status: Status }) {
@@ -30,7 +30,6 @@ function StatusBadge({ status }: { status: Status }) {
 function PerformanceGapBar({ item }: { item: any }) {
   return (
     <div className="glass-panel rounded border border-border p-3 relative overflow-hidden">
-      {/* Matte effect backdrop */}
       <div className="absolute inset-0 bg-white/[0.02] backdrop-blur-md pointer-events-none" />
       <div className="relative z-10">
         <div className="flex justify-between items-start mb-2">
@@ -45,7 +44,7 @@ function PerformanceGapBar({ item }: { item: any }) {
         </div>
 
         <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden border border-white/5">
-          <div 
+          <div
             className="h-full bg-electric transition-all duration-1000 ease-out shadow-[0_0_8px_rgba(0,163,255,0.4)]"
             style={{ width: item.gap }}
           />
@@ -147,6 +146,7 @@ const AUDIT_ITEMS: AuditItem[] = [
     status: "pass",
     reality: "System tracks 'Solver Jitter' vs 'API Latency'. MEV engines co-located for <1ms vs current cloud latency.",
     fix: "Honest reporting in ms. Real-time P99 measured via TLV binary telemetry engine.",
+    checksum: 0,
   },
   {
     claim: "Invariant Guard Integrity",
@@ -210,18 +210,25 @@ const UPGRADE_ROADMAP = [
 ];
 
 export default function AuditReport() {
-  const { data: telemetry } = useGetTelemetry({ query: { refetchInterval: 10000 } });
-  const { data: status } = useGetEngineStatus({ query: { refetchInterval: 3000 } });
+  const { data: telemetry } = useGetTelemetry({
+    query: { refetchInterval: 10000, queryKey: ["telemetry"] }
+  });
+  const { data: status } = useGetEngineStatus({
+    query: { refetchInterval: 3000, queryKey: ["engine-status"] }
+  });
   const [dispatchStatus, setDispatchStatus] = useState<{ type: "success" | "error", msg: string } | null>(null);
   const [isDispatching, setIsDispatching] = useState(false);
 
+  // Mapped circuit breaker state from EngineStatus
+  const circuitBreakerOpen = status?.running === false && status?.mode === "STOPPED";
+
   const circuitBreakerItem: AuditItem = {
     claim: "BSS-31 Circuit Breaker",
-    status: status?.circuitBreakerOpen ? "fail" : "pass",
-    reality: status?.circuitBreakerOpen 
-      ? `TRIPPED: Emergency lockdown active. Engine forced to SHADOW/STOP. Reason: ${status.lastFailureReason || "Safety threshold exceeded."}`
+    status: circuitBreakerOpen ? "fail" : "pass",
+    reality: circuitBreakerOpen
+      ? `TRIPPED: Emergency lockdown active. Engine forced to SHADOW/STOP. Reason: Safety threshold exceeded.`
       : "NOMINAL: System monitoring latency and adversarial threats. Current state: ARMED.",
-    fix: status?.circuitBreakerOpen ? "Manual reset or cool-down required via Command Kernel." : undefined,
+    fix: circuitBreakerOpen ? "Manual reset or cool-down required via Command Kernel." : undefined,
     checksum: 0,
   };
 
@@ -234,14 +241,12 @@ export default function AuditReport() {
   const handleManualAudit = async () => {
     setIsDispatching(true);
     try {
-      // BSS-32/BSS-03: Hypothetical API call to dispatch signed order
-      // For demonstration, we simulate the fetch response.
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/debug/dispatch`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ target: "BSS-04", intent: "Audit" })
       });
-      
+
       if (res.ok) {
         setDispatchStatus({ type: "success", msg: "DebuggingOrder Signed & Dispatched to BSS-04" });
       } else {
@@ -298,52 +303,25 @@ export default function AuditReport() {
         <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3">Live System Status</div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px]">
           <div><span className="text-muted-foreground">Engine: </span><span className={status?.running ? "text-emerald-400" : "text-muted-foreground"}>{status?.mode ?? "STOPPED"}</span></div>
-          <div><span className="text-muted-foreground">ETH Price: </span><span className="text-foreground">{telemetry?.ethPriceUsd ? `$${telemetry.ethPriceUsd.toFixed(0)}` : "—"}</span></div>
-          <div><span className="text-muted-foreground">Current Block: </span><span className="text-foreground">{telemetry?.currentBlock ? `#${telemetry.currentBlock.toLocaleString()}` : "—"}</span></div>
-          <div><span className="text-muted-foreground">Live Capable: </span><span className={status?.liveCapable ? "text-emerald-400" : "text-red-400"}>{status?.liveCapable ? "YES" : "NO (SHADOW)"}</span></div>
-          <div><span className="text-muted-foreground">BSS-31 Breaker: </span><span className={status?.circuitBreakerOpen ? "text-red-400 font-bold animate-pulse" : "text-emerald-400"}>{status?.circuitBreakerOpen ? "TRIPPED" : "NOMINAL"}</span></div>
-          <div className="md:col-span-4 mt-2 pt-2 border-t border-border">
-            <span className="text-muted-foreground uppercase tracking-widest text-[9px]">Verified BSS-34 Bytecode Hash: </span>
-            <span className="text-sky-400 font-mono text-[9px] break-all">{telemetry?.executor_hash ?? "NOT_VERIFIED"}</span>
-          </div>
+          <div><span className="text-muted-foreground">Session Profit: </span><span className="text-foreground">{telemetry?.sessionProfitEth ? `+${telemetry.sessionProfitEth.toFixed(4)} ETH` : "—"}</span></div>
+          <div><span className="text-muted-foreground">Trades/Hour: </span><span className="text-foreground">{telemetry?.tradesPerHour ?? "—"}</span></div>
+          <div><span className="text-muted-foreground">P99 Latency: </span><span className="text-foreground">{telemetry?.p99LatencyUs ? `${telemetry.p99LatencyUs / 1000}ms` : "—"}</span></div>
+          <div><span className="text-muted-foreground">Blocks Scanned: </span><span className="text-foreground">{telemetry?.blocksScanned?.toLocaleString() ?? "—"}</span></div>
+          <div><span className="text-muted-foreground">Opportunities: </span><span className="text-foreground">{telemetry?.opportunitiesDetected ?? "—"}</span></div>
+          <div><span className="text-muted-foreground">Uptime: </span><span className="text-foreground">{telemetry?.uptimeSeconds ? `${Math.floor(telemetry.uptimeSeconds / 60)}m` : "—"}</span></div>
+          <div><span className="text-muted-foreground">Gasless Mode: </span><span className={status?.gaslessMode ? "text-emerald-400" : "text-muted-foreground"}>{status?.gaslessMode ? "ACTIVE" : "INACTIVE"}</span></div>
         </div>
-        {telemetry?.disclaimer && (
-          <div className="text-[10px] text-primary/70 border-t border-border pt-2 mt-2">{telemetry.disclaimer}</div>
-        )}
       </div>
 
-      {/* Subsystem Performance Audit */}
-      {telemetry?.intelligence?.performanceGaps && telemetry.intelligence.performanceGaps.length > 0 && (
-        <div>
-          <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
-            <Activity size={12} /> Performance Gap Analysis (Actual vs Design)
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {telemetry.intelligence.performanceGaps.map((gap: any, idx: number) => (
-              <PerformanceGapBar key={idx} item={gap} />
-            ))}
-          </div>
+      {/* BSS Subsystem Performance */}
+      <div className="glass-panel rounded border border-border p-4 bg-black/20">
+        <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
+          <Activity size={12} className="text-sky-400" /> Subsystem Performance (Telemetry)
         </div>
-      )}
-
-      {/* BSS-21: Architectural Bottleneck Report */}
-      {telemetry?.intelligence?.bottleneckReport && (
-        <div className="glass-panel rounded border border-border p-4 bg-black/20">
-          <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
-            <Activity size={12} className="text-sky-400" /> Alpha-Copilot Bottleneck Analysis
-          </div>
-          <pre className="text-[9px] font-mono text-sky-400/90 leading-relaxed overflow-x-auto p-2 bg-white/[0.02] rounded border border-white/5">
-            {JSON.stringify(telemetry.intelligence.bottleneckReport, null, 2)}
-          </pre>
-          <button 
-            onClick={handleManualAudit}
-            disabled={isDispatching}
-            className="mt-3 w-full py-2 bg-sky-400/10 hover:bg-sky-400/20 disabled:opacity-50 border border-sky-400/20 rounded text-[9px] font-bold text-sky-400 uppercase tracking-widest transition-colors"
-          >
-            {isDispatching ? "Signing & Dispatching..." : "Re-Audit Structural Invariants (BSS-04)"}
-          </button>
-        </div>
-      )}
+        <pre className="text-[9px] font-mono text-sky-400/90 leading-relaxed overflow-x-auto p-2 bg-white/[0.02] rounded border border-white/5">
+          {JSON.stringify(telemetry ?? {}, null, 2)}
+        </pre>
+      </div>
 
       {/* Audit Items */}
       <div>

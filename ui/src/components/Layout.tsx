@@ -17,10 +17,13 @@ const navItems = [
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { data: status } = useGetEngineStatus({ query: { refetchInterval: 2000 } });
+  const { data: status } = useGetEngineStatus({
+    query: { refetchInterval: 2000, queryKey: ["engine-status"] }
+  });
 
   const isRunning = status?.running;
   const mode = status?.mode ?? "STOPPED";
+  const isShadowMode = mode === "SHADOW";
 
   return (
     <div className="min-h-screen flex bg-[#0A0A0B] text-zinc-300 font-mono selection:bg-cyan-500/30">
@@ -47,9 +50,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
           {isRunning && (
             <span className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-tighter transition-colors duration-300 ${
-              status?.shadowModeActive ? "text-amber-400 bg-amber-500/10" : "text-emerald-400 bg-emerald-500/10 shadow-[0_0_8px_rgba(52,211,153,0.15)]"
+              isShadowMode ? "text-amber-400 bg-amber-500/10" : "text-emerald-400 bg-emerald-500/10 shadow-[0_0_8px_rgba(52,211,153,0.15)]"
             }`}>
-              {status?.shadowModeActive ? "Shadow Simulation" : "Live Listening"}
+              {isShadowMode ? "Shadow Simulation" : "Live Listening"}
             </span>
           )}
         </div>

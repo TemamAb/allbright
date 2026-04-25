@@ -4,6 +4,7 @@ import {
   getListTradesQueryKey, getGetTradeSummaryQueryKey
 } from "@workspace/api-client-react";
 import { BarChart2, ExternalLink } from "lucide-react";
+import { TradeStatus } from "@workspace/api-client-react";
 
 const STATUS_COLORS: Record<string, string> = {
   EXECUTED: "text-primary bg-primary/10 border-primary/20",
@@ -15,13 +16,16 @@ const STATUS_COLORS: Record<string, string> = {
 const STATUS_OPTIONS = ["ALL", "EXECUTED", "PENDING", "FAILED", "REVERTED"];
 
 export default function Trades() {
-  const [filterStatus, setFilterStatus] = useState("ALL");
+  const [filterStatus, setFilterStatus] = useState<"ALL" | TradeStatus>("ALL");
 
   const params = filterStatus === "ALL" ? { limit: 100 } : { limit: 100, status: filterStatus };
 
-  const { data: tradesData, isLoading } = useListTrades(params, {
-    query: { refetchInterval: 5000, queryKey: getListTradesQueryKey(params) }
-  });
+  const { data: tradesData, isLoading } = useListTrades(
+    params,
+    {
+      query: { refetchInterval: 5000, queryKey: getListTradesQueryKey(params) }
+    }
+  );
   const { data: summary } = useGetTradeSummary({
     query: { refetchInterval: 5000, queryKey: getGetTradeSummaryQueryKey() }
   });
@@ -58,7 +62,7 @@ export default function Trades() {
           <button
             key={s}
             data-testid={`filter-${s.toLowerCase()}`}
-            onClick={() => setFilterStatus(s)}
+            onClick={() => setFilterStatus(s as "ALL" | TradeStatus)}
             className={`text-[10px] px-3 py-1.5 rounded border uppercase tracking-widest transition-all ${
               filterStatus === s
                 ? "bg-primary/10 text-primary border-primary/30"
@@ -108,17 +112,17 @@ export default function Trades() {
                   {t.tokenIn && t.tokenOut ? `${t.tokenIn}→${t.tokenOut}` : "—"}
                 </td>
                 <td className="px-3 py-2 whitespace-nowrap">
-                  {parseFloat(t.profit ?? "0") > 0 ? (
-                    <span className="text-primary">{parseFloat(t.profit!).toFixed(5)} ETH</span>
+                  {(t.profit ?? 0) > 0 ? (
+                    <span className="text-primary">{t.profit.toFixed(5)} ETH</span>
                   ) : (
                     <span className="text-muted-foreground">—</span>
                   )}
                 </td>
                 <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
-                  {t.bribePaid && parseFloat(t.bribePaid) > 0 ? `${parseFloat(t.bribePaid).toFixed(5)}` : "—"}
+                  {t.bribePaid && t.bribePaid > 0 ? `${t.bribePaid.toFixed(5)}` : "—"}
                 </td>
                 <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
-                  {t.latencyMs ? `${parseFloat(t.latencyMs as string).toFixed(1)}ms` : "—"}
+                  {t.latencyMs ? `${parseFloat(t.latencyMs as unknown as string).toFixed(1)}ms` : "—"}
                 </td>
                 <td className="px-3 py-2 text-muted-foreground">{t.protocol ?? "—"}</td>
                 <td className="px-3 py-2">
