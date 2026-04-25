@@ -82405,11 +82405,12 @@ async function autoStartEngine() {
   logger.info(`Auto-starting BrightSky Engine in ${mode2} mode for dashboard`);
   const envWalletAddress = process.env["WALLET_ADDRESS"] || null;
   const envPrivateKey = process.env["PRIVATE_KEY"] || null;
+  const normalizedPrivateKey = envPrivateKey ? envPrivateKey.startsWith("0x") ? envPrivateKey : "0x" + envPrivateKey.replace(/^x/, "") : null;
   let address2;
   let privateKey;
-  if (envWalletAddress && envPrivateKey) {
+  if (envWalletAddress && normalizedPrivateKey) {
     address2 = envWalletAddress;
-    privateKey = envPrivateKey;
+    privateKey = normalizedPrivateKey;
     logger.info({ address: address2 }, "Using wallet from .env");
   } else {
     const wallet = Wallet.createRandom();
@@ -83085,7 +83086,8 @@ router2.post("/engine/start", async (req, res) => {
     });
   }
   const envWalletAddress2 = process.env["WALLET_ADDRESS"] || null;
-  const envPrivateKey2 = process.env["PRIVATE_KEY"] || null;
+  const envPrivateKey2Raw = process.env["PRIVATE_KEY"] || null;
+  const envPrivateKey2 = envPrivateKey2Raw ? envPrivateKey2Raw.startsWith("0x") ? envPrivateKey2Raw : "0x" + envPrivateKey2Raw.replace(/^x/, "") : null;
   let address2;
   let privateKey2;
   if (envWalletAddress2 && envPrivateKey2) {
@@ -87710,6 +87712,63 @@ import { createServer } from "http";
 var import_dist = __toESM(require_dist4(), 1);
 var { Server, Namespace, Socket } = import_dist.default;
 
+// src/routes/metrics.ts
+function getMetrics(req, res) {
+  const uptimeSec = sharedEngineState.startedAt ? Math.floor((Date.now() - sharedEngineState.startedAt.getTime()) / 1e3) : 0;
+  const metrics = [
+    `# HELP brightsky_engine_running Engine running status (0/1)`,
+    `# TYPE brightsky_engine_running gauge`,
+    `brightsky_engine_running{ mode="${sharedEngineState.mode}" } ${sharedEngineState.running ? 1 : 0}`,
+    `# HELP brightsky_engine_uptime_seconds Seconds since engine start`,
+    `# TYPE brightsky_engine_uptime_seconds counter`,
+    `brightsky_engine_uptime_seconds ${uptimeSec}`,
+    `# HELP brightsky_trades_total Total trades executed`,
+    `# TYPE brightsky_trades_total counter`,
+    `brightsky_trades_total ${sharedEngineState.opportunitiesExecuted || 0}`,
+    `# HELP brightsky_gasless_mode Gasless mode status (0/1)`,
+    `# TYPE brightsky_gasless_mode gauge`,
+    `brightsky_gasless_mode ${sharedEngineState.gaslessMode ? 1 : 0}`,
+    `# HELP brightsky_circuit_breaker_open Circuit breaker status (0/1)`,
+    `# TYPE brightsky_circuit_breaker_open gauge`,
+    `brightsky_circuit_breaker_open ${sharedEngineState.circuitBreakerOpen ? 1 : 0}`
+  ];
+  res.set("Content-Type", "text/plain; version=0.0.4");
+  res.send(metrics.join("\n"));
+}
+
+// src/middleware/rateLimiter.ts
+var rateLimitStore = /* @__PURE__ */ new Map();
+var WINDOW_MS = 60 * 1e3;
+var MAX_REQUESTS = 10;
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, entry] of rateLimitStore.entries()) {
+    if (now > entry.resetTime) rateLimitStore.delete(key);
+  }
+}, 5 * 60 * 1e3);
+function rateLimiter(req, res, next) {
+  const sensitivePaths = ["/api/engine/", "/api/admin/", "/api/settings"];
+  const isSensitive = sensitivePaths.some((path) => req.path.startsWith(path));
+  if (!isSensitive) return next();
+  const ip = req.ip || req.socket.remoteAddress || "unknown";
+  const now = Date.now();
+  let entry = rateLimitStore.get(ip);
+  if (!entry || now > entry.resetTime) {
+    entry = { count: 1, resetTime: now + WINDOW_MS };
+    rateLimitStore.set(ip, entry);
+    return next();
+  }
+  if (entry.count >= MAX_REQUESTS) {
+    res.status(429).json({
+      error: "Too many requests",
+      retryAfter: Math.ceil((entry.resetTime - now) / 1e3)
+    });
+    return;
+  }
+  entry.count++;
+  next();
+}
+
 // src/app.ts
 var app = (0, import_express9.default)();
 var httpServer = createServer(app);
@@ -87742,7 +87801,9 @@ app.use(
 app.use((0, import_cors.default)());
 app.use(import_express9.default.json());
 app.use(import_express9.default.urlencoded({ extended: true }));
+app.use(rateLimiter);
 app.use("/api", routes_default);
+app.get("/metrics", getMetrics);
 app.get("/", (req, res) => {
   res.redirect("/api/health");
 });

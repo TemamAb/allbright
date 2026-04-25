@@ -29,6 +29,7 @@ export declare const GetEngineStatusResponse: zod.ZodObject<{
     gaslessMode: zod.ZodBoolean;
     pimlicoEnabled: zod.ZodBoolean;
     scannerActive: zod.ZodBoolean;
+    flashloanContractAddress: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
 }, "strip", zod.ZodTypeAny, {
     running: boolean;
     mode: "SHADOW" | "LIVE" | "STOPPED";
@@ -37,6 +38,7 @@ export declare const GetEngineStatusResponse: zod.ZodObject<{
     scannerActive: boolean;
     uptime?: number | undefined;
     walletAddress?: string | undefined;
+    flashloanContractAddress?: string | null | undefined;
 }, {
     running: boolean;
     mode: "SHADOW" | "LIVE" | "STOPPED";
@@ -45,6 +47,7 @@ export declare const GetEngineStatusResponse: zod.ZodObject<{
     scannerActive: boolean;
     uptime?: number | undefined;
     walletAddress?: string | undefined;
+    flashloanContractAddress?: string | null | undefined;
 }>;
 /**
  * @summary Start arbitrage engine
