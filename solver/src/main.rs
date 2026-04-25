@@ -1388,8 +1388,29 @@ async fn run_watchtower(
     .into_iter()
     .collect();
 
+    // BSS-35: Gasless Manager — dynamic Pimlico v2 endpoint per chain
+    let chain_id = std::env::var("CHAIN_ID")
+        .ok()
+        .and_then(|s| s.parse::<u64>().ok())
+        .unwrap_or(1);
+    let pimlico_api_key = std::env::var("PIMLICO_API_KEY").unwrap_or_default();
+    
+    // Map chain ID to Pimlico network name (v2 endpoints)
+    let network = match chain_id {
+        1 => "ethereum",
+        8453 => "base",
+        42161 => "arbitrum",
+        10 => "optimism",
+        137 => "polygon",
+        43114 => "avalanche",
+        56 => "binance",
+        250 => "fantom",
+        _ => "ethereum", // fallback
+    };
+    let bundler_url = format!("https://api.pimlico.io/v2/{}/rpc?apikey={}", network, pimlico_api_key);
+
     let gasless_manager = Arc::new(GaslessManager {
-        bundler_url: "https://api.pimlico.io/v1/base/rpc".into(),
+        bundler_url: bundler_url.into(),
         paymaster_active: AtomicBool::new(true),
     });
 
