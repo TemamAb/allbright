@@ -1177,9 +1177,10 @@ async fn handle_gateway_connection<S>(
 
         if !req_str.contains("GET") && !req_str.contains("POST") {
             if let Ok(order) = serde_json::from_str::<DebuggingOrder>(&req_str) {
-            let _ = debug_tx.send(order).await;
-            let _ = writer.write_all(b"{\"status\":\"order_queued\"}\n").await;
-            return;
+                let _ = debug_tx.send(order).await;
+                let _ = writer.write_all(b"{\"status\":\"order_queued\"}\n").await;
+                return;
+            }
         }
 
         // BSS-27: Handle UI Connectivity Sync from the Node.js bridge
@@ -1261,7 +1262,7 @@ async fn handle_gateway_connection<S>(
     let response = format!(
          "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nAccess-Control-Allow-Origin: *\r\n\r\n{report}"
      );
-    let _ = socket.write_all(response.as_bytes()).await;
+    let _ = writer.write_all(response.as_bytes()).await;
 }
 
 /// BSS-16: P2P Node Bridge (Mempool Analyzer)
