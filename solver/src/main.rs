@@ -13,7 +13,7 @@ use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::sync::{Mutex, RwLock};
 use std::time::{Duration, Instant};
-use tokio::io::{AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
+use tokio::io::{AsyncRead, AsyncWrite, AsyncWriteExt, AsyncBufReadExt};
 type HmacSha256 = Hmac<Sha256>;
 use tokio::sync::{broadcast, mpsc, watch};
 use tokio::time::{sleep, timeout};
@@ -134,9 +134,11 @@ pub struct WatchtowerStats {
     opt_cycles_hour: AtomicU64,
     next_opt_cycle_timestamp: AtomicU64,
     min_profit_bps_adj: AtomicU64, // BSS-36 dynamic adjustment
-    total_profit_milli_eth: AtomicU64,
+     total_profit_milli_eth: AtomicU64,
+     alpha_decay_avg_ms: AtomicU64,
+     sim_parity_delta_bps: AtomicU64,
 
-    // BSS-40/43: Predictive Metrics
+     // BSS-40/43: Predictive Metrics
     mempool_events_per_sec: AtomicUsize,
     simulated_tx_success_rate: AtomicUsize, // Percentage
     mempool_state_prediction_ready: AtomicBool,
@@ -1161,7 +1163,7 @@ async fn run_api_gateway(
 }
 
 async fn handle_gateway_connection<S>(
-    mut socket: S,
+    socket: S,
     stats: Arc<WatchtowerStats>,
     mut opp_rx: tokio::sync::broadcast::Receiver<Vec<u8>>,
     debug_tx: mpsc::Sender<DebuggingOrder>,

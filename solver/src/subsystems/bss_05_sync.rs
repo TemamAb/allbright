@@ -188,7 +188,7 @@ async fn run_subscription_loop(
 /// Estimate fee in basis points based on pool address patterns
 /// For Uniswap V3: fee is encoded in the pool address (bytes 15-17)
 /// For Uniswap V2: typically 30bps (0.3%), but can be 5bps or 100bps
-pub fn estimate_fee_bps(pool_address: &str) -> u32 {
+pub fn estimate_fee_bps(_pool_address: &str) -> u32 {
     // Simple heuristic: default to 30bps (0.3%) - most common for V2 and V3
     // TODO: Proper V3 fee extraction from pool address via contract call
     30
