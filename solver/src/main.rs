@@ -129,14 +129,23 @@ pub struct WatchtowerStats {
     cpu_usage_percent: AtomicUsize,
     thermal_throttle_active: AtomicBool,
 
-    // BSS-36 Auto-Optimization Metrics
-    opt_improvement_delta: AtomicU64, // Basis points
-    opt_cycles_hour: AtomicU64,
-    next_opt_cycle_timestamp: AtomicU64,
-    min_profit_bps_adj: AtomicU64, // BSS-36 dynamic adjustment
-     total_profit_milli_eth: AtomicU64,
-     alpha_decay_avg_ms: AtomicU64,
-     sim_parity_delta_bps: AtomicU64,
+     // BSS-36 Auto-Optimization Metrics
+     opt_improvement_delta: AtomicU64, // Basis points
+     opt_cycles_hour: AtomicU64,
+     next_opt_cycle_timestamp: AtomicU64,
+     min_profit_bps_adj: AtomicU64, // BSS-36 dynamic adjustment
+      total_profit_milli_eth: AtomicU64,
+      alpha_decay_avg_ms: AtomicU64,
+      sim_parity_delta_bps: AtomicU64,
+      
+      // Additional KPIs for 27 KPI monitoring
+      arb_execution_count: AtomicU64,
+      avg_profit_per_trade_milli_eth: AtomicU64,
+      loss_rate_bps: AtomicU64,
+      spread_capture_bps: AtomicU64,
+      uptime_percent: AtomicU64,
+      cycle_accuracy_percent: AtomicU64,
+      pnl_volatility_milli_eth: AtomicU64,
 
      // BSS-40/43: Predictive Metrics
     mempool_events_per_sec: AtomicUsize,
@@ -1231,33 +1240,41 @@ async fn handle_gateway_connection<S>(
         let throughput = stats.msg_throughput_sec.load(Ordering::Relaxed);
         let latency = stats.solver_latency_p99_ms.load(Ordering::Relaxed);
 
-        let data = serde_json::json!({
-            "throughput_msg_s": throughput,
-            "p99_latency_ms": latency,
-            "opportunities_found": stats.opportunities_found_count.load(Ordering::Relaxed),
-            "trades_executed": stats.executed_trades_count.load(Ordering::Relaxed),
-            "total_profit_eth": stats.total_profit_milli_eth.load(Ordering::Relaxed) as f64 / 1000.0,
-            "risk_gate_rejections": stats.signals_rejected_risk.load(Ordering::Relaxed),
-            "alpha_decay_avg_ms": stats.alpha_decay_avg_ms.load(Ordering::Relaxed),
-            "sim_parity_delta_bps": stats.sim_parity_delta_bps.load(Ordering::Relaxed),
-            "adversarial_events": stats.adversarial_detections.load(Ordering::Relaxed),
-            "copilot_insight": AlphaCopilot::generate_insight(&stats),
-            "opt_delta_improvement": stats.opt_improvement_delta.load(Ordering::Relaxed) as f64 / 100.0,
-            "opt_cycles_hour": stats.opt_cycles_hour.load(Ordering::Relaxed),
-            "next_opt_cycle": stats.next_opt_cycle_timestamp.load(Ordering::Relaxed),
-            "perf_gap_throughput": AutoOptimizer::calculate_performance_gap(throughput, TARGET_THROUGHPUT),
-            "perf_gap_latency": if latency == 0 { 100.0 } else { (TARGET_LATENCY_MS as f64 / latency as f64 * 100.0).min(100.0) },
-            "wallet_eth": stats.wallet_balance_milli_eth.load(Ordering::Relaxed) as f64 / 1000.0,
-            "executor_deployed": stats.is_executor_deployed.load(Ordering::Relaxed),
-            "mempool_throughput": stats.mempool_events_per_sec.load(Ordering::Relaxed),
-            "sim_success_rate": stats.simulated_tx_success_rate.load(Ordering::Relaxed),
-            "executor_hash": std::env::var("EXECUTOR_CODE_HASH").unwrap_or_else(|_| "0x6f2a4c10da345e0d48f2b1c93a9b1e7f3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f".to_string()),
-            "next_nonce": stats.nonce_tracker.load(Ordering::Relaxed),
-            "flashloan_contract_address": stats.flashloan_contract_address.read().unwrap().as_ref().map(|s| s.to_string()),
-            "shadow_mode_active": stats.is_shadow_mode_active.load(Ordering::Relaxed),
-            "bundler_online": stats.is_bundler_online.load(Ordering::Relaxed),
-            "circuit_breaker_tripped": CircuitBreaker::is_tripped(&stats),
-        });
+         let data = serde_json::json!({
+             "throughput_msg_s": throughput,
+             "p99_latency_ms": latency,
+             "opportunities_found": stats.opportunities_found_count.load(Ordering::Relaxed),
+             "trades_executed": stats.executed_trades_count.load(Ordering::Relaxed),
+             "total_profit_eth": stats.total_profit_milli_eth.load(Ordering::Relaxed) as f64 / 1000.0,
+             "risk_gate_rejections": stats.signals_rejected_risk.load(Ordering::Relaxed),
+             "alpha_decay_avg_ms": stats.alpha_decay_avg_ms.load(Ordering::Relaxed),
+             "sim_parity_delta_bps": stats.sim_parity_delta_bps.load(Ordering::Relaxed),
+             "adversarial_events": stats.adversarial_detections.load(Ordering::Relaxed),
+             "copilot_insight": AlphaCopilot::generate_insight(&stats),
+             "opt_delta_improvement": stats.opt_improvement_delta.load(Ordering::Relaxed) as f64 / 100.0,
+             "opt_cycles_hour": stats.opt_cycles_hour.load(Ordering::Relaxed),
+             "next_opt_cycle": stats.next_opt_cycle_timestamp.load(Ordering::Relaxed),
+             "perf_gap_throughput": AutoOptimizer::calculate_performance_gap(throughput, TARGET_THROUGHPUT),
+             "perf_gap_latency": if latency == 0 { 100.0 } else { (TARGET_LATENCY_MS as f64 / latency as f64 * 100.0).min(100.0) },
+             "wallet_eth": stats.wallet_balance_milli_eth.load(Ordering::Relaxed) as f64 / 1000.0,
+             "executor_deployed": stats.is_executor_deployed.load(Ordering::Relaxed),
+             "mempool_throughput": stats.mempool_events_per_sec.load(Ordering::Relaxed),
+             "sim_success_rate": stats.simulated_tx_success_rate.load(Ordering::Relaxed),
+             "executor_hash": std::env::var("EXECUTOR_CODE_HASH").unwrap_or_else(|_| "0x6f2a4c10da345e0d48f2b1c93a9b1e7f3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f".to_string()),
+             "next_nonce": stats.nonce_tracker.load(Ordering::Relaxed),
+             "flashloan_contract_address": stats.flashloan_contract_address.read().unwrap().as_ref().map(|s| s.to_string()),
+             "shadow_mode_active": stats.is_shadow_mode_active.load(Ordering::Relaxed),
+             "bundler_online": stats.is_bundler_online.load(Ordering::Relaxed),
+             "circuit_breaker_tripped": CircuitBreaker::is_tripped(&stats),
+             // New KPIs for 27 KPI monitoring
+             "arb_execution_count": stats.arb_execution_count.load(Ordering::Relaxed),
+             "avg_profit_per_trade": stats.avg_profit_per_trade_milli_eth.load(Ordering::Relaxed) as f64 / 1000.0,
+             "loss_rate": stats.loss_rate_bps.load(Ordering::Relaxed) as f64 / 100.0,
+             "spread_capture": stats.spread_capture_bps.load(Ordering::Relaxed),
+             "uptime": stats.uptime_percent.load(Ordering::Relaxed),
+             "cycle_accuracy": stats.cycle_accuracy_percent.load(Ordering::Relaxed),
+             "pnl_volatility": stats.pnl_volatility_milli_eth.load(Ordering::Relaxed) as f64 / 1000.0,
+         });
         ("200 OK", data)
     };
 

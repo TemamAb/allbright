@@ -26,6 +26,13 @@ This document outlines the 20 critical KPIs for the BrightSky arbitrage engine, 
 | 18| **Revert Cost Impact** | 0.7% | 0.05% | +1300% | ✅ |
 | 19| **Capital Turnover Speed** | 10% / trade | 25% / trade | -60.0% | ✅ |
 | 20| **Paymaster Efficiency** | 1.0 | 1.0 | 0.0% | ✅ |
+| 21| **Arb Execution Count (per day)** | 0 | 3456 | -100.0% | ⚠️ |
+| 22| **Avg Profit Per Trade (ETH)** | 0.000 | 0.0045 | -100.0% | ⚠️ |
+| 23| **Loss Rate (%)** | 0.0 | 1.2 | -100.0% | ⚠️ |
+| 24| **Spread Capture (bps)** | 0 | 15.0 | -100.0% | ⚠️ |
+| 25| **Uptime (%)** | 0.0 | 99.9 | -100.0% | ⚠️ |
+| 26| **Cycle Accuracy (%)** | 0.0 | 95.0 | -100.0% | ⚠️ |
+| 27| **P&L Volatility (ETH)** | 0.000 | 0.002 | -100.0% | ⚠️ |
 
 ---
 
