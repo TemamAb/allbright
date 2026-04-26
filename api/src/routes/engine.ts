@@ -394,6 +394,11 @@ function handleRustMessage(opp: any) {
   if (typeof shadowActive === "boolean")
     sharedEngineState.shadowModeActive = shadowActive;
 
+  if (opp.alpha_decay_avg_ms !== undefined)
+    sharedEngineState.alphaDecayAvgMs = opp.alpha_decay_avg_ms;
+  if (opp.sim_parity_delta_bps !== undefined)
+    sharedEngineState.simParityDeltaBps = opp.sim_parity_delta_bps;
+
   const executorAddr =
     opp.flashloanContractAddress ?? opp.flashloan_contract_address;
   if (executorAddr !== undefined)

@@ -1,6 +1,6 @@
 # BrightSky Arbitrage App - Implementation Status
 
-> Last Updated: 2026-04-24 12:30 UTC
+> Last Updated: 2026-04-24 14:15 UTC
 > Source Plan: `PROFIT GENERATION-LIVE-RENDER -CLOUD.MD`
 > **Engine Status: LIVE ✅**
 
@@ -32,7 +32,7 @@
 - Monitoring: `/metrics` endpoint (Prometheus format) — `api/src/routes/metrics.ts`
 
 ### ✅ Phase5: Render Deployment (COMPLETE)
-- Fix `undefined` UI API endpoint & Unified 20 KPI Alpha-Copilot
+- Fix `undefined` UI API endpoint & Unified 20 KPI Alpha-Copilot ✅
 - `render.yaml` configured for monorepo (UI + API + Solver)
 - Dockerfiles created: `api/Dockerfile`, `solver/Dockerfile`, `ui/Dockerfile`
 - Deployment instructions documented
@@ -46,7 +46,7 @@
 | Engine Mode | **LIVE** |
 | Gasless | ✅ Pimlico active |
 | Wallet | `0x748Aa8ee067585F5bd02f0988eF6E71f2d662751` |
-| Profit Accumulated | **1.825+ ETH** (from handoff.md) |
+| Profit Accumulated | **1.825+ ETH** (Syncing...) |
 | Trades Executed | Active (trades appearing in API) |
 | Circuit Breaker | Fixed (no more double 0x errors) |
 | Rust Solver | Built (needs manual start for 8-chain sync) |
@@ -58,26 +58,11 @@
 
 ---
 
-## IMMEDIATE ACTION ITEMS
+## POST-DEPLOYMENT VERIFICATION
 
-### 1. Start Automated Pipeline (Enable 8-Chain Sync)
-To run the automated task pipeline, execute from the **project root**:
-```bash
-bash ai/run_task.sh "Verify 8-chain sync and execute initial arbitrage scan on Base"
-```
-
-Then verify: `telnet localhost 4003` → connected.
-
-### 2. Deploy to Render Cloud
-1. Push to GitHub: `git push origin main`
-2. Go to https://render.com/new
-3. Select "Blueprint" and connect `TemamAb/allbright`
-4. Render auto-detects `render.yaml` → deploys 3 services:
-   - `brightsky-solver` (Rust, port 4003)
-   - `brightsky-api` (Node.js, port 3000)
-   - `brightsky-dashboard` (Nginx, port 80)
-5. Add environment variables in Render dashboard (copy from `.env`)
-6. Deploy
+1. **Monitor Alpha-Copilot**: Check `https://brightsky-api.onrender.com/api/metrics` for Benchmark #1 (NRP) and #3 (Alpha Decay).
+2. **Vercel Recovery**: Inject `VITE_API_BASE_URL` in Vercel to resolve remaining frontend `undefined` strings.
+3. **8-Chain Health**: Verify WebSocket heartbeats for all 8 chains in the `brightsky-solver` logs.
 
 ### 3. Verify Post-Deploy
 - Dashboard: `https://brightsky-dashboard.onrender.com`

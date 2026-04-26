@@ -37,7 +37,6 @@ fi
 # ----------------------------
 echo "⚙️ BUILD (Verifying 8-chain sync & KPI alignment...)"
 # Use timeout to allow the solver to initialize and log KPIs, then move to Audit
-# 15s is usually enough for BSS-05 to establish WebSocket heartbeats
 timeout 15s "$SOLVER_BIN" < "$TASK_FILE" > "$OUTPUT_FILE" 2>&1
 echo "✅ Build logs captured."
 
