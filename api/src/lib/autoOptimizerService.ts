@@ -1,10 +1,8 @@
-import { EngineState } from "./engineState";
+import { sharedEngineState } from "./engineState";
 
 export class AutoOptimizerService {
-  private engineState: EngineState;
-
   constructor() {
-    this.engineState = EngineState.getInstance();
+    // Use shared engine state directly
   }
 
   /**

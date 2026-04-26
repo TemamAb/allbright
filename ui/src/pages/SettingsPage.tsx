@@ -385,8 +385,6 @@ export default function SettingsPage() {
    );
  }
 
-function SliderField({
-
 const AUDIT_ITEMS: AuditItem[] = [
   {
     claim: "Gasless via Pimlico Paymaster",

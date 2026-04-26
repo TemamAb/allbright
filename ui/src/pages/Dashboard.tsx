@@ -202,7 +202,7 @@ export default function Dashboard() {
             </span>
           </div>
           <div className="text-[9px] text-muted-foreground mt-1">
-            Average: {telemetry?.avgLatencyUs ? `${telemetry.avgLatencyUs / 1000}ms` : "�?""}
+             Average: {telemetry?.avgLatencyUs ? `${telemetry.avgLatencyUs / 1000}ms` : "?"}
           </div>
         </div>
 

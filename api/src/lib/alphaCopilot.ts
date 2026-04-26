@@ -50,20 +50,20 @@ export class AlphaCopilot {
    * BSS-32: Prepares a signed DebuggingOrder payload for the Rust backbone.
    * The signature is placed in the 'params' field, matching the Rust SecurityModule.
    */
-  public prepareSignedOrder(target: string, intent: DebugIntent, payload?: string) {
-    const timestamp = Math.floor(Date.now() / 1000);
-    const nonce = crypto.randomBytes(8).readBigUInt64BE();
-    const signature = this.generateSignature(target, timestamp, nonce, payload);
-    
-    return {
-      target,
-      intent,
-      params: signature,
-      payload: payload || null,
-      timestamp,
-      nonce: nonce.toString() // Transmit as string to handle BigInt in JSON
-    };
-  }
+   public prepareSignedOrder(target: string, intent: DebugIntent, payload?: string) {
+     const timestamp = Math.floor(Date.now() / 1000);
+     const nonce = crypto.randomBytes(8).readBigUInt64BE();
+     const signature = this.generateSignature(target, timestamp, nonce, payload);
+
+     return {
+       target,
+       intent,
+       params: signature,
+       payload: payload || null,
+       timestamp,
+       nonce: Number(nonce), // Convert BigInt to Number for JSON serialization (may lose precision above 2^53 but acceptable for nonce)
+     };
+   }
 
   /**
    * BSS-03 / BSS-32: Dispatches a signed DebuggingOrder to the Rust backbone
@@ -92,7 +92,7 @@ export class AlphaCopilot {
         const fallbackClient = net.createConnection(
           { port, host: "127.0.0.1" },
           () => {
-            fallbackClient.write(JSON.stringify(order));
+            fallbackClient.write(JSON.stringify(order) + "\n");
           },
         );
 

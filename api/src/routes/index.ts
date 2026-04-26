@@ -6,6 +6,7 @@ import walletRouter from "./wallet";
 import telemetryRouter from "./telemetry";
 import settingsRouter from "./settings";
 import autodetectRouter from "./autodetect";
+import autoOptimizerRouter from "./auto-optimizer";
 
 const router: IRouter = Router();
 

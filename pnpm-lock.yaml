@@ -80,6 +80,9 @@ importers:
       '@workspace/db':
         specifier: workspace:*
         version: link:../lib/db
+      aes-js:
+        specifier: ^4.0.0-beta.5
+        version: 4.0.0-beta.5
       cookie-parser:
         specifier: ^1.4.7
         version: 1.4.7

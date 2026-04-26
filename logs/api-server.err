@@ -1,0 +1,12 @@
+C:\Users\op\Desktop\brightsky\api\src\routes\index.ts:29
+router.use("/auto-optimizer", autoOptimizerRouter);
+                              ^
+
+
+ReferenceError: autoOptimizerRouter is not defined
+    at <anonymous> (C:\Users\op\Desktop\brightsky\api\src\routes\index.ts:29:31)
+    at ModuleJob.run (node:internal/modules/esm/module_job:371:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:669:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.5.0
