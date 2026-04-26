@@ -1,1 +1,1 @@
-Verify auto-optimizer dashboard integration with 27 KPIs
+Verify currency toggle and dashboard enhancements

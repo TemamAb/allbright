@@ -2,6 +2,7 @@ import { useGetEngineStatus, useGetTelemetry } from "@workspace/api-client-react
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Activity, Zap, Wallet, TrendingUp, Shield, Cpu } from "lucide-react";
 import { useWallets } from "@/context/WalletContext";
+import { useState } from "react";
 
 export default function Dashboard() {
   const { data: status } = useGetEngineStatus({
@@ -11,8 +12,10 @@ export default function Dashboard() {
     query: { refetchInterval: 10000, queryKey: ["telemetry"] }
   });
   const { totalBalance } = useWallets();
+  const [showUSD, setShowUSD] = useState(false);
 
   const dailyProfit = telemetry?.sessionProfitEth ?? 0.0092;
+  const ethPrice = 2350; // Mock ETH price in USD
 
   // Dummy performance data for chart
   const perfData = telemetry?.profitHistory ?? [
@@ -38,7 +41,7 @@ export default function Dashboard() {
             Mission Telemetry
           </h1>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <div className={`px-3 py-1 rounded text-xs font-bold uppercase tracking-widest border ${
             isRunning
               ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
@@ -52,6 +55,14 @@ export default function Dashboard() {
               : "bg-cyan-500/10 text-cyan-400 border-cyan-500/30"
           }`}>
             {mode} MODE
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowUSD(!showUSD)}
+              className="px-2 py-0.5 rounded text-xs font-bold transition-colors hover:bg-zinc-800/20"
+            >
+              {showUSD ? "USD" : "ETH"}
+            </button>
           </div>
         </div>
       </div>
@@ -98,11 +109,11 @@ export default function Dashboard() {
           <div className="flex items-center gap-2">
             <Wallet size={16} className="text-bright-blue" />
             <span className="text-lg font-bold neon-glow-green">
-              {totalBalance.toFixed(4)} ETH
+              {showUSD ? `$${(totalBalance * ethPrice).toFixed(2)}` : `${totalBalance.toFixed(4)} ETH`}
             </span>
           </div>
           <div className="text-[9px] text-muted-foreground mt-1">
-            ~${(totalBalance * 2350).toLocaleString()} USD
+            {showUSD ? `${totalBalance.toFixed(4)} ETH` : `$${(totalBalance * ethPrice).toFixed(2)}`}
           </div>
         </div>
 
@@ -114,11 +125,11 @@ export default function Dashboard() {
           <div className="flex items-center gap-2">
             <TrendingUp size={16} className="text-emerald-400" />
             <span className="text-lg font-bold text-emerald-400">
-              +{dailyProfit.toFixed(4)} ETH
+              {showUSD ? `$${(dailyProfit * ethPrice).toFixed(2)}` : `+${dailyProfit.toFixed(4)} ETH`}
             </span>
           </div>
           <div className="text-[9px] text-muted-foreground mt-1">
-            ~${(dailyProfit * 2350).toFixed(2)} USD
+            {showUSD ? `+${dailyProfit.toFixed(4)} ETH` : `$${(dailyProfit * ethPrice).toFixed(2)}`}
           </div>
         </div>
       </div>
