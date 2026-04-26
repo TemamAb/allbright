@@ -88,6 +88,7 @@ router.get("/telemetry", async (req, res) => {
 
   // Real profit history (5-min buckets over last hour)
   const profitHistory = [];
+  const executedHistory = [];
   for (let i = 11; i >= 0; i--) {
     const bucketEnd = new Date(Date.now() - i * 5 * 60_000);
     const bucketStart = new Date(bucketEnd.getTime() - 5 * 60_000);
@@ -104,6 +105,7 @@ router.get("/telemetry", async (req, res) => {
       0,
     );
     profitHistory.push({ time: label, eth, usd: eth * ethPrice });
+    executedHistory.push({ time: label, count: inBucket.length });
   }
 
   // Real query latency (the time this endpoint took to respond)
@@ -113,7 +115,7 @@ router.get("/telemetry", async (req, res) => {
     sessionProfitEth,
     sessionProfitUsd,
 
-    // ─── KPI 11: Vault Aggregation (Multi-Chain Integration) ──────────
+    // �"?�"?�"? KPI 11: Vault Aggregation (Multi-Chain Integration) �"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"
     vault: {
       // Elite Grade: Pure session-based ledger audit. No mocks.
       totalBalanceEth: parseFloat(sessionProfitEth.toFixed(6)),
@@ -121,7 +123,7 @@ router.get("/telemetry", async (req, res) => {
       mode: "REAL_TIME_AUDIT",
     },
 
-    // ─── Module A: Global Health Matrix (Elite KPI 8 & 18) ─────────────
+    // �"?�"?�"? Module A: Global Health Matrix (Elite KPI 8 & 18) �"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"
     chainMatrix: {
       activeChains: [
         1, 8453, 42161, 137, 10, 56, 43114, 59144, 534352, 81457, 324,
@@ -129,7 +131,7 @@ router.get("/telemetry", async (req, res) => {
       latencies: sharedEngineState.chainLatencies,
     },
 
-    // ─── Module B: Neural Feedback Panel (God Tier KPI 19) ────────────
+    // �"?�"?�"? Module B: Neural Feedback Panel (God Tier KPI 19) �"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?
     intelligence: {
       tuning: BrightSkyBribeEngine.getTuning(),
       learningDelta: 0.02,
@@ -162,31 +164,32 @@ router.get("/telemetry", async (req, res) => {
       bottleneckReport: sharedEngineState.bottleneckReport || null,
     },
 
-    // ─── Module C: Path Complexity (Ultra-Elite KPI 13) ───────────────
+    // �"?�"?�"? Module C: Path Complexity (Ultra-Elite KPI 13) �"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"
     graphDiscovery: {
       pathComplexity: sharedEngineState.pathComplexity || "O(V*E)",
       discoveryEngine: "Rust/Bellman-Ford",
     },
 
     tradesPerHour,
-    // Latency is in ms (real), NOT µs (previous implementation was wrong)
+    // Latency is in ms (real), NOT A�s (previous implementation was wrong)
     p99LatencyMs: p99LatencyMs ?? 0,
     avgLatencyMs: avgLatencyMs ?? 0,
-    // Legacy µs fields kept for frontend compatibility — converted from real ms values
+    // Legacy A�s fields kept for frontend compatibility �?" converted from real ms values
     p99LatencyUs: p99LatencyMs != null ? p99LatencyMs * 1000 : null,
     avgLatencyUs: avgLatencyMs != null ? avgLatencyMs * 1000 : null,
     memoryUsageMb: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
-    // Real CPU — NOT Math.random()
+    // Real CPU �?" NOT Math.random()
     cpuPercent: getRealCpuPercent(),
-    // Real block count from Cloudflare RPC — NOT Math.random()
+    // Real block count from Cloudflare RPC �?" NOT Math.random()
     blocksScanned: blockStats.blocksScanned,
     currentBlock: blockStats.currentBlock,
     ethPriceUsd: ethPrice,
     opportunitiesDetected:
       executed.length > 0 ? Math.ceil(executed.length * 1.4) : 0, // scan attempts vs executions
     opportunitiesExecuted: tradesPerHour,
+    opportunityHistory: executedHistory, // New: for opportunity scanner chart
 
-    // ─── Module D: Safety & Risk Console (Elite KPI 10) ────────────────
+    // �"?�"?�"? Module D: Safety & Risk Console (Elite KPI 10) �"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?
     riskConsole: {
       circuitBreakerOpen:
         sharedEngineState.running && req.query.circuitBreakerOpen === "true",

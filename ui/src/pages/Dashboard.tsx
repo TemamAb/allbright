@@ -198,6 +198,95 @@ export default function Dashboard() {
           <div className="flex items-center gap-2">
             <Cpu size={16} className="text-primary" />
             <span className="text-xl font-bold text-foreground">
+              {telemetry ? `${telemetry.p99LatencyUs / 1000}ms` : "�?""}
+            </span>
+          </div>
+          <div className="text-[9px] text-muted-foreground mt-1">
+            Average: {telemetry?.avgLatencyUs ? `${telemetry.avgLatencyUs / 1000}ms` : "�?""}
+          </div>
+        </div>
+
+        {/* Blocks Scanned */}
+        <div className="glass-panel border border-border rounded p-4">
+          <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-2">
+            Blocks Scanned
+          </div>
+          <div className="flex items-center gap-2">
+            <Activity size={16} className="text-electric" />
+            <span className="text-xl font-bold text-foreground">
+              {telemetry?.blocksScanned?.toLocaleString() ?? "�?""}
+            </span>
+          </div>
+          <div className="text-[9px] text-muted-foreground mt-1">
+            Opportunities found: {telemetry?.opportunitiesDetected ?? "�?""}
+          </div>
+        </div>
+      </div>
+      
+      {/* Arbitrage Opportunity Scanner */}
+      <div className="glass-panel border border-border rounded p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-[11px] uppercase tracking-widest text-muted-foreground">
+            Arbitrage Opportunity Scanner
+          </h2>
+          <div className="flex items-center gap-2">
+            <Zap size={12} className="text-primary" />
+            <span className="text-[9px] text-muted-foreground">
+              Real-time Detection & Execution
+            </span>
+          </div>
+        </div>
+        <div className="h-48">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={telemetry?.opportunityHistory ?? []}>
+              <defs>
+                <linearGradient id="colorOpportunity" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(50 100% 50%)" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="hsl(50 100% 50%)" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="colorExecution" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(120 100% 40%)" stopOpacity={0.4} />
+                  <stop offset="100%" stopColor="hsl(120 100% 40%)" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <XAxis
+                dataKey="time"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: "hsl(220 15% 60%)", fontSize: 10 }}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: "hsl(220 15% 60%)", fontSize: 10 }}
+              />
+              <Tooltip
+                contentStyle={{
+                  background: "hsl(220 20% 12% / 0.9)",
+                  border: "1px solid hsl(220 15% 15%)",
+                  borderRadius: "4px",
+                  fontSize: "11px",
+                }}
+                labelStyle={{ color: "hsl(220 15% 60%)" }}
+                formatter={(value) => `${value} ops`}
+              />
+              <Area
+                type="monotone"
+                dataKey="count"
+                stroke="hsl(50 100% 50%)"
+                strokeWidth={2}
+                fill="url(#colorOpportunity)"
+              </Area>
+              
+              {/* Add execution markers as scatter points */}
+              {/* In a real implementation, we would overlay execution points */}
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+          <div className="flex items-center gap-2">
+            <Cpu size={16} className="text-primary" />
+            <span className="text-xl font-bold text-foreground">
               {telemetry ? `${telemetry.p99LatencyUs / 1000}ms` : "—"}
             </span>
           </div>

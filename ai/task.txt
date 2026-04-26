@@ -1,1 +1,1 @@
-Verify currency toggle and dashboard enhancements
+Fix auditor issues: authorize optimization, fix UI connectivity, enable JIT sandwich protection
