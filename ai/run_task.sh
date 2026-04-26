@@ -20,16 +20,19 @@ KOIS="$BASE/ai/telemetry/kois.json"
 echo "$TASK" > "$TASK_FILE"
 
 # Verify solver binary exists
-# Note: In a Rust workspace, the binary is at the root 'target' folder.
-SOLVER_BIN="$BASE/target/release/brightsky.exe"
-
-if [ ! -f "$SOLVER_BIN" ]; then
-  echo "⚠️ Solver binary missing. Attempting to build..."
-  cargo build --release --bin brightsky
-  if [ $? -ne 0 ]; then
-    echo "❌ Build failed. Please check Rust errors."
-    exit 1
-  fi
+# Optimization: Priority: 1. Release, 2. Debug, 3. Build Debug
+if [ -f "$BASE/target/release/brightsky.exe" ]; then
+    SOLVER_BIN="$BASE/target/release/brightsky.exe"
+elif [ -f "$BASE/target/debug/brightsky.exe" ]; then
+    SOLVER_BIN="$BASE/target/debug/brightsky.exe"
+else
+    echo "⚠️ Solver binary missing. Building in debug mode for speed..."
+    cargo build --bin brightsky
+    if [ $? -ne 0 ]; then
+        echo "❌ Build failed. Please check Rust errors."
+        exit 1
+    fi
+    SOLVER_BIN="$BASE/target/debug/brightsky.exe"
 fi
 
 # ----------------------------
