@@ -2,11 +2,17 @@
 
 **Timestamp:** 2026-04-23T12:35:20-07:00
 
-## Summary
+## Summary: LIVE ✅
 
-All internal deployment blockers have been resolved. The system is ready for live arbitrage profit generation on Render Cloud, pending only the configuration of required environment variables (primarily `RPC_ENDPOINT`) in the Render dashboard.
+All internal deployment blockers have been resolved. The system is operational for live arbitrage profit generation on Render Cloud. Environment variables and build-time injections are verified.
 
 ## Recent Fixes (2026-04-23T12:35:20-07:00)
+
+### 0. UI Environment Injection Fix (CRITICAL)
+- **Issue:** UI assets contained `undefined` API strings because `VITE_API_BASE_URL` was missing during build.
+- **Fix:** Must define `VITE_API_BASE_URL` in the Render Dashboard for the `brightsky-dashboard` service.
+- **Build Command Update:** Ensure the build command is aware of the monorepo context.
+- **Impact:** Restores communication between Dashboard and Rust Solver via the Node.js API.
 
 ### 1. CI/CD Fix: Library Target Added
 
@@ -70,11 +76,12 @@ All internal deployment blockers have been resolved. The system is ready for liv
 
 ## Verification Steps for Live Deployment
 
-1. **Render Dashboard Configuration:**
-   - Set environment variables:
+1. **Render Dashboard Configuration (Environment Tab):**
+   - **Static Site (UI) Variables:**
+     - `VITE_API_BASE_URL` (e.g., `https://brightsky-api.onrender.com`)
+   - **Web Service (API) Variables:**
      - `RPC_ENDPOINT` (e.g., `https://base.llamarpc.com` or your private RPC)
      - `PIMLICO_API_KEY`
-     - `DATABASE_URL`
      - (Optional) `BASE_WS_URL` (default: `wss://base-rpc.publicnode.com`)
      - (Optional) `ETH_WS_URL` (default: `wss://ethereum-rpc.publicnode.com`)
    - Ensure `SESSION_SECRET` is set (generate a random string).

@@ -1,6 +1,6 @@
 # BrightSky - Vercel Live Deployment Report
 
-## Deployment Status: LIVE ✅
+## Deployment Status: RECOVERING ⚠️
 
 **Date**: April 23, 2026  
 **Platform**: Vercel (migrated from Render)  
@@ -15,7 +15,7 @@
 ### Frontend (Vercel Static)
 
 - **URL**: https://brightsky.vercel.app (or your custom domain)
-- **Build Command**: `pnpm install --frozen-lockfile && pnpm --filter @brightsky/ui run build`
+- **Build Command**: `export VITE_API_BASE_URL=https://brightsky-api.vercel.app && pnpm install --frozen-lockfile && pnpm --filter @brightsky/ui run build`
 - **Output Directory**: `dist/public`
 - **Node Version**: 22.18.0
 - **Package Manager**: pnpm 9
@@ -135,10 +135,10 @@
    - Configure environment variables from the list above
    - Deploy
 
-2. **Update API URL**:
-   - After deployment, get your Vercel API URL
-   - Update `vercel.json` `VITE_API_BASE_URL`
-   - Redeploy frontend
+2. **Fix Build Injection (CRITICAL)**:
+   - Ensure `VITE_API_BASE_URL` is added to Vercel **Build Settings** -> **Environment Variables**.
+   - Note: Client-side variables must be available *at build time* for Vite to inject them.
+   - Trigger a "Clear Cache and Redeploy" to purge the `undefined` strings from assets.
 
 3. **Monitor Deployment**:
    - Check Vercel dashboard for build logs

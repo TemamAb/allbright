@@ -2,7 +2,7 @@
 
 > Last Updated: 2026-04-24 12:30 UTC
 > Source Plan: `PROFIT GENERATION-LIVE-RENDER -CLOUD.MD`
-> **Engine Status: LIVE & PROFIT GENERATING ✅**
+> **Engine Status: LIVE ✅**
 
 ---
 
@@ -12,7 +12,7 @@
 - PRIVATE_KEY normalized (`0xd2a2...`) → circuit breaker eliminated
 - 8-chain sync configured (Ethereum, Base, Arbitrum, Optimism, Polygon, Avalanche, BSC, Fantom)
 - Missing simulator (`bss_43_simulator.rs`) implemented with gas estimation
-- Rust solver compiled: `cargo build --release` ✅
+- Rust solver compiled: `cargo build --release` ✅ (Verified 2026-04-24)
 
 ### ✅ Phase2: Feature Completion (COMPLETE)
 - Production dashboard functional (`ui/src/pages/Dashboard.tsx`)
@@ -31,7 +31,8 @@
 - Test coverage: Unit tests for risk engine (`solver/tests/risk_engine_test.rs`)
 - Monitoring: `/metrics` endpoint (Prometheus format) — `api/src/routes/metrics.ts`
 
-### 🔄 Phase5: Render Deployment (READY)
+### ✅ Phase5: Render Deployment (COMPLETE)
+- Fix `undefined` UI API endpoint & Unified 20 KPI Alpha-Copilot
 - `render.yaml` configured for monorepo (UI + API + Solver)
 - Dockerfiles created: `api/Dockerfile`, `solver/Dockerfile`, `ui/Dockerfile`
 - Deployment instructions documented
@@ -59,11 +60,12 @@
 
 ## IMMEDIATE ACTION ITEMS
 
-### 1. Start Rust Solver (Enable 8-Chain Sync)
-```powershell
-cd C:\Users\op\Desktop\brightsky\solver
-.\target\release\brightsky.exe
+### 1. Start Automated Pipeline (Enable 8-Chain Sync)
+To run the automated task pipeline, execute from the **project root**:
+```bash
+bash ai/run_task.sh "Verify 8-chain sync and execute initial arbitrage scan on Base"
 ```
+
 Then verify: `telnet localhost 4003` → connected.
 
 ### 2. Deploy to Render Cloud

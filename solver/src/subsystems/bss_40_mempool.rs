@@ -51,14 +51,17 @@ impl MempoolEngine {
         solver_trigger: Arc<tokio::sync::Notify>,
     ) {
         println!("[BSS-40] Mempool Intelligence Worker Active");
-
+        
+        // BSS-40: We track the ingestion start to measure Alpha Decay later
         while let Some((token_a, token_b, state)) = rx.recv().await {
             let is_mempool_update = state.last_updated_block == 0;
+            let mut should_notify = true;
 
             // BSS-40: Mark stats for the UI
             if is_mempool_update {
                 stats.mempool_events_per_sec.fetch_add(1, Ordering::Relaxed);
-                stats
+                // Only update flag if not already set to reduce cache contention
+                let _ = stats
                     .mempool_state_prediction_ready
                     .store(true, Ordering::SeqCst);
             }
@@ -69,7 +72,9 @@ impl MempoolEngine {
 
             // BSS-13: Notify solver to wake up.
             // Elite Grade: In mempool mode, we solve for every single relevant swap.
-            solver_trigger.notify_one();
+            if should_notify {
+                solver_trigger.notify_one();
+            }
         }
     }
 

@@ -12,7 +12,7 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "https://your-api-url.vercel.app/api/$1"
+      "dest": "https://brightsky-api.vercel.app/api/$1"
     },
     {
       "src": "/(.*)",
@@ -21,6 +21,6 @@
   ],
   "env": {
     "NODE_ENV": "production",
-    "VITE_API_BASE_URL": "https://your-api-url.vercel.app"
+    "VITE_API_BASE_URL": "https://brightsky-api.vercel.app"
   }
 }

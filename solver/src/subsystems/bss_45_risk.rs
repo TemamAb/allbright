@@ -59,10 +59,11 @@ impl RiskEngine {
             stats.signals_rejected_risk.fetch_add(1, Ordering::Relaxed);
             return false;
         }
-        // 4. Daily Loss Limit (auto-stop at 1 ETH loss)
+        // 4. Daily Loss Limit (auto-stop at 1 ETH loss) - FIX #1
         if policy.daily_loss_limit_eth > 0.0 {
-            let new_loss = policy.daily_loss_used_eth + simulation.profit_eth.min(0.0);
-            if new_loss.abs() > policy.daily_loss_limit_eth {
+            let trade_loss = if simulation.profit_eth < 0.0 { -simulation.profit_eth } else { 0.0 };
+            let new_loss = policy.daily_loss_used_eth + trade_loss;
+            if new_loss > policy.daily_loss_limit_eth {
                 stats.signals_rejected_risk.fetch_add(1, Ordering::Relaxed);
                 return false;
             }
