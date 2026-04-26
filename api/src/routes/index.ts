@@ -26,5 +26,6 @@ router.use(walletRouter);
 router.use(telemetryRouter);
 router.use(settingsRouter);
 router.use("/autodetect", autodetectRouter);
+router.use("/auto-optimizer", autoOptimizerRouter);
 
 export default router;

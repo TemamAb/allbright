@@ -1,1 +1,1 @@
-Verify 27 KPIs integration with dashboard and Alpha-Copilot monitoring
+Verify auto-optimizer dashboard integration with 27 KPIs
