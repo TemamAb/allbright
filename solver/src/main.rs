@@ -147,10 +147,13 @@ pub struct WatchtowerStats {
       cycle_accuracy_percent: AtomicU64,
       pnl_volatility_milli_eth: AtomicU64,
       
-      // Core metrics for optimization logic
-      success_rate: AtomicUsize,
-      gas_efficiency: AtomicUsize,
-      daily_profit_eth: AtomicU64,
+       // Core metrics for optimization logic
+       success_rate: AtomicUsize,
+       gas_efficiency: AtomicUsize,
+       daily_profit_eth: AtomicU64,
+       
+       // BSS-27: UI Gateway Connection Tracking
+       connected_ui_clients: AtomicUsize,
       
       // Additional metrics for 27 KPI optimization
       drawdown: AtomicU64,
@@ -165,15 +168,14 @@ pub struct WatchtowerStats {
     simulated_tx_success_rate: AtomicUsize, // Percentage
     mempool_state_prediction_ready: AtomicBool,
 
-    // BSS-33 & BSS-34 Metrics
-    wallet_balance_milli_eth: AtomicU64,
-    is_executor_deployed: AtomicBool,
-    nonce_tracker: AtomicU64,
-    connected_ui_clients: AtomicUsize,
-    flashloan_contract_address: Arc<RwLock<Option<Arc<str>>>>, // Dynamically managed by BSS-34
-    is_shadow_mode_active: AtomicBool,
-    is_bundler_online: AtomicBool,
-    is_adversarial_threat_active: AtomicBool,
+       // BSS-33 & BSS-34 Metrics
+     wallet_balance_milli_eth: AtomicU64,
+     is_executor_deployed: AtomicBool,
+     nonce_tracker: AtomicU64,
+     flashloan_contract_address: Arc<RwLock<Option<Arc<str>>>>, // Dynamically managed by BSS-34
+     is_shadow_mode_active: AtomicBool,
+     is_bundler_online: AtomicBool,
+     is_adversarial_threat_active: AtomicBool,
 }
 
 /// BSS-27: Dashboard Lifecycle Specialist
@@ -1631,81 +1633,84 @@ async fn run_watchtower(
         stats: Arc::clone(&stats),
     });
 
-    let specialists: Vec<Arc<dyn SubsystemSpecialist>> = vec![
-        Arc::new(IpcBridgeSpecialist) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(SyncSpecialist {
-            stats: Arc::clone(&stats),
-        }) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(TelemetrySpecialist) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(AdversarialSpecialist {
-            stats: Arc::clone(&stats),
-        }) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(InvariantSpecialist {
-            graph: Arc::clone(&graph),
-        }) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(DashboardSpecialist {
-            stats: Arc::clone(&stats),
-        }) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(MetaLearner {
-            success_ratio: AtomicUsize::new(95),
-        }) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(WalletManager {
-            address: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e".into(),
-            last_nonce: AtomicU64::new(0),
-        }) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(AlphaCopilot) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(SecurityModule) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(MempoolAnalyzer) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(subsystems::SolverSpecialist {
-            stats: Arc::clone(&stats),
-            graph: Arc::clone(&graph),
-        }) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(CircuitBreakerSpecialist {
-            stats: Arc::clone(&stats),
-        }) as Arc<dyn SubsystemSpecialist>,
-        // BSS-45: Now correctly sourced from subsystems module
-        Arc::new(RiskSpecialist {
-            stats: Arc::clone(&stats),
-        }) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(MarginGuard {
-            min_margin: AtomicU64::new(100),
-        }) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(BribeEngine {
-            default_ratio: AtomicUsize::new(500),
-        }) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(RpcSwitch {
-            primary_latency: AtomicU64::new(45),
-            backup_latency: AtomicU64::new(80),
-        }) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(DiagnosticHub) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(CommandKernel) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(StrategyTuner) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(HdVault {
-            encryption_active: AtomicBool::new(true),
-        }) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(SignalBacktester) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(DeploymentEngine {
-            target_chain: 1,
-            stats: Arc::clone(&stats),
-        }) as Arc<dyn SubsystemSpecialist>,
-        Arc::clone(&gasless_manager) as Arc<dyn SubsystemSpecialist>,
-        Arc::clone(&auto_optimizer) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(DockerSpecialist) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(PreflightSpecialist) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(subsystems::MempoolIntelligenceSpecialist {
-            stats: Arc::clone(&stats),
-            graph: Arc::clone(&graph),
-        }) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(subsystems::MEVGuardSpecialist {
-            stats: Arc::clone(&stats),
-        }) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(subsystems::SimulationSpecialist {
-            stats: Arc::clone(&stats),
-        }) as Arc<dyn SubsystemSpecialist>,
-        Arc::new(subsystems::MetricsSpecialist {
-            stats: Arc::clone(&stats),
-        }) as Arc<dyn SubsystemSpecialist>,
-    ];
+     let specialists: Vec<Arc<dyn SubsystemSpecialist>> = vec![
+         Arc::new(IpcBridgeSpecialist) as Arc<dyn SubsystemSpecialist>,
+         Arc::new(SyncSpecialist {
+             stats: Arc::clone(&stats),
+         }) as Arc<dyn SubsystemSpecialist>,
+         Arc::new(TelemetrySpecialist) as Arc<dyn SubsystemSpecialist>,
+         Arc::new(AdversarialSpecialist {
+             stats: Arc::clone(&stats),
+         }) as Arc<dyn SubsystemSpecialist>,
+         Arc::new(InvariantSpecialist {
+             graph: Arc::clone(&graph),
+         }) as Arc<dyn SubsystemSpecialist>,
+         Arc::new(DashboardSpecialist {
+             stats: Arc::clone(&stats),
+         }) as Arc<dyn SubsystemSpecialist>,
+         Arc::new(MetaLearner {
+             success_ratio: AtomicUsize::new(95),
+         }) as Arc<dyn SubsystemSpecialist>,
+         Arc::new(WalletManager {
+             address: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e".into(),
+             last_nonce: AtomicU64::new(0),
+         }) as Arc<dyn SubsystemSpecialist>,
+         Arc::new(AlphaCopilot) as Arc<dyn SubsystemSpecialist>,
+         Arc::new(SecurityModule) as Arc<dyn SubsystemSpecialist>,
+         Arc::new(MempoolAnalyzer) as Arc<dyn SubsystemSpecialist>,
+         Arc::new(subsystems::SolverSpecialist {
+             stats: Arc::clone(&stats),
+             graph: Arc::clone(&graph),
+         }) as Arc<dyn SubsystemSpecialist>,
+         Arc::new(CircuitBreakerSpecialist {
+             stats: Arc::clone(&stats),
+         }) as Arc<dyn SubsystemSpecialist>,
+         // BSS-45: Now correctly sourced from subsystems module
+         Arc::new(RiskSpecialist {
+             stats: Arc::clone(&stats),
+         }) as Arc<dyn SubsystemSpecialist>,
+         Arc::new(MarginGuard {
+             min_margin: AtomicU64::new(100),
+         }) as Arc<dyn SubsystemSpecialist>,
+         Arc::new(BribeEngine {
+             default_ratio: AtomicUsize::new(500),
+         }) as Arc<dyn SubsystemSpecialist>,
+         Arc::new(RpcSwitch {
+             primary_latency: AtomicU64::new(45),
+             backup_latency: AtomicU64::new(80),
+         }) as Arc<dyn SubsystemSpecialist>,
+         Arc::new(DiagnosticHub) as Arc<dyn SubsystemSpecialist>,
+         Arc::new(CommandKernel) as Arc<dyn SubsystemSpecialist>,
+         Arc::new(StrategyTuner) as Arc<dyn SubsystemSpecialist>,
+         Arc::new(HdVault {
+             encryption_active: AtomicBool::new(true),
+         }) as Arc<dyn SubsystemSpecialist>,
+         Arc::new(SignalBacktester) as Arc<dyn SubsystemSpecialist>,
+         Arc::new(DeploymentEngine {
+             target_chain: 1,
+             stats: Arc::clone(&stats),
+         }) as Arc<dyn SubsystemSpecialist>,
+         Arc::clone(&gasless_manager) as Arc<dyn SubsystemSpecialist>,
+         Arc::clone(&auto_optimizer) as Arc<dyn SubsystemSpecialist>,
+         Arc::new(DockerSpecialist) as Arc<dyn SubsystemSpecialist>,
+         Arc::new(PreflightSpecialist) as Arc<dyn SubsystemSpecialist>,
+         Arc::new(subsystems::MempoolIntelligenceSpecialist {
+             stats: Arc::clone(&stats),
+             graph: Arc::clone(&graph),
+         }) as Arc<dyn SubsystemSpecialist>,
+         Arc::new(subsystems::MEVGuardSpecialist {
+             stats: Arc::clone(&stats),
+         }) as Arc<dyn SubsystemSpecialist>,
+         Arc::new(subsystems::SimulationSpecialist {
+             stats: Arc::clone(&stats),
+         }) as Arc<dyn SubsystemSpecialist>,
+         Arc::new(subsystems::MetricsSpecialist {
+             stats: Arc::clone(&stats),
+         }) as Arc<dyn SubsystemSpecialist>,
+         // New subsystems for auditor fixes
+         Arc::new(subsystems::P2PNBridgeSpecialist::new(Arc::clone(&stats))) as Arc<dyn SubsystemSpecialist>,
+         Arc::new(subsystems::UIGatewaySpecialist::new(Arc::clone(&stats))) as Arc<dyn SubsystemSpecialist>,
+     ];
 
     let mut last_insight_tick: u64 = 0;
     loop {
