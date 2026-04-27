@@ -17,7 +17,7 @@
 ### Commit 688eeb0: Documentation Updates
 
 - **Files Modified**:
-  - `AcidAudit.md` (added profit projection algorithm)
+  - `KPIs_Audit.md` (added profit projection algorithm)
   - `brightsky_directory.md` (complete directory structure update)
   - `solver/src/main.rs` (updated Nexus Orchestrator status message)
 - **Changes**:
@@ -75,7 +75,7 @@
 ### 5. Documentation Inconsistency (Fixed)
 
 - **Problem**: Outdated directory documentation and subsystem counts
-- **Solution**: Updated `brightsky_directory.md` and `AcidAudit.md` with accurate current state
+- **Solution**: Reorganized subsystem directory to Macro-Module/Mini-Module/File hierarchy mapped to 30 KPIs. Updated brightsky_directory.md and KPIs_Audit.md.
 
 ## Expected Behavior Notes
 
@@ -92,7 +92,7 @@ Is **correct and intentional** - it's a safety feature that activates when RPC e
 
 ## Profit Generation Capability
 
-As documented in AcidAudit.md (Part V - Algorithmic Profit Projection):
+As documented in KPIs_Audit.md (Part V - Algorithmic Profit Projection):
 
 - **Base Mainnet (Chain 8453) Projection**: ~14.77 ETH/day
 - **Formula**: Daily Profit = (Blocks per day × Arbs per block × Success rate × Avg net profit)

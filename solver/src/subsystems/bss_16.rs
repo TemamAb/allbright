@@ -1,4 +1,4 @@
-// BSS-16: P2P Node Bridge Subsystem
+// BSS-16: P2P Node Bridge Subsystem (Domain 4: Efficiency)
 use crate::{HealthStatus, SubsystemSpecialist, WatchtowerStats};
 use serde_json::Value;
 use std::sync::atomic::Ordering;
@@ -14,7 +14,7 @@ impl P2PNBridgeSpecialist {
     pub fn new(stats: Arc<WatchtowerStats>) -> Self {
         Self {
             stats,
-            jit_sandwich_protection_enabled: false,
+            jit_sandwich_protection_enabled: true, // Default to true for Elite Grade security
             mempool_density: 0,
         }
     }
@@ -78,17 +78,11 @@ impl SubsystemSpecialist for P2PNBridgeSpecialist {
         }
     }
     fn get_performance_kpi(&self) -> Value {
-        // KPI for mempool protection effectiveness
-        let protection_effectiveness = if self.jit_sandwich_protection_enabled {
-            95.0 // Assume 95% effective when enabled
-        } else {
-            0.0
-        };
         serde_json::json!({
             "kpi": "Mempool Protection Effectiveness",
-            "target": 100.0,
-            "actual": protection_effectiveness,
-            "unit": "%"
+            "target": crate::TARGET_MEMPOOL_INGESTION_SEC,
+            "actual": self.stats.mempool_events_per_sec.load(Ordering::Relaxed) as f64,
+            "unit": "ev/s"
         })
     }
 }
