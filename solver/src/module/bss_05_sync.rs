@@ -323,7 +323,7 @@ async fn run_subscription_loop(
     while let Some(log) = stream.next().await {
         let now = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
+            .unwrap_or_else(|_| std::time::Duration::from_secs(0))
             .as_secs();
         stats.last_heartbeat_bss05.store(now, Ordering::Relaxed);
         stats.msg_throughput_sec.fetch_add(1, Ordering::Relaxed);

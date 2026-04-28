@@ -84,7 +84,10 @@ impl SimulationEngine {
                 avg_gas_efficiency: 0.985, // Discovered from block data
                 inclusion_rate: 0.99,
                 estimated_daily_pnl: 25.4,
-                discovered_at: std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs(),
+                discovered_at: std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or_else(|_| std::time::Duration::from_secs(0))
+                    .as_secs(),
             });
             // ... (Discovering Rank 2 and 3 similarly from live data)
         }

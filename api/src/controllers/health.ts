@@ -14,11 +14,11 @@ import { db } from "@workspace/db";
 import { sql } from "drizzle-orm";
 import fs from "node:fs";
 import * as net from "net";
+import { withBackoff } from "../services/retry";
 
 const router: IRouter = Router();
 
 // Primary path — must match render.yaml healthCheckPath minus the /api prefix
-// (Express mounts under /api, so /health here = /api/health externally)
 router.get("/health", async (_req, res) => {
   try {
     // Audit Step 1: Check if the environment variable is actually present in the process
@@ -76,32 +76,40 @@ router.get("/health", async (_req, res) => {
       });
     }
 
-    // Database connection with retry logic for cloud environments
+    // Database connection with exponential backoff retry logic for cloud environments
     let dbConnected = false;
-    let lastError = null;
+    let lastError: unknown = null;
 
-    // Try to connect to database with retries (important for cloud startup)
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        if (db) {
-          await db.execute(sql`SELECT 1`);
-          dbConnected = true;
-          break;
-        }
-      } catch (err) {
-        lastError = err;
-        // Don't log on first attempt to reduce noise, but log retries
-        if (attempt > 1) {
-          console.warn(
-            `[health] Database connection attempt ${attempt} failed:`,
-            err instanceof Error ? err.message : String(err),
-          );
-        }
-        // Wait before retry (except on last attempt)
-        if (attempt < 3) {
-          await new Promise((resolve) => setTimeout(resolve, 1000 * attempt)); // 1s, 2s delays
-        }
-      }
+    try {
+      const result = await withBackoff(
+        async () => {
+          if (db) {
+            await db.execute(sql`SELECT 1`);
+            return true;
+          }
+          throw new Error("DB not initialized");
+        },
+        {
+          maxAttempts: 5,
+          baseDelay: 1000,
+          maxDelay: 10000,
+          jitter: 0.2,
+          shouldRetry: (err) => {
+            // Retry on connection errors, timeouts, but not on auth/config errors
+            const msg = err instanceof Error ? err.message : String(err);
+            return (
+              msg.includes("ECONNREFUSED") ||
+              msg.includes("ETIMEDOUT") ||
+              msg.includes("ENOTFOUND") ||
+              msg.includes("network") ||
+              msg.includes("timeout")
+            );
+          },
+        },
+      );
+      dbConnected = result.value;
+    } catch (err) {
+      lastError = err;
     }
 
     if (!dbConnected) {
@@ -112,7 +120,7 @@ router.get("/health", async (_req, res) => {
         bridge_alive: isBridgeAlive,
         bridge_socket_path: bridgeSocketPath,
         message: hasAnyDbUrl
-          ? `Database connection failed after 3 attempts. Last error: ${lastError instanceof Error ? lastError.message : String(lastError)}`
+          ? `Database connection failed after retries. Last error: ${lastError instanceof Error ? lastError.message : String(lastError)}`
           : "No database URL found in primary or fallback environment variables.",
         detected_env_keys: envKeys,
         rpc_configured: hasRpc,

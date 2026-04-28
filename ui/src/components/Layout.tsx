@@ -1,16 +1,18 @@
 import { Link, useLocation } from "wouter";
 import { useState } from "react";
 import {
-  Activity, Radio, Wallet, Settings, BarChart2, Zap, Menu, X, ShieldCheck
+  Activity, Radio, Wallet, Settings, BarChart2, Zap, Menu, X, ShieldCheck, Brain
 } from "lucide-react";
 import { useGetEngineStatus } from "@workspace/api-client-react";
 import { useTheme } from "next-themes";
 
 const navItems = [
   { path: "/", label: "Telemetry", icon: Activity },
+  { path: "/setup", label: "Setup Wizard", icon: Zap },
   { path: "/stream", label: "Stream", icon: Radio },
   { path: "/trades", label: "Trade History", icon: BarChart2 },
   { path: "/vault", label: "Vault", icon: Wallet },
+  { path: "/copilot", label: "Alpha-Copilot", icon: Brain },
   { path: "/audit", label: "Audit Report", icon: ShieldCheck },
   { path: "/settings", label: "Settings", icon: Settings },
 ];

@@ -302,9 +302,10 @@ impl SubsystemSpecialist for InvariantSpecialist {
     fn subsystem_id(&self) -> &'static str { "BSS-30" }
     fn check_health(&self) -> HealthStatus {
         if let Some(err) = self.graph.validate_global_invariants() {
-            return HealthStatus::Degraded(err);
+            HealthStatus::Degraded(err)
+        } else {
+            HealthStatus::Optimal
         }
-        HealthStatus::Optimal
     }
     fn upgrade_strategy(&self) -> &'static str { "Static: Formal verification of log-space math." }
     fn testing_strategy(&self) -> &'static str { "Fuzzing: Graph cycle validation." }

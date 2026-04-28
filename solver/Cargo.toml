@@ -34,7 +34,15 @@ fastrand = "2.0"
 
 [profile.release]
 opt-level = 3
-lto = true          # Enable Link Time Optimization for best runtime performance
-codegen-units = 1   # Maximize optimization across the entire crate
-panic = "abort"    # Remove stack unwinding for a smaller/faster binary
+lto = true
+codegen-units = 1
+panic = "abort"
 incremental = false
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "path_cache"
+harness = false
+

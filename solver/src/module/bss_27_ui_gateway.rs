@@ -3,6 +3,30 @@ use crate::{HealthStatus, SubsystemSpecialist, WatchtowerStats};
 use serde_json::Value;
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
+use tracing::{error, info, warn};
+
+/// Helper: safely get current Unix timestamp (seconds), with fallback on clock errors
+fn now_secs() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_else(|e| {
+            error!(target: "bss_27", error = ?e, "System clock error, using epoch fallback");
+            std::time::Duration::from_secs(0)
+        })
+        .as_secs()
+}
+use tracing::{error, info, warn};
+
+/// Helper: safely get current Unix timestamp (seconds), with fallback on clock errors
+fn now_secs() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_else(|e| {
+            error!(target: "bss_27", error = ?e, "System clock error, using epoch fallback");
+            std::time::Duration::from_secs(0)
+        })
+        .as_secs()
+}
 
 pub struct UIGatewaySpecialist {
     pub stats: Arc<WatchtowerStats>,
@@ -27,10 +51,7 @@ impl SubsystemSpecialist for UIGatewaySpecialist {
         "BSS-27"
     }
     fn check_health(&self) -> HealthStatus {
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
+        let now = now_secs();
         let last_heartbeat = self.last_heartbeat.load(Ordering::Relaxed);
         let ui_connections = self.ui_connections.load(Ordering::Relaxed);
         
@@ -52,10 +73,7 @@ impl SubsystemSpecialist for UIGatewaySpecialist {
         "Stress: Simulate concurrent UI clients with intermittent connectivity."
     }
     fn run_diagnostic(&self) -> Value {
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
+        let now = now_secs();
         let last_heartbeat = self.last_heartbeat.load(Ordering::Relaxed);
         let heartbeat_age = now.saturating_sub(last_heartbeat);
         let ui_connections = self.ui_connections.load(Ordering::Relaxed);
@@ -79,10 +97,7 @@ impl SubsystemSpecialist for UIGatewaySpecialist {
                 Ok(())
             }
             "UPDATE_HEARTBEAT" => {
-                let now = std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap()
-                    .as_secs();
+                let now = now_secs();
                 self.last_heartbeat.store(now, Ordering::Relaxed);
                 Ok(())
             }
@@ -101,10 +116,7 @@ impl SubsystemSpecialist for UIGatewaySpecialist {
         }
     }
     fn ai_insight(&self) -> Option<String> {
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
+        let now = now_secs();
         let last_heartbeat = self.last_heartbeat.load(Ordering::Relaxed);
         let heartbeat_age = now.saturating_sub(last_heartbeat);
         let ui_connections = self.ui_connections.load(Ordering::Relaxed);
@@ -125,10 +137,7 @@ impl SubsystemSpecialist for UIGatewaySpecialist {
     }
     fn get_performance_kpi(&self) -> Value {
         // KPI for UI Gateway connectivity
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
+        let now = now_secs();
         let last_heartbeat = self.last_heartbeat.load(Ordering::Relaxed);
         let heartbeat_age = now.saturating_sub(last_heartbeat);
         let ui_connections = self.ui_connections.load(Ordering::Relaxed);

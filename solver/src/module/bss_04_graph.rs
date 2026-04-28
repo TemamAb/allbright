@@ -4,6 +4,8 @@
 
 use dashmap::DashMap;
 use std::sync::RwLock;
+use tracing::{error, warn};
+use tracing::{error, warn};
 
 /// State of a liquidity pool (Uniswap V2 style)
 #[derive(Debug, Clone, Default)]
@@ -52,6 +54,54 @@ impl GraphPersistence {
         }
     }
 
+    /// Safely acquire read lock with poison recovery
+    #[inline]
+    fn acquire_adj_read(&self) -> std::sync::RwLockReadGuard<'_, Vec<Vec<PoolEdge>>> {
+        match self.adjacency_list.read() {
+            Ok(guard) => guard,
+            Err(poisoned) => {
+                error!(target: "bss_04_graph", "Adjacency list RwLock poisoned, recovering");
+                poisoned.into_inner()
+            }
+        }
+    }
+
+    /// Safely acquire write lock with poison recovery
+    #[inline]
+    fn acquire_adj_write(&self) -> std::sync::RwLockWriteGuard<'_, Vec<Vec<PoolEdge>>> {
+        match self.adjacency_list.write() {
+            Ok(guard) => guard,
+            Err(poisoned) => {
+                error!(target: "bss_04_graph", "Adjacency list RwLock poisoned (write), recovering");
+                poisoned.into_inner()
+            }
+        }
+    }
+
+    /// Safely acquire index_to_token read lock with poison recovery
+    #[inline]
+    fn acquire_index_read(&self) -> std::sync::RwLockReadGuard<'_, Vec<String>> {
+        match self.index_to_token.read() {
+            Ok(guard) => guard,
+            Err(poisoned) => {
+                error!(target: "bss_04_graph", "Index token RwLock poisoned (read), recovering");
+                poisoned.into_inner()
+            }
+        }
+    }
+
+    /// Safely acquire index_to_token write lock with poison recovery
+    #[inline]
+    fn acquire_index_write(&self) -> std::sync::RwLockWriteGuard<'_, Vec<String>> {
+        match self.index_to_token.write() {
+            Ok(guard) => guard,
+            Err(poisoned) => {
+                error!(target: "bss_04_graph", "Index token RwLock poisoned (write), recovering");
+                poisoned.into_inner()
+            }
+        }
+    }
+
     /// Maps a token address string to a stable usize index.
     /// Creates new index if token not seen before.
     pub fn get_or_create_index(&self, token: &str) -> usize {
@@ -61,8 +111,8 @@ impl GraphPersistence {
         }
         
         // Slow path: need to add new token (requires write locks)
-        let mut tokens = self.index_to_token.write().unwrap();
-        let mut adj = self.adjacency_list.write().unwrap();
+        let mut tokens = self.acquire_index_write();
+        let mut adj = self.acquire_adj_write();
         
         // Double-check after acquiring locks to avoid race conditions
         if let Some(idx) = self.token_to_index.get(token) {
@@ -84,7 +134,7 @@ impl GraphPersistence {
         let idx_b = self.get_or_create_index(&token_b);
         
         // Get write access to adjacency list
-        let mut adj = self.adjacency_list.write().unwrap();
+        let mut adj = self.acquire_adj_write();
         
         // Create edge A -> B (reserve_0 is input, reserve_1 is output)
         let edge_ab = PoolEdge {
@@ -135,14 +185,14 @@ impl GraphPersistence {
 
     /// Retrieves all outgoing edges for a given token index
     pub fn get_edges(&self, node_idx: usize) -> Vec<PoolEdge> {
-        let adj = self.adjacency_list.read().unwrap();
+        let adj = self.acquire_adj_read();
         adj.get(node_idx).cloned().unwrap_or_default()
     }
 
     /// Validates basic data integrity for the arbitrage engine.
     /// Returns Some(error_message) if validation fails, None if valid.
     pub fn validate_global_invariants(&self) -> Option<String> {
-        let adj = self.adjacency_list.read().unwrap();
+        let adj = self.acquire_adj_read();
         for edges in adj.iter() {
             for edge in edges {
                 // Check for zero reserves (invalid pool state)

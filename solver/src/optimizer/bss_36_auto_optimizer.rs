@@ -54,7 +54,10 @@ impl SubsystemSpecialist for AutoOptimizer {
                 self.stats.thermal_throttle_active.store(false, Ordering::SeqCst);
             }
 
-            let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_else(|_| std::time::Duration::from_secs(0))
+                .as_secs();
             self.last_optimization.store(now, Ordering::SeqCst);
             return Ok(());
         }

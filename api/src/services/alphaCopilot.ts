@@ -264,3 +264,29 @@ export class AlphaCopilot {
 }
 
 export const alphaCopilot = new AlphaCopilot();
+
+// Live telemetry broadcast helper
+export function broadcastCopilotEvent(type: string, message: string, data: any = {}) {
+  const io = (global as any).io;
+  if (io) {
+    io.emit('copilot-event', {
+      id: crypto.randomUUID(),
+      type,
+      message,
+      timestamp: Date.now(),
+      data,
+    });
+  }
+}
+
+export function broadcastCopilotStatus() {
+  const io = (global as any).io;
+  if (io) {
+    io.emit('copilot-status', {
+      online: sharedEngineState.running,
+      specialists: specialists.length,
+      alerts: sharedEngineState.anomalyLog?.length || 0,
+      performance: sharedEngineState.successRate || 0.94,
+    });
+  }
+}

@@ -7,6 +7,7 @@ use serde_json::Value;
 use std::collections::VecDeque;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
+use tracing::{error, warn, debug};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ArbitrageOpportunity {
@@ -36,9 +37,16 @@ impl SubsystemSpecialist for SolverSpecialist {
         "Backtesting: Verifying against historical block Geth traces."
     }
     fn run_diagnostic(&self) -> Value {
+        let adjacency_guard = match self.graph.adjacency_list.read() {
+            Ok(guard) => guard,
+            Err(poisoned) => {
+                error!(target: "bss_13_solver", "Adjacency list lock poisoned, recovering");
+                poisoned.into_inner()
+            }
+        };
         serde_json::json!({
             "algorithm": "SPFA-SLF",
-            "nodes": self.graph.adjacency_list.read().unwrap().len(),
+            "nodes": adjacency_guard.len(),
             "p99_latency": self.stats.solver_latency_p99_ms.load(Ordering::Relaxed)
         })
     }
@@ -95,11 +103,17 @@ impl SolverSpecialist {
                 let mut cache_misses = 0;
 
                 // Get timing engine reference for this iteration
-                let timing_engine_lock = timing_engine.lock().unwrap();
-                let optimal_delay_ns = timing_engine_lock.calculate_optimal_delay();
+                let timing_guard = match timing_engine.lock() {
+                    Ok(guard) => guard,
+                    Err(poisoned) => {
+                        error!(target: "bss_13_solver", "Timing engine lock poisoned, recovering");
+                        poisoned.into_inner()
+                    }
+                };
+                let optimal_delay_ns = timing_engine.calculate_optimal_delay();
                 // Note: In a real implementation, we would actually wait this delay before executing
                 // For now, we just record the timing decision for metrics
-                drop(timing_engine_lock); // Release lock early
+                drop(timing_guard); // Release lock early
 
                 while let Some(u) = queue.pop_front() {
                     in_queue[u] = false;
@@ -124,7 +138,14 @@ impl SolverSpecialist {
                                     // Negative cycle detected - check path cache first
                                     if let Some(path) = self.extract_cycle(v, &parent) {
                                         // Check if this path is already cached and still profitable
-                                        let cache_result = path_cache.lock().unwrap().get(&path);
+                                        let cache_guard = match path_cache.lock() {
+                                            Ok(guard) => guard,
+                                            Err(poisoned) => {
+                                                error!(target: "bss_13_solver", "Path cache lock poisoned, recovering");
+                                                poisoned.into_inner()
+                                            }
+                                        };
+                                        let cache_result = cache_guard.get(&path);
                                         if let Some(cached_opportunity) = cache_result {
                                             cache_hits += 1;
                                             // Use cached result if it's still valid
@@ -137,7 +158,16 @@ impl SolverSpecialist {
                                                 path: path.clone(),
                                                 log_weight: dist[v],
                                             };
-                                            path_cache.lock().unwrap().put(opportunity.clone());
+                                            // Need to re-acquire lock for insert
+                                            drop(cache_guard);
+                                            let mut cache_write_guard = match path_cache.lock() {
+                                                Ok(guard) => guard,
+                                                Err(poisoned) => {
+                                                    error!(target: "bss_13_solver", "Path cache lock poisoned on write, recovering");
+                                                    poisoned.into_inner()
+                                                }
+                                            };
+                                            cache_write_guard.put(opportunity.clone());
                                             results.push(opportunity);
                                             return results; // Return first found for immediate simulation
                                         }
@@ -145,8 +175,16 @@ impl SolverSpecialist {
                                 }
 
                                 // SLF (Small Label First) Optimization
-                                if !queue.is_empty() && dist[v] < dist[*queue.front().unwrap()] {
-                                    queue.push_front(v);
+                                if !queue.is_empty() {
+                                    if let Some(front_val) = queue.front() {
+                                        if dist[v] < dist[*front_val] {
+                                            queue.push_front(v);
+                                        } else {
+                                            queue.push_back(v);
+                                        }
+                                    } else {
+                                        queue.push_back(v);
+                                    }
                                 } else {
                                     queue.push_back(v);
                                 }
@@ -158,8 +196,7 @@ impl SolverSpecialist {
 
                 // Log cache performance for this starting token
                 if cache_hits > 0 || cache_misses > 0 {
-                    // Note: We don't want to spam logs in the hot path, so we'll sample
-                    // In a real implementation, we might use a counter and log every Nth iteration
+                    debug!(target: "bss_13_solver", cache_hits, cache_misses, "Cache performance for start token");
                 }
 
                 results
