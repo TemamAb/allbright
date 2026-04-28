@@ -71,13 +71,18 @@ struct PendingPoolInfo {
                                     },
                                  );
                                  let _ = tx.send(update).await;
-                             }
-                         }
-                     }
-                 }
+                            }
+                        }
+                    }
+                }
+            }
+
+                pending_hashes.clear();
+                last_batch_time = std::time::Instant::now();
+            }
+        }
     }
 }
-                }
 
                 pending_hashes.clear();
                 last_batch_time = std::time::Instant::now();
