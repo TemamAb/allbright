@@ -1,5 +1,5 @@
 import httpServer from "./app";
-import { logger } from "./lib/logger";
+import { logger } from "./services/logger";
 
 const rawPort = process.env["PORT"] || "10000";
 const port = Number(rawPort) || 10000;

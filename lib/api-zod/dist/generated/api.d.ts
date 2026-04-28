@@ -29,7 +29,6 @@ export declare const GetEngineStatusResponse: zod.ZodObject<{
     gaslessMode: zod.ZodBoolean;
     pimlicoEnabled: zod.ZodBoolean;
     scannerActive: zod.ZodBoolean;
-    flashloanContractAddress: zod.ZodOptional<zod.ZodNullable<zod.ZodString>>;
 }, "strip", zod.ZodTypeAny, {
     running: boolean;
     mode: "SHADOW" | "LIVE" | "STOPPED";
@@ -38,7 +37,6 @@ export declare const GetEngineStatusResponse: zod.ZodObject<{
     scannerActive: boolean;
     uptime?: number | undefined;
     walletAddress?: string | undefined;
-    flashloanContractAddress?: string | null | undefined;
 }, {
     running: boolean;
     mode: "SHADOW" | "LIVE" | "STOPPED";
@@ -47,7 +45,6 @@ export declare const GetEngineStatusResponse: zod.ZodObject<{
     scannerActive: boolean;
     uptime?: number | undefined;
     walletAddress?: string | undefined;
-    flashloanContractAddress?: string | null | undefined;
 }>;
 /**
  * @summary Start arbitrage engine
@@ -421,6 +418,7 @@ export declare const GetSettingsResponse: zod.ZodObject<{
     maxSlippagePct: zod.ZodOptional<zod.ZodNumber>;
     openaiApiKey: zod.ZodOptional<zod.ZodString>;
     pimlicoApiKey: zod.ZodOptional<zod.ZodString>;
+    visibleKpis: zod.ZodOptional<zod.ZodArray<zod.ZodString, "many">>;
 }, "strip", zod.ZodTypeAny, {
     minMarginPct: number;
     flashLoanSizeEth: number;
@@ -430,6 +428,7 @@ export declare const GetSettingsResponse: zod.ZodObject<{
     targetProtocols?: string[] | undefined;
     maxSlippagePct?: number | undefined;
     openaiApiKey?: string | undefined;
+    visibleKpis?: string[] | undefined;
 }, {
     minMarginPct: number;
     flashLoanSizeEth: number;
@@ -439,6 +438,7 @@ export declare const GetSettingsResponse: zod.ZodObject<{
     targetProtocols?: string[] | undefined;
     maxSlippagePct?: number | undefined;
     openaiApiKey?: string | undefined;
+    visibleKpis?: string[] | undefined;
 }>;
 /**
  * @summary Update system settings
@@ -452,6 +452,7 @@ export declare const UpdateSettingsBody: zod.ZodObject<{
     maxSlippagePct: zod.ZodOptional<zod.ZodNumber>;
     openaiApiKey: zod.ZodOptional<zod.ZodString>;
     pimlicoApiKey: zod.ZodOptional<zod.ZodString>;
+    visibleKpis: zod.ZodOptional<zod.ZodArray<zod.ZodString, "many">>;
 }, "strip", zod.ZodTypeAny, {
     minMarginPct?: number | undefined;
     pimlicoApiKey?: string | undefined;
@@ -461,6 +462,7 @@ export declare const UpdateSettingsBody: zod.ZodObject<{
     targetProtocols?: string[] | undefined;
     maxSlippagePct?: number | undefined;
     openaiApiKey?: string | undefined;
+    visibleKpis?: string[] | undefined;
 }, {
     minMarginPct?: number | undefined;
     pimlicoApiKey?: string | undefined;
@@ -470,6 +472,7 @@ export declare const UpdateSettingsBody: zod.ZodObject<{
     targetProtocols?: string[] | undefined;
     maxSlippagePct?: number | undefined;
     openaiApiKey?: string | undefined;
+    visibleKpis?: string[] | undefined;
 }>;
 export declare const UpdateSettingsResponse: zod.ZodObject<{
     success: zod.ZodBoolean;

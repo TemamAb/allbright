@@ -7,7 +7,8 @@ import {
   useGetEngineStatus,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Settings } from "lucide-react";
+import { Settings, Palette } from "lucide-react";
+import { useTheme } from "next-themes";
 
 const AVAILABLE_PROTOCOLS = [
   "uniswap_v3",
@@ -21,6 +22,7 @@ const AVAILABLE_PROTOCOLS = [
 
 export default function SettingsPage() {
   const qc = useQueryClient();
+  const { theme, setTheme } = useTheme();
   const [saved, setSaved] = useState(false);
   const [local, setLocal] = useState({
     flashLoanSizeEth: 100,
@@ -31,6 +33,7 @@ export default function SettingsPage() {
     targetProtocols: ["uniswap_v3", "aave_v3", "balancer"],
     openaiApiKey: "",
     pimlicoApiKey: "",
+    visibleKpis: [] as string[],
     // Deployment registry state
     deployments: [],
     newDeployment: {
@@ -60,6 +63,18 @@ export default function SettingsPage() {
         targetProtocols: settings.targetProtocols ?? [],
         openaiApiKey: "",
         pimlicoApiKey: "",
+        visibleKpis: settings.visibleKpis ?? [],
+        deployments: [],
+        newDeployment: {
+          version: "",
+          codeHash: "",
+          success: false,
+          timestamp: "",
+          contractAddress: "",
+          smartWallet: "",
+          notes: "",
+        },
+        showDeploymentForm: false,
       });
     }
   }, [settings]);
@@ -189,6 +204,27 @@ export default function SettingsPage() {
                 />
               </button>
             </div>
+
+            {/* Theme switcher */}
+            <div className="flex items-center justify-between pt-4 border-t border-border">
+              <div>
+                <div className="text-[11px] text-foreground uppercase tracking-widest flex items-center gap-2">
+                  <Palette size={12} className="text-violet-400" /> Theme
+                </div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">
+                  Choose your visual theme
+                </div>
+              </div>
+              <select
+                value={theme}
+                onChange={(e) => setTheme(e.target.value)}
+                className="bg-background border border-border rounded px-3 py-1 text-[11px]"
+              >
+                <option value="dark">Dark</option>
+                <option value="light">Light</option>
+                <option value="colorblind">Colorblind</option>
+              </select>
+            </div>
           </div>
 
           {/* Protocol targets */}
@@ -249,258 +285,12 @@ export default function SettingsPage() {
                  ? "Saving..."
                  : "Save Settings"}
            </button>
-         </>
-       )}
-     
-     {/* Audit Report Section */}
-     <div className="mt-8">
-       <div className="flex items-center justify-between mb-4">
-         <h2 className="text-xl font-bold text-primary">Architect Audit Report</h2>
-         <button
-           onClick={() => {
-             // Trigger a manual audit refresh
-             fetch(`${import.meta.env.VITE_API_BASE_URL}/api/debug/dispatch`, {
-               method: "POST",
-               headers: { "Content-Type": "application/json" },
-               body: JSON.stringify({ target: "BSS-04", intent: "Audit" })
-             });
-           }}
-           className="px-3 py-1 rounded bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20 transition-all text-sm font-medium"
-         >
-           Run Manual Audit
-         </button>
-       </div>
-       
-       <div className="space-y-4">
-         {/* Score Panel */}
-         <div className="grid grid-cols-3 gap-3">
-           <div className="glass-panel rounded border border-emerald-400/20 bg-emerald-400/5 p-4 text-center">
-             <div className="text-2xl font-bold text-emerald-400">10</div>
-             <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">Claims Verified</div>
-           </div>
-           <div className="glass-panel rounded border border-yellow-400/20 bg-yellow-400/5 p-4 text-center">
-             <div className="text-2xl font-bold text-yellow-400">1</div>
-             <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">Partial / Fixed</div>
-           </div>
-           <div className="glass-panel rounded border border-red-400/20 bg-red-400/5 p-4 text-center">
-             <div className="text-2xl font-bold text-red-400">0</div>
-             <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">False Claims (Fixed)</div>
-           </div>
-         </div>
-         
-         {/* Live system status */}
-         <div className="glass-panel rounded border border-border p-4 space-y-2">
-           <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3">Live System Status</div>
-           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px]">
-             <div><span className="text-muted-foreground">Engine: </span><span className={status?.running ? "text-emerald-400" : "text-muted-foreground"}>{status?.mode ?? "STOPPED"}</span></div>
-             <div><span className="text-muted-foreground">Session Profit: </span><span className="text-foreground">{telemetry?.sessionProfitEth ? `+${telemetry.sessionProfitEth.toFixed(4)} ETH` : "—"}</span></div>
-             <div><span className="text-muted-foreground">Trades/Hour: </span><span className="text-foreground">{telemetry?.tradesPerHour ?? "—"}</span></div>
-             <div><span className="text-muted-foreground">P99 Latency: </span><span className="text-foreground">{telemetry?.p99LatencyUs ? `${telemetry.p99LatencyUs / 1000}ms` : "—"}</span></div>
-             <div><span className="text-muted-foreground">Blocks Scanned: </span><span className="text-foreground">{telemetry?.blocksScanned?.toLocaleString() ?? "—"}</span></div>
-             <div><span className="text-muted-foreground">Opportunities: </span><span className="text-foreground">{telemetry?.opportunitiesDetected ?? "—"}</span></div>
-             <div><span className="text-muted-foreground">Uptime: </span><span className="text-foreground">{telemetry?.uptimeSeconds ? `${Math.floor(telemetry.uptimeSeconds / 60)}m` : "—"}</span></div>
-             <div><span className="text-muted-foreground">Gasless Mode: </span><span className={status?.gaslessMode ? "text-emerald-400" : "text-muted-foreground"}>{status?.gaslessMode ? "ACTIVE" : "INACTIVE"}</span></div>
-           </div>
-         </div>
-         
-         {/* BSS Subsystem Performance */}
-         <div className="glass-panel rounded border border-border p-4 bg-black/20">
-           <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
-             <Activity size={12} className="text-sky-400" /> Subsystem Performance (Telemetry)
-           </div>
-           <pre className="text-[9px] font-mono text-sky-400/90 leading-relaxed overflow-x-auto p-2 bg-white/[0.02] rounded border border-white/5">
-             {JSON.stringify(telemetry ?? {}, null, 2)}
-           </pre>
-         </div>
-         
-         {/* Audit Items */}
-         <div className="mt-4">
-           <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3">Claim-by-Claim Audit</div>
-           <div className="space-y-2">
-             {AUDIT_ITEMS.map((item, index) => (
-               <AuditRow key={index} item={item} />
-             ))}
-           </div>
-         </div>
-         
-         {/* Institutional Comparison */}
-         <div className="glass-panel rounded border border-border p-5">
-           <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-4">AlphaMax (Subsystems 1-25) vs BrightSky</div>
-           <div className="overflow-x-auto">
-             <table className="w-full text-[9px]">
-               <thead>
-                 <tr className="border-b border-border">
-                   <th className="text-left py-2 pr-4 text-muted-foreground uppercase tracking-wide">Capability</th>
-                   <th className="text-left py-2 pr-4 text-muted-foreground uppercase tracking-wide">Institutional (Jump/Wintermute)</th>
-                   <th className="text-left py-2 text-muted-foreground uppercase tracking-wide">BrightSky Free Tier</th>
-                 </tr>
-               </thead>
-               <tbody className="divide-y divide-border/50">
-                 {[
-                   ["Execution Latency",    "< 5ms (Co-located Bare Metal)",    "~40ms (Hybrid Rust/Node on PaaS)"],
-                   ["Risk Modeling",       "EV-based Probabilistic (Sub 9)",   "Deterministic Margin Math"],
-                   ["Adversarial Logic",   "Active Threat Detection (Sub 17)", "Passive MEV Protection (Flashbots)"],
-                   ["Path Optimization",   "Pre-Computed Routing (Sub 4)",     "On-the-fly Multi-hop Scanning"],
-                   ["Strategy Tuning",     "Self-Improving ML (Sub 22)",       "AI-Copilot Diagnostic Suggestions"],
-                   ["Gas Strategy",        "Competitive Auction Engine",       "Dynamic EIP-1559 Bidding"],
-                   ["Profit per trade",    "$100–$10,000+ (Institutional)",    "Simulated Alpha Validation"],
-                   ["Infrastructure cost", "$10k–$100k/month",                 "Scalable Cloud Tier"],
-                   ["Win rate vs others",  "50–70% (competition is intense)",  "N/A (no real execution)"],
-                 ].map(([cap, inst, bs]) => (
-                   <tr key={cap}>
-                     <td className="py-2 pr-4 text-foreground/70">{cap}</td>
-                     <td className="py-2 pr-4 text-yellow-400/80">{inst}</td>
-                     <td className="py-2 text-primary/80">{bs}</td>
-                   </tr>
-                 ))}
-               </tbody>
-             </table>
-           </div>
-         </div>
-         
-         {/* Upgrade Roadmap */}
-         <div className="mt-6">
-           <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3">Upgrade Roadmap (Within Constraints)</div>
-           <div className="grid md:grid-cols-2 gap-3">
-             {UPGRADE_ROADMAP.map((item, idx) => {
-               const Icon = item.icon;
-               const tierColor = item.tier === "FREE" ? "text-emerald-400 border-emerald-400/20 bg-emerald-400/5"
-                 : item.tier === "PAID" ? "text-yellow-400 border-yellow-400/20 bg-yellow-400/5"
-                 : "text-sky-400 border-sky-400/20 bg-sky-400/5";
-               return (
-                 <div key={idx} className={`glass-panel rounded border p-4 ${tierColor.split(" ").slice(1).join(" ")}`}>
-                   <div className="flex items-center gap-2 mb-2">
-                     <Icon size={12} className={tierColor.split(" ")[0]} />
-                     <span className="text-[11px] font-bold text-foreground">{item.title}</span>
-                     <span className={`ml-auto text-[9px] px-2 py-0.5 rounded border ${tierColor}`}>{item.tier}</span>
-                   </div>
-                   <p className="text-[10px] text-muted-foreground">{item.desc}</p>
-                 </div>
-               );
-             })}
-           </div>
-         </div>
-       </div>
-     </div>
-   );
- }
+          </>
+        )}
 
-const AUDIT_ITEMS: AuditItem[] = [
-  {
-    claim: "Gasless via Pimlico Paymaster",
-    status: "pass",
-    reality: "Verified. Pimlico API keys provide integrated access to both Bundler and Paymaster services, enabling gasless UserOperations.",
-    fix: "BSS-35 Specialist added. Connectivity probe verified against Pimlico RPC.",
-    checksum: 0,
-  },
-  {
-    claim: "Auto-Optimization 24/7",
-    status: "pass",
-    reality: "Autonomous BSS-36 agent monitors telemetry and redeploys logic policy every 60s based on solver jitter.",
-    fix: "BSS-36 specialist fully integrated into Watchtower Nexus.",
-    checksum: 0,
-  },
-  {
-    claim: "KPI Performance Gaps",
-    status: "pass",
-    reality: "Real-time Operational KPIs are measured against Design-Time targets (Actual vs 100% Target).",
-    fix: "Telemetry cards now display percentage gap (e.g., 88%) in top-right corner.",
-    checksum: 0,
-  },
-  {
-    claim: "Flash loan arbitrage logic",
-    status: "partial",
-    reality: "BSS-13 uses Bellman-Ford in log-space. Math includes Aave fee (0.09%) and gas overhead per hop.",
-    fix: "Verified against BSS-09 Risk Engine safety gates.",
-    checksum: 0,
-  },
-  {
-    claim: "Real-time block scanning",
-    status: "pass",
-    reality: "BSS-05 Sync Layer tracks block heights via WebSocket. Heartbeat monitored by BSS-26.",
-    fix: "Watchtower forces SHADOW mode if BSS-05 staleness > 10s. Staleness guard is ARMED.",
-    checksum: 0,
-  },
-  {
-    claim: "ETH price in USD (profit calculation)",
-    status: "pass",
-    reality: "External Oracle data synced via BSS-04 persistence engine.",
-    checksum: 0,
-  },
-  {
-    claim: "Anti-Hijack Safety Gate",
-    status: "pass",
-    reality: "BSS-45 compares simulated RPC profit vs raw Rust graph math. 20% delta limit enforced.",
-    fix: "Neutralizes 'Flash-Honeypot' capital loss scenarios.",
-    checksum: 0,
-  },
-  {
-    claim: "Latency Accuracy",
-    status: "pass",
-    reality: "System tracks 'Solver Jitter' vs 'API Latency'. MEV engines co-located for <1ms vs current cloud latency.",
-    fix: "Honest reporting in ms. Real-time P99 measured via TLV binary telemetry engine.",
-    checksum: 0,
-  },
-  {
-    claim: "Invariant Guard Integrity",
-    status: "pass",
-    reality: "BSS-30 Invariants (No self-loops, dust liquidity rejection) checked at ingestion.",
-    checksum: 0,
-  },
-  {
-    claim: "Engine state survives restart",
-    status: "partial",
-    reality: "Persistent state in BSS-04 (Graph) and BSS-28 (Meta-Learner weights).",
-    fix: "PostgreSQL sync enabled for historical trade validation.",
-    checksum: 0,
-  },
-  {
-    claim: "LIVE mode submits real on-chain transactions",
-    status: "pass",
-    reality: "Operational. BSS-35 UserOperations are dispatched via Pimlico with dynamic executor address resolution from BSS-34.",
-    fix: "BSS-35 logic fully implemented in engine.ts.",
-    checksum: "0x6f2a4c10da345e0d48f2b1c93a9b1e7f3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f",
-  },
-];
-
-const UPGRADE_ROADMAP = [
-  {
-    icon: Globe,
-    title: "Free: Uniswap V3 Subgraph Scanning",
-    desc: "The Graph public endpoint gives real pool sqrtPriceX96 data. Can calculate real cross-pool price discrepancies without any API key.",
-    tier: "FREE",
-  },
-  {
-    icon: Database,
-    title: "Free: Arbitrum/Base instead of Mainnet",
-    desc: "L2 gas is 50–200x cheaper. Flash loan arb on Base via Aave V3 + Uniswap V3 is viable with much smaller loan sizes. Public RPCs on L2s are more permissive.",
-    tier: "FREE",
-  },
-  {
-    icon: Zap,
-    title: "Free: Shadow Mode Signal Validation",
-    desc: "Run 500+ SHADOW cycles to build a real win-rate dataset. This validates the strategy before spending real money on infrastructure.",
-    tier: "FREE",
-  },
-  {
-    icon: TrendingUp,
-    title: "Paid: Pimlico API Key ($)",
-    desc: "Enables real ERC-4337 gasless UserOperations. Required for true '$0 pre-funded wallet' live execution on mainnet.",
-    tier: "PAID",
-  },
-  {
-    icon: Shield,
-    title: "Paid: Private RPC (Alchemy/Infura)",
-    desc: "Required for bundle submission. Unlocks eth_sendRawTransaction, private mempool, and MEV-protected transactions.",
-    tier: "PAID",
-  },
-  {
-    icon: Lock,
-    title: "Advanced: Deploy FlashExecutor.sol",
-    desc: "A deployed smart contract on mainnet that atomically borrows (Aave V3), swaps (Uniswap V3), and repays in a single transaction. Without this, no flash loan is possible.",
-    tier: "ADVANCED",
-  },
-];
+      </div>
+    );
+  }
 
 function SliderField({
   label,

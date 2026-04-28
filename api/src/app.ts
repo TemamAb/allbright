@@ -1,11 +1,11 @@
 import express, { type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
-import router from "./routes";
-import { logger } from "./lib/logger";
+import router from "./controllers";
+import { logger } from "./services/logger";
 import { createServer } from "http";
 import { Server } from "socket.io";
-import { getMetrics } from "./routes/metrics";
+import { getMetrics } from "./controllers/metrics";
 import { rateLimiter } from "./middleware/rateLimiter";
 
 const app: Express = express();

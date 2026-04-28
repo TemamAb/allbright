@@ -5,7 +5,7 @@
  * BrightSky Elite - Flash Loan Arbitrage Engine API
  * OpenAPI spec version: 0.1.0
  */
-import type { ProfitPoint } from "./profitPoint";
+import type { ProfitPoint } from './profitPoint';
 export interface TelemetryData {
     sessionProfitEth: number;
     sessionProfitUsd: number;

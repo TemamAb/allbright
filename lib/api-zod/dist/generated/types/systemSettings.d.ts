@@ -16,5 +16,6 @@ export interface SystemSettings {
     openaiApiKey?: string;
     /** Masked key */
     pimlicoApiKey?: string;
+    visibleKpis?: string[];
 }
 //# sourceMappingURL=systemSettings.d.ts.map

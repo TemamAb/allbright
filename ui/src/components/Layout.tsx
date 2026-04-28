@@ -4,6 +4,7 @@ import {
   Activity, Radio, Wallet, Settings, BarChart2, Zap, Menu, X, ShieldCheck
 } from "lucide-react";
 import { useGetEngineStatus } from "@workspace/api-client-react";
+import { useTheme } from "next-themes";
 
 const navItems = [
   { path: "/", label: "Telemetry", icon: Activity },
@@ -17,6 +18,7 @@ const navItems = [
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { theme } = useTheme();
   const { data: status } = useGetEngineStatus({
     query: { refetchInterval: 2000, queryKey: ["engine-status"] }
   });
@@ -26,7 +28,29 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const isShadowMode = mode === "SHADOW";
 
   return (
-    <div className="min-h-screen flex bg-[#0A0A0B] text-zinc-300 font-mono selection:bg-cyan-500/30">
+    <div className={`min-h-screen flex font-mono selection:bg-cyan-500/30 relative overflow-hidden ${
+      theme === 'light' ? 'bg-gradient-to-br from-slate-50 to-slate-100 text-slate-900' :
+      theme === 'colorblind' ? 'bg-gradient-to-br from-white to-slate-50 text-black' :
+      'bg-gradient-to-br from-[#0A0A0B] via-[#0D0D0E] to-[#0A0A0B] text-zinc-300'
+    }`}>
+      {/* Animated background effects for Phase 1 */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className={`absolute top-0 left-1/4 w-96 h-96 rounded-full blur-3xl opacity-20 animate-pulse ${
+          theme === 'light' ? 'bg-cyan-200' :
+          theme === 'colorblind' ? 'bg-red-200' :
+          'bg-cyan-500/30'
+        }`} style={{ animationDuration: '4s' }} />
+        <div className={`absolute bottom-0 right-1/4 w-80 h-80 rounded-full blur-3xl opacity-15 animate-pulse ${
+          theme === 'light' ? 'bg-emerald-200' :
+          theme === 'colorblind' ? 'bg-green-200' :
+          'bg-emerald-500/25'
+        }`} style={{ animationDuration: '6s', animationDelay: '2s' }} />
+        <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-3xl opacity-10 animate-pulse ${
+          theme === 'light' ? 'bg-violet-200' :
+          theme === 'colorblind' ? 'bg-blue-200' :
+          'bg-violet-500/20'
+        }`} style={{ animationDuration: '8s', animationDelay: '1s' }} />
+      </div>
       {/* Sidebar */}
       <aside className={`
         fixed inset-y-0 left-0 z-50 w-64 flex flex-col bg-[#0D0D0E]/80 backdrop-blur-xl border-r border-zinc-800/50
@@ -34,12 +58,33 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
         lg:translate-x-0 lg:static lg:inset-auto
       `}>
-        {/* Logo */}
-        <div className="flex items-center gap-3 px-6 py-6 border-b border-zinc-800/50">
-          <div className="w-8 h-8 rounded bg-cyan-600 flex items-center justify-center shadow-[0_0_20px_rgba(6,182,212,0.4)]">
-            <Zap className="text-white" size={20} />
+        {/* Animated Logo - Phase 1 Enhancement */}
+        <div className="flex items-center gap-3 px-6 py-6 border-b border-zinc-800/50 relative">
+          <div className={`w-8 h-8 rounded bg-gradient-to-br flex items-center justify-center shadow-[0_0_20px_rgba(6,182,212,0.4)] transform transition-all duration-300 hover:scale-110 ${
+            theme === 'light' ? 'from-cyan-400 to-cyan-600' :
+            theme === 'colorblind' ? 'from-red-400 to-red-600' :
+            'from-cyan-500 to-cyan-700'
+          }`}>
+            <Zap className="text-white animate-pulse" size={20} />
+            <div className="absolute inset-0 rounded bg-cyan-400/20 animate-ping" style={{ animationDuration: '3s' }} />
           </div>
-          <span className="font-bold text-lg tracking-tighter text-white uppercase">BRIGHT<span className="text-cyan-500">SKY</span></span>
+          <div className="flex flex-col">
+            <span className={`font-bold text-lg tracking-tighter uppercase ${
+              theme === 'light' ? 'text-slate-900' :
+              theme === 'colorblind' ? 'text-black' :
+              'text-white'
+            }`}>
+              BRIGHT
+              <span className={`${
+                theme === 'light' ? 'text-cyan-600' :
+                theme === 'colorblind' ? 'text-red-600' :
+                'text-cyan-500'
+              } animate-pulse`}>SKY</span>
+            </span>
+            <div className="text-[8px] text-muted-foreground uppercase tracking-widest animate-fadeInUp">
+              Elite Trading Protocol
+            </div>
+          </div>
         </div>
 
         {/* Engine status badge */}
@@ -103,8 +148,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top bar */}
-        <header className="h-16 flex items-center gap-3 px-8 border-b border-zinc-800/50 bg-[#0D0D0E]/50 backdrop-blur-md sticky top-0 z-40">
+        {/* Enhanced Top Bar - Phase 1 */}
+        <header className={`h-16 flex items-center gap-3 px-8 border-b backdrop-blur-md sticky top-0 z-40 transition-all duration-500 ${
+          theme === 'light' ? 'border-slate-200/50 bg-white/80 shadow-lg' :
+          theme === 'colorblind' ? 'border-black/20 bg-white/90 shadow-lg' :
+          'border-zinc-800/50 bg-[#0D0D0E]/80 shadow-2xl shadow-cyan-500/5'
+        }`}>
           <div className="flex flex-col">
             <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Bridge Status</span>
             <span className="text-xs text-zinc-300">NEXUS IPC <span className="text-zinc-700">•</span> PORT 4001</span>

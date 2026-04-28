@@ -5,7 +5,7 @@
  * BrightSky Elite - Flash Loan Arbitrage Engine API
  * OpenAPI spec version: 0.1.0
  */
-import type { EngineStatusMode } from "./engineStatusMode";
+import type { EngineStatusMode } from './engineStatusMode';
 
 export interface EngineStatus {
   running: boolean;

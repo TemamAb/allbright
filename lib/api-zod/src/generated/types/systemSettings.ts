@@ -17,4 +17,5 @@ export interface SystemSettings {
   openaiApiKey?: string;
   /** Masked key */
   pimlicoApiKey?: string;
+  visibleKpis?: string[];
 }

@@ -159,6 +159,7 @@ export interface SystemSettings {
     openaiApiKey?: string;
     /** Masked key */
     pimlicoApiKey?: string;
+    visibleKpis?: string[];
 }
 export interface UpdateSettingsRequest {
     flashLoanSizeEth?: number;
@@ -169,6 +170,7 @@ export interface UpdateSettingsRequest {
     maxSlippagePct?: number;
     openaiApiKey?: string;
     pimlicoApiKey?: string;
+    visibleKpis?: string[];
 }
 export interface OperationResult {
     success: boolean;

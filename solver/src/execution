@@ -1,0 +1,108 @@
+// BSS-41: Private Executor Subsystem
+use crate::{HealthStatus, SubsystemSpecialist, WatchtowerStats};
+use serde_json::Value;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::Arc;
+
+pub struct PrivateExecutorSpecialist {
+    pub stats: Arc<WatchtowerStats>,
+    pub is_executor_deployed: AtomicBool,
+    pub last_execution_timestamp: AtomicU64,
+}
+
+impl PrivateExecutorSpecialist {
+    pub fn new(stats: Arc<WatchtowerStats>) -> Self {
+        Self {
+            stats,
+            is_executor_deployed: AtomicBool::new(false),
+            last_execution_timestamp: AtomicU64::new(0),
+        }
+    }
+}
+
+impl SubsystemSpecialist for PrivateExecutorSpecialist {
+    fn subsystem_id(&self) -> &'static str {
+        "BSS-41"
+    }
+
+    fn check_health(&self) -> HealthStatus {
+        if !self.is_executor_deployed.load(Ordering::Relaxed) {
+            HealthStatus::Degraded("Private executor not deployed".to_string())
+        } else {
+            let now = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs();
+            let last_exec = self.last_execution_timestamp.load(Ordering::Relaxed);
+            if now - last_exec > 300 {
+                HealthStatus::Degraded("No recent executions".to_string())
+            } else {
+                HealthStatus::Optimal
+            }
+        }
+    }
+
+    fn upgrade_strategy(&self) -> &'static str {
+        "Architecture: Transition to MEV-protected private mempool with flashbots integration."
+    }
+
+    fn testing_strategy(&self) -> &'static str {
+        "Security: Simulate frontrunning and sandwich attacks in private mempool."
+    }
+
+    fn run_diagnostic(&self) -> Value {
+        serde_json::json!({
+            "is_executor_deployed": self.is_executor_deployed.load(Ordering::Relaxed),
+            "last_execution_timestamp": self.last_execution_timestamp.load(Ordering::Relaxed),
+            "connected_ui_clients": self.stats.connected_ui_clients.load(Ordering::Relaxed),
+        })
+    }
+
+    fn execute_remediation(&self, command: &str) -> Result<(), String> {
+        match command {
+            "DEPLOY_EXECUTOR" => {
+                self.is_executor_deployed.store(true, Ordering::Relaxed);
+                Ok(())
+            }
+            "EXECUTE_TRADE" => {
+                self.stats
+                    .executed_trades_count
+                    .fetch_add(1, Ordering::Relaxed);
+                let now = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs();
+                self.last_execution_timestamp.store(now, Ordering::Relaxed);
+                Ok(())
+            }
+            _ => Err(format!("Unknown command: {}", command)),
+        }
+    }
+
+    fn ai_insight(&self) -> Option<String> {
+        if !self.is_executor_deployed.load(Ordering::Relaxed) {
+            Some("Private executor is not deployed. Consider deploying for MEV protection.".into())
+        } else if self.stats.executed_trades_count.load(Ordering::Relaxed) == 0 {
+            Some("Executor deployed but no trades executed. Check mempool conditions.".into())
+        } else {
+            Some("Private executor is active and executing trades with MEV protection.".into())
+        }
+    }
+
+    fn get_performance_kpi(&self) -> Value {
+        let executed = self.stats.executed_trades_count.load(Ordering::Relaxed);
+        let rejected = self.stats.signals_rejected_risk.load(Ordering::Relaxed);
+        let total = executed + rejected;
+        let success_rate = if total > 0 {
+            (executed as f64 / total as f64) * 100.0
+        } else {
+            100.0
+        };
+        serde_json::json!({
+            "kpi": "Execution Success Rate",
+            "target": 95.0,
+            "actual": success_rate,
+            "unit": "%"
+        })
+    }
+}

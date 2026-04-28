@@ -5,7 +5,7 @@
  * BrightSky Elite - Flash Loan Arbitrage Engine API
  * OpenAPI spec version: 0.1.0
  */
-import type { Trade } from "./trade";
+import type { Trade } from './trade';
 
 export interface TradeListResponse {
   trades: Trade[];

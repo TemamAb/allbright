@@ -1,33 +1,27 @@
-// Stubbed macro modules - implement or remove
-// pub mod macro_module_1_profit;
-// pub mod macro_module_2_risk;
-// pub mod macro_module_3_performance;
-// pub mod macro_module_4_efficiency;
-// pub mod macro_module_5_health;
+// BrightSky Solver Library - Core Types & Traits
 
-// External crate imports
-use hmac::{Hmac, Mac};
+use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
+use std::sync::{Arc, Mutex, RwLock};
+use lazy_static::lazy_static;
+use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
-use std::sync::Arc;
-use std::sync::{Mutex, RwLock};
-type HmacSha256 = Hmac<sha2::Sha256>;
+use lazy_static::lazy_static;
 
-// Re-export subsystem items
-// Stubbed - use subsystems instead
-// Temporarily stubbed re-exports - subsystems exist but paths verify later
-#[allow(dead_code)]
-pub type GraphPersistence = ();
-#[allow(dead_code)]
-pub type PoolState = ();
-#[allow(dead_code)]
-pub type ArbitrageOpportunity = ();
-#[allow(dead_code)]
-pub type SolverSpecialist = ();
-#[allow(dead_code)]
-pub type PrivateExecutorSpecialist = ();
+// BSS-26: The Specialist Interface
+pub trait SubsystemSpecialist: Send + Sync {
+    fn subsystem_id(&self) -> &'static str;
+    fn check_health(&self) -> HealthStatus;
+    fn upgrade_strategy(&self) -> &'static str;
+    fn testing_strategy(&self) -> &'static str;
+    fn run_diagnostic(&self) -> Value;
+    fn execute_remediation(&self, command: &str) -> Result<(), String>;
+    fn get_performance_kpi(&self) -> Value {
+        serde_json::json!({"kpi": "unknown", "status": "unimplemented"})
+    }
+    fn get_domain_score(&self) -> f64 { 1.0 }
+    fn ai_insight(&self) -> Option<String> { None }
+}
 
 // BSS-26: Watchtower Health Definitions
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -42,28 +36,6 @@ pub enum BssLevel {
     Missing,
     Skeleton,
     Production,
-}
-
-// BSS-26: Specialist Trait
-pub trait SubsystemSpecialist: Send + Sync {
-    fn subsystem_id(&self) -> &'static str;
-    fn check_health(&self) -> HealthStatus;
-    fn upgrade_strategy(&self) -> &'static str;
-    fn testing_strategy(&self) -> &'static str;
-    fn run_diagnostic(&self) -> Value;
-    fn execute_remediation(&self, command: &str) -> Result<(), String>;
-
-    /// BSS-26 Integrity: Returns the Design KPI vs Operational Actual.
-    fn get_performance_kpi(&self) -> Value;
-
-    /// BSS-21 meta-logic: Returns the efficiency score for the specialist's domain (0.0 - 1.0)
-    fn get_domain_score(&self) -> f64 {
-        1.0 // Default to optimal if not overridden
-    }
-
-    fn ai_insight(&self) -> Option<String> {
-        None
-    }
 }
 
 // Debug Orders
@@ -95,7 +67,7 @@ pub struct CopilotProposal {
     pub suggested_changes: Vec<String>,
 }
 
-lazy_static::lazy_static! {
+lazy_static! {
     pub static ref PENDING_PROPOSAL: Mutex<Option<CopilotProposal>> = Mutex::new(None);
     pub static ref USED_NONCES: Mutex<HashMap<u64, u64>> = Mutex::new(HashMap::new());
 }
@@ -106,21 +78,38 @@ pub struct SystemPolicy {
     pub max_hops: usize,
     pub min_profit_bps: f64,
     pub shadow_mode: bool,
-    // Risk limits (Milestone 4C.1)
-    pub max_position_size_eth: f64, // Max 10% of wallet per trade
-    pub daily_loss_limit_eth: f64, // Auto-stop at 1 ETH loss
-    pub daily_loss_used_eth: f64, // Track losses used today
+    pub max_position_size_eth: f64,
+    pub daily_loss_limit_eth: f64,
+    pub daily_loss_used_eth: f64,
 }
 
-// Design KPIs (kept for documentation, used in SubsystemSpecialist trait)
+// Design KPIs
 #[allow(dead_code)]
-const TARGET_THROUGHPUT: usize = 500;
+pub const TARGET_THROUGHPUT: usize = 500;
 #[allow(dead_code)]
-const TARGET_LATENCY_MS: u64 = 10;
+pub const TARGET_LATENCY_MS: u64 = 10;
 #[allow(dead_code)]
 const TARGET_CYCLES_PER_HOUR: u64 = 120;
 pub const TARGET_MEMPOOL_INGESTION_SEC: f64 = 10000.0;
 pub const TARGET_TOTAL_SCORE_PCT: f64 = 95.0;
+
+/// BSS-36: Global Efficiency Score (GES) domain weightings.
+/// Sum must equal 1.0 (within floating-point tolerance).
+/// Weights from benchmark-36-kpis.md: 25/20/15/10/10/10 (Domains 1-6).
+pub const GES_WEIGHTS: [f64; 6] = [0.25, 0.20, 0.15, 0.10, 0.10, 0.10];
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_ges_weights_sum_to_one() {
+        let sum: f64 = GES_WEIGHTS.iter().sum();
+        assert!(
+            (sum - 1.0).abs() < 0.001,
+            "GES weights sum to {sum}, expected 1.0"
+        );
+    }
+}
 
 // Watchtower Stats
 #[derive(Default)]
@@ -150,6 +139,9 @@ pub struct WatchtowerStats {
     pub simulated_tx_success_rate: AtomicUsize,
     pub mempool_state_prediction_ready: AtomicBool,
     pub wallet_balance_milli_eth: AtomicU64,
+    pub loss_rate_bps: AtomicU64,
+    pub gas_efficiency: AtomicU64,
+    pub uptime_percent: AtomicU64,
     pub is_executor_deployed: AtomicBool,
     pub nonce_tracker: AtomicU64,
     pub connected_ui_clients: AtomicUsize,
@@ -161,44 +153,136 @@ pub struct WatchtowerStats {
     pub graph_node_count: AtomicU64,
     pub graph_edge_count: AtomicU64,
     pub total_weighted_score: AtomicU64,
-    pub domain_score_profit: AtomicU64, // Domain 1 score (Milli-units)
-    pub domain_score_risk: AtomicU64,   // Domain 2 score
-    pub domain_score_perf: AtomicU64,   // Domain 3 score
-    pub domain_score_eff: AtomicU64,    // Domain 4 score
-    pub domain_score_health: AtomicU64, // Domain 5 score
+    pub domain_score_profit: AtomicU64,
+    pub domain_score_risk: AtomicU64,
+    pub domain_score_perf: AtomicU64,
+    pub domain_score_eff: AtomicU64,
+    pub domain_score_health: AtomicU64,
+    pub domain_score_dashboard: AtomicU64,
+    pub domain_score_auto_opt: AtomicU64,
+    pub min_margin_ratio_bps: AtomicU64, // BSS-44: Min margin required (bps * 100), e.g., 1000 = 10%
+    pub bribe_ratio_bps: AtomicU64,       // BSS-07: Bribe percentage of profit (bps * 100), e.g., 500 = 5%
+
+    // BSS-13: Path caching statistics
+    pub path_cache_hits: AtomicU64,
+    pub path_cache_misses: AtomicU64,
+    pub path_cache_stores: AtomicU64,
+    pub path_cache_evictions: AtomicU64,
+
+    // BSS-05: RPC batching statistics
+    pub rpc_batch_latency_ms: AtomicU64,
+    pub rpc_calls_per_sec: AtomicU64,
+    pub rpc_avg_latency_ms: AtomicU64,
+    pub rpc_batch_success_rate: AtomicU64,
+
+    // BSS-28: Meta-Learner state (EMA of success rate, profit momentum, trade count)
+    pub meta_success_ratio_ema: AtomicUsize, // 0-10000 representing 0-100.00%
+    pub meta_profit_momentum: AtomicU64,      // f64 bits (exponential moving sum of profit)
+    pub meta_trade_count: AtomicU64,
+    // BSS-28: Reinforcement Learning Meta-Learner
+    pub reinforcement_meta_learner: Mutex<crate::reinforcement_meta_learner::ReinforcementMetaLearner>,
+    // BSS-13: Path caching system
+    pub path_cache: Mutex<crate::path_cache::PathCache>,
+    // KPI Improvement Metrics (Phase: Remaining KPI Categories)
+    // Sub-block timing metrics
+    pub collision_rate_estimate: AtomicU64,        // Estimated collision rate (bps * 100, e.g., 40 = 0.4%)
+    pub timing_precision_ns: AtomicU64,            // Average timing precision achieved (nanoseconds)
+    pub builder_queue_position: AtomicU64,         // Average predicted queue position (0-1000)
+    pub market_pressure_factor: AtomicU64,         // Market pressure factor (0-1000, higher = more pressure)
+    // RPC orchestration metrics
+    pub rpc_provider_count: AtomicU64,             // Number of active RPC providers
+    pub rpc_avg_latency_ms_per_provider: AtomicU64, // Average latency per provider (ms)
+    pub rpc_provider_success_rate: AtomicU64,      // Overall success rate across providers (bps * 100)
+    pub rpc_geo_balance_score: AtomicU64,          // Geographic balance score (0-1000)
+    pub rpc_predictive_selection_accuracy: AtomicU64, // Accuracy of predictive provider selection (bps * 100)
+    // Dynamic position sizing metrics
+    pub avg_position_size_pct: AtomicU64,          // Average position size as % of wallet (bps * 100)
+    pub volatility_factor_applied: AtomicU64,      // Current volatility factor applied (0-1000)
+    pub iceberg_order_ratio: AtomicU64,            // % of orders using iceberg technique (bps * 100)
+    pub multi_timeframe_signal_strength: AtomicU64, // Strength of multi-timeframe signals (0-1000)
+    // Capital allocator metrics
+    pub capital_efficiency_ratio: AtomicU64,       // Capital efficiency ratio (bps * 100, target 2500 for 25%)
+    pub portfolio_diversity_score: AtomicU64,      // Portfolio diversity score (0-1000)
+    pub risk_adjusted_scaling_factor: AtomicU64,   // Risk-adjusted scaling factor applied (0-1000)
+    // Transaction validator metrics
+    pub simulation_accuracy_pct: AtomicU64,        // Accuracy of pre-execution simulation (bps * 100)
+    pub gas_estimation_error_pct: AtomicU64,       // Average gas estimation error (bps * 100)
+    pub revert_reason_count: AtomicU64,            // Count of revert reasons (simplified as counter)
+    pub failure_prediction_accuracy: AtomicU64,    // Accuracy of failure prediction (bps * 100)
+    pub false_positive_rate: AtomicU64,            // False positive rate of failure prediction (bps * 100)
+    // KPI Improvement Modules
+    pub sub_block_timing: Mutex<crate::timing::sub_block_timing::SubBlockTimingEngine>,
+    pub rpc_orchestrator: Mutex<crate::rpc::rpc_orchestrator::RpcOrchestrator>,
 }
 
-// Specialist Structs
-pub struct DashboardSpecialist { pub stats: Arc<WatchtowerStats> }
-pub struct AutoOptimizer { pub last_optimization: AtomicU64, pub cycle_interval_secs: AtomicU64, pub stats: Arc<WatchtowerStats> }
-pub struct DockerSpecialist;
-pub struct PreflightSpecialist;
-pub struct IpcBridgeSpecialist;
-pub struct SyncSpecialist { pub stats: Arc<WatchtowerStats> }
-pub struct TelemetrySpecialist;
-pub struct AdversarialSpecialist { pub stats: Arc<WatchtowerStats> }
-pub struct DiagnosticHub;
-pub struct CommandKernel;
-pub struct InvariantSpecialist { pub graph: Arc<GraphPersistence> }
-pub struct StrategyTuner;
-pub struct HdVault { pub encryption_active: AtomicBool }
-pub struct SignalBacktester;
-pub struct MarginGuard { pub min_margin: AtomicU64 }
-pub struct BribeEngine { pub default_ratio: AtomicUsize }
-pub struct RpcSwitch { pub primary_latency: AtomicU64, pub backup_latency: AtomicU64 }
-pub struct MetaLearner { pub success_ratio: AtomicUsize }
-pub struct WalletManager { pub address: Arc<str>, pub last_nonce: AtomicU64 }
-pub struct DeploymentEngine { pub target_chain: u64, pub stats: Arc<WatchtowerStats> }
-pub struct GaslessManager { pub bundler_url: Arc<str>, pub paymaster_active: AtomicBool }
-pub struct AlphaCopilot;
-pub struct SecurityModule;
+// PolicyDelta from MetaLearner → AutoOptimizer
+#[derive(Default, Clone, Copy)]
+pub struct PolicyDelta {
+    pub min_profit_bps_delta: i64,
+    pub max_hops_delta: i64,
+    // Extendable: max_position_size_delta, daily_loss_limit_delta, etc.
+}
 
-// Implement SubsystemSpecialist for each specialist
+impl WatchtowerStats {
+    /// BSS-28: Observe outcome of a single trade to update online learning metrics.
+    /// Call from gateway handler when Node.js reports a completed trade.
+    pub fn observe_trade(&self, profit_eth: f64, success: bool) {
+        // EMA update for success ratio (α = 0.1) - keep for backward compatibility
+        let old = self.meta_success_ratio_ema.load(Ordering::Relaxed);
+        let target = if success { 10000 } else { 0 };
+        let new = ((old as f64) * 0.9 + target as f64 * 0.1) as usize;
+        self.meta_success_ratio_ema.store(new, Ordering::Relaxed);
+
+        // EMA for profit momentum - keep for backward compatibility
+        let old_bits = self.meta_profit_momentum.load(Ordering::Relaxed);
+        let old_momentum = f64::from_bits(old_bits);
+        let new_momentum = old_momentum * 0.9 + profit_eth * 0.1;
+        self.meta_profit_momentum.store(new_momentum.to_bits(), Ordering::Relaxed);
+
+        // Increment trade counter
+        self.meta_trade_count.fetch_add(1, Ordering::Relaxed);
+
+        // BSS-28: Update reinforcement learning meta-learner
+        if let Ok(mut rl_learner) = self.reinforcement_meta_learner.lock() {
+            rl_learner.observe_trade(self, profit_eth, success);
+        }
+    }
+
+    /// BSS-28: Generate policy adjustment recommendations based on learned trends.
+    /// Uses reinforcement learning meta-learner for better long-term strategy optimization.
+    pub fn get_meta_recommendation(&self) -> PolicyDelta {
+        // Try reinforcement learning approach first
+        if let Ok(rl_learner) = self.reinforcement_meta_learner.lock() {
+            return rl_learner.getPolicyRecommendation(self);
+        }
+
+        // Fallback to original EMA-based approach if RL fails
+        let mut delta = PolicyDelta::default();
+
+        let success_pct = self.meta_success_ratio_ema.load(Ordering::Relaxed) as f64 / 100.0;
+        if success_pct < 80.0 {
+            delta.min_profit_bps_delta = 5; // raise floor to improve quality
+        }
+
+        let momentum = f64::from_bits(self.meta_profit_momentum.load(Ordering::Relaxed));
+        if momentum < -0.3 {
+            delta.max_hops_delta = -1; // reduce complexity when losing
+        }
+
+        delta
+    }
+}
+
+// Specialist Structs (defined here: core shared types)
+// DashboardSpecialist and InvariantSpecialist are defined here.
+// Other specialists are defined in main.rs.
+pub struct DashboardSpecialist { pub stats: Arc<WatchtowerStats> }
+pub struct InvariantSpecialist { pub graph: Arc<GraphPersistence>, pub stats: Arc<WatchtowerStats> }
+
+// Implement SubsystemSpecialist for DashboardSpecialist
 impl SubsystemSpecialist for DashboardSpecialist {
     fn subsystem_id(&self) -> &'static str { "BSS-27" }
-    fn check_health(&self) -> HealthStatus {
-        HealthStatus::Optimal // Headless cloud-ready logic
-    }
+    fn check_health(&self) -> HealthStatus { HealthStatus::Optimal }
     fn upgrade_strategy(&self) -> &'static str { "Hot-Swappable via API Gateway" }
     fn testing_strategy(&self) -> &'static str { "End-to-End: Browser simulation" }
     fn run_diagnostic(&self) -> Value {
@@ -213,155 +297,54 @@ impl SubsystemSpecialist for DashboardSpecialist {
     }
 }
 
-// (Add other impl SubsystemSpecialist blocks similarly...)
-// For brevity, I'll add the SecurityModule::authenticate method which is used in tests
-
-impl SecurityModule {
-    pub fn authenticate(order: &DebuggingOrder) -> bool {
-        let secret = match std::env::var("DASHBOARD_PASS") {
-            Ok(val) => val,
-            Err(_) => return false,
-        };
-
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs();
-
-        {
-            let mut nonces = match USED_NONCES.lock() {
-                Ok(lock) => lock,
-                Err(poisoned) => poisoned.into_inner(),
-            };
-            nonces.retain(|_, &mut ts| now <= ts + 30);
-            
-            if nonces.contains_key(&order.nonce) {
-                return false;
-            }
-            nonces.insert(order.nonce, order.timestamp);
+// Implement SubsystemSpecialist for InvariantSpecialist
+impl SubsystemSpecialist for InvariantSpecialist {
+    fn subsystem_id(&self) -> &'static str { "BSS-30" }
+    fn check_health(&self) -> HealthStatus {
+        if let Some(err) = self.graph.validate_global_invariants() {
+            return HealthStatus::Degraded(err);
         }
-
-        if order.timestamp > now + 5 || now > order.timestamp + 30 {
-            return false;
-        }
-
-        let mut mac = HmacSha256::new_from_slice(secret.as_bytes()).expect("HMAC init failed");
-        mac.update(order.target.as_bytes());
-        if let Some(ref p) = order.payload {
-            mac.update(p.as_bytes());
-        }
-        mac.update(&order.timestamp.to_be_bytes());
-        mac.update(&order.nonce.to_be_bytes());
-
-        if let Ok(sig_bytes) = hex::decode(&order.params) {
-            return mac.verify_slice(&sig_bytes).is_ok();
-        }
-        false
+        HealthStatus::Optimal
     }
+    fn upgrade_strategy(&self) -> &'static str { "Static: Formal verification of log-space math." }
+    fn testing_strategy(&self) -> &'static str { "Fuzzing: Graph cycle validation." }
+    fn get_performance_kpi(&self) -> Value {
+        serde_json::json!({
+            "kpi": "Graph Update Latency",
+            "target": 5.0,
+            "actual": self.stats.graph_update_latency_ms.load(Ordering::Relaxed) as f64,
+            "unit": "ms"
+        })
+    }
+    fn run_diagnostic(&self) -> Value {
+        serde_json::json!({
+            "checks": ["no-self-loops", "reserve-positivity", "fee-cap"],
+            "node_count": self.graph.token_to_index.len(),
+            "edge_count": self.stats.graph_edge_count.load(Ordering::Relaxed)
+        })
+    }
+    fn execute_remediation(&self, _cmd: &str) -> Result<(), String> { Ok(()) }
 }
 
-// Test module (moved from main.rs)
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use hmac::{Hmac, Mac};
-    use sha2::Sha256;
-
-    fn create_test_order(target: &str, secret: &str, ts_offset: i64, nonce: u64) -> DebuggingOrder {
-        let timestamp = (std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_secs() as i64
-            + ts_offset) as u64;
-
-        let mut mac = Hmac::<Sha256>::new_from_slice(secret.as_bytes()).unwrap();
-        mac.update(target.as_bytes());
-        mac.update(&timestamp.to_be_bytes());
-        mac.update(&nonce.to_be_bytes());
-        let params = hex::encode(mac.finalize().into_bytes());
-
-        DebuggingOrder {
-            target: target.to_string(),
-            intent: DebugIntent::Audit,
-            params,
-            payload: None,
-            timestamp,
-            nonce,
-        }
-    }
-
-    #[test]
-    fn test_signature_integrity() {
-        std::env::set_var("DASHBOARD_PASS", "test_secret");
-        let order = create_test_order("BSS-04", "test_secret", 0, 12345);
-        assert!(SecurityModule::authenticate(&order));
-    }
-
-    #[test]
-    fn test_nonce_pruning() {
-        std::env::set_var("DASHBOARD_PASS", "test_secret");
-        let now = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
-
-        {
-            let mut nonces = USED_NONCES.lock().unwrap();
-            nonces.clear();
-            nonces.insert(999, now - 31);
-            assert_eq!(nonces.len(), 1);
-        }
-
-        let order = create_test_order("BSS-04", "test_secret", 0, 1000);
-        assert!(SecurityModule::authenticate(&order));
-
-        {
-            let nonces = USED_NONCES.lock().unwrap();
-            assert!(!nonces.contains_key(&999));
-            assert!(nonces.contains_key(&1000));
-            assert_eq!(nonces.len(), 1);
-        }
-    }
-
-    #[test]
-    fn test_invalid_signature() {
-        std::env::set_var("DASHBOARD_PASS", "test_secret");
-        let mut order = create_test_order("BSS-04", "test_secret", 0, 67890);
-        order.params = "wrong_signature".to_string();
-        assert!(!SecurityModule::authenticate(&order));
-    }
-
-    #[test]
-    fn test_expired_timestamp() {
-        std::env::set_var("DASHBOARD_PASS", "test_secret");
-        let order = create_test_order("BSS-04", "test_secret", -60, 11111);
-        assert!(!SecurityModule::authenticate(&order));
-    }
-
-    #[test]
-    fn test_future_timestamp() {
-        std::env::set_var("DASHBOARD_PASS", "test_secret");
-        let order = create_test_order("BSS-04", "test_secret", 60, 22222);
-        assert!(!SecurityModule::authenticate(&order));
-    }
-
-    #[test]
-    fn test_nonce_replay() {
-        std::env::set_var("DASHBOARD_PASS", "test_secret");
-        let nonce = 99999;
-        let order1 = create_test_order("BSS-04", "test_secret", 0, nonce);
-        let order2 = create_test_order("BSS-04", "test_secret", 0, nonce);
-
-        assert!(SecurityModule::authenticate(&order1));
-        assert!(!SecurityModule::authenticate(&order2));
-    }
-
-    #[test]
-    fn test_tampered_payload() {
-        std::env::set_var("DASHBOARD_PASS", "test_secret");
-        let mut order = create_test_order("BSS-04", "test_secret", 0, 88888);
-        order.target = "BSS-13".to_string();
-        assert!(!SecurityModule::authenticate(&order));
-    }
-
-}
+// Re-export subsystem modules
+pub mod module;
+// BSS-36 Auto-Optimizer module (root level file)
+pub mod benchmarks;
+pub mod bss_36_auto_optimizer;
+pub mod reinforcement_meta_learner;
+pub mod path_cache;
+pub mod timing;
+pub mod rpc;
+pub use bss_36_auto_optimizer::AutoOptimizer;
+pub use module::bss_04_graph::{GraphPersistence, PoolState, PoolEdge};
+pub use module::bss_13_solver::{ArbitrageOpportunity, SolverSpecialist};
+pub use module::bss_44_liquidity::LiquidityEngine;
+pub use module::bss_43_simulator::{SimulationEngine, SimulationResult, SimulationSpecialist};
+pub use module::bss_45_risk::{RiskEngine, RiskSpecialist};
+pub use module::bss_42_mev_guard::{MEVGuardEngine, MEVGuardSpecialist};
+pub use module::bss_27_ui_gateway::UIGatewaySpecialist;
+pub use module::bss_46_metrics::MetricsSpecialist;
+pub use module::bss_41_executor::PrivateExecutorSpecialist;
+pub use module::bss_16_p2p_bridge::P2PNBridgeSpecialist;
+pub use module::bss_40_mempool::{MempoolIntelligenceSpecialist, MempoolEngine};
+pub use module::bss_05_sync::{subscribe_chain, subscribe_mempool};

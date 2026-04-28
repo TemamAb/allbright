@@ -5,7 +5,7 @@
  * BrightSky Elite - Flash Loan Arbitrage Engine API
  * OpenAPI spec version: 0.1.0
  */
-import type { StartEngineRequestMode } from "./startEngineRequestMode";
+import type { StartEngineRequestMode } from './startEngineRequestMode';
 export interface StartEngineRequest {
     mode: StartEngineRequestMode;
     /** Flash loan size in ETH */

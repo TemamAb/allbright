@@ -189,6 +189,7 @@ export interface SystemSettings {
   openaiApiKey?: string;
   /** Masked key */
   pimlicoApiKey?: string;
+  visibleKpis?: string[];
 }
 
 export interface UpdateSettingsRequest {
@@ -200,6 +201,7 @@ export interface UpdateSettingsRequest {
   maxSlippagePct?: number;
   openaiApiKey?: string;
   pimlicoApiKey?: string;
+  visibleKpis?: string[];
 }
 
 export interface OperationResult {

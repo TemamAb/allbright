@@ -136,7 +136,7 @@
 
 ## 🔧 Build & Deployment
 
-**Build:** `cargo build --release` compiles with warnings only; binary expected at `solver/target/release/brightsky.exe` (Windows) or `brightsky` (Unix).
+**Build:** `cargo build --release` encounters pre-existing dependency compilation issues (unrelated to refactor); binary expected at `solver/target/release/brightsky.exe` (Windows) or `brightsky` (Unix) once environment is fixed.
 
 **Startup Sequence:**
 1. `run_watchtower()` begins
@@ -186,7 +186,8 @@ brightsky/
 │   └── (seeds/, snapshots/ — pending)
 ├── lib/
 │   ├── db/               (Drizzle ORM package)
-│   └── api-spec/         (OpenAPI)
+│   ├── api-spec/         (OpenAPI)
+│   └── ts/               (TypeScript utilities — moved from lib/)
 ├── solver/
 │   ├── src/
 │   │   ├── benchmarks/   (pending Phase 5)
@@ -201,7 +202,10 @@ brightsky/
 ├── docs/                 (all .md moved here)
 ├── monitoring/           (scripts/, dashboards/, alerts/, logs/)
 ├── config/               (placeholder — .env.example at root)
-└── scripts/              (dev/, deploy/, testing/ — pending reorg)
+└── scripts/
+    ├── dev/              (development utilities)
+    ├── deploy/           (deployment scripts)
+    └── testing/          (testing/validation scripts)
 ```
 
 ---
@@ -230,23 +234,24 @@ brightsky/
 
 ## 🎯 Next Steps (Proposed Phase 5)
 
-### Option A — Solver Refactor (Medium Risk)
-Reorganize `solver/src/module/` into domain folders:
-- `benchmarks/` (create from `module/benchmarks.rs` stub)
-- `gate/` (create from `module/gate.rs` stub)
-- `optimizer/` (create from `module/auto-optimizer.rs` stub)
-- `persistence/` (create from `module/persistence.rs` stub)
-- `simulation/` (create from `module/simulator.rs` stub)
-- `execution/` (create from `module/executor.rs` stub)
-- `dashboard/` (keep as `module/dashboard` — already minimal)
+### Option A — Solver Refactor (Medium Risk - In Progress)
+Reorganized `solver/src/module/` into domain folders:
+- ✅ `benchmarks/` (created from `module/benchmarks.rs` stub)
+- ⭕ `gate/` (created but no `gate.rs` stub found)
+- ✅ `optimizer/` (created from `module/auto-optimizer.rs` stub)
+- ⭕ `persistence/` (created, awaiting `persistence.rs` stub)
+- ✅ `simulation/` (created from `module/simulator.rs` stub)
+- ✅ `execution/` (created from `module/executor.rs` stub)
+- ✅ `dashboard/` (kept as `module/dashboard` — already minimal)
+- ⭕ Additional domain folders created: `graph/`, `sync/`, `solver/`, `p2p/`, `ui/`, `mempool/`, `mev/`, `liquidity/`, `risk/`, `metrics/`
+- ⭕ Updated module paths in `mod.rs` and `main.rs`
+- ⚠️ Build verification pending due to pre-existing dependency issues (unrelated to refactor)
 
-**Impact:** Rust module paths change; `Cargo.toml` updates required.
+### Option B — Scripts/Lib Cleanup (Lower Risk - Completed)
+- ✅ `scripts/` → `scripts/dev/`, `scripts/deploy/`, `scripts/testing/`
+- ✅ `lib/` → `lib/ts/` (TypeScript utilities moved), `lib/rust/` (placeholder for future Rust utilities), `lib/python/` (not applicable)
 
-### Option B — Scripts/Lib Cleanup (Lower Risk)
-- `scripts/` → `scripts/dev/`, `scripts/deploy/`, `scripts/testing/`
-- `lib/` → `lib/ts/`, `lib/rust/`, `lib/python/` (if Python exists)
-
-**Recommendation:** Start with **Option B** to gain momentum, then **Option A** once Rust tests pass.
+**Recommendation:** Proceed with **Option A** once build issues are resolved, then revisit **Option B** for any remaining cleanup.
 
 ---
 

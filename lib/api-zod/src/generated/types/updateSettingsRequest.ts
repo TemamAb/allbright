@@ -15,4 +15,5 @@ export interface UpdateSettingsRequest {
   maxSlippagePct?: number;
   openaiApiKey?: string;
   pimlicoApiKey?: string;
+  visibleKpis?: string[];
 }

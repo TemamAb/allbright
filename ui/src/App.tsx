@@ -1,15 +1,18 @@
 import { Switch, Route } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
+import { ThemeProvider } from "next-themes";
+
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import StrategiesPage from "@/pages/StrategiesPage";
 import WalletPage from "@/pages/WalletPage";
 import SettingsPage from "@/pages/SettingsPage";
-import AuditReport from "@/pages/AuditReport";
-import Stream from "@/pages/Stream";
-import Trades from "@/pages/Trades";
+import AuditReport from "@/pages/AuditReport.tsx";
+import Stream from "@/pages/Stream.tsx";
+import Trades from "@/pages/Trades.tsx";
 import Vault from "@/pages/Vault";
+import Welcome from "@/pages/Welcome";
 import Layout from "@/components/Layout";
 import { WalletProvider } from "@/context/WalletContext";
 import { StrategiesProvider } from "@/context/StrategiesContext";
@@ -81,15 +84,17 @@ function SocketProvider({ children }: { children: ReactNode }) {
 
 function AppProviders({ children }: { children: ReactNode }) {
   return (
-    <QueryClientProvider client={queryClient}>
-      <StrategiesProvider>
-        <WalletProvider>
-          <SocketProvider>
-            {children}
-          </SocketProvider>
-        </WalletProvider>
-      </StrategiesProvider>
-    </QueryClientProvider>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} themes={['dark', 'light', 'colorblind']}>
+      <QueryClientProvider client={queryClient}>
+        <StrategiesProvider>
+          <WalletProvider>
+            <SocketProvider>
+              {children}
+            </SocketProvider>
+          </WalletProvider>
+        </StrategiesProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 
@@ -98,7 +103,9 @@ export default function App() {
     <AppProviders>
       <Layout>
         <Switch>
-          <Route path="/" component={Dashboard} />
+          <Route path="/welcome" component={Welcome} />
+          <Route path="/" component={Welcome} />
+          <Route path="/dashboard" component={Dashboard} />
           <Route path="/strategies" component={StrategiesPage} />
           <Route path="/stream" component={Stream} />
           <Route path="/trades" component={Trades} />

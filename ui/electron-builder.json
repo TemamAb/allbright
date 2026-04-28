@@ -1,0 +1,36 @@
+{
+  "appId": "com.brightsky.app",
+  "productName": "Brightsky",
+  "directories": {
+    "output": "dist-electron"
+  },
+  "files": [
+    "dist/**/*",
+    "main.js",
+    "preload.js",
+    "node_modules/**/*",
+    {
+      "from": "../api/dist",
+      "to": "api"
+    },
+    {
+      "from": "../api/node_modules",
+      "to": "api/node_modules"
+    }
+  ],
+  "win": {
+    "target": "nsis",
+    "icon": "assets/icon.ico"
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": true,
+    "allowToChangeInstallationDirectory": true,
+    "installerIcon": "assets/icon.ico",
+    "uninstallerIcon": "assets/icon.ico",
+    "installerHeaderIcon": "assets/icon.ico",
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "Brightsky"
+  }
+}

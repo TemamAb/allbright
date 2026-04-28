@@ -27,7 +27,6 @@ export const GetEngineStatusResponse = zod.object({
   gaslessMode: zod.boolean(),
   pimlicoEnabled: zod.boolean(),
   scannerActive: zod.boolean(),
-  flashloanContractAddress: zod.string().nullable().optional(),
 });
 
 /**
@@ -201,6 +200,7 @@ export const GetSettingsResponse = zod.object({
   maxSlippagePct: zod.number().optional(),
   openaiApiKey: zod.string().optional().describe("Masked key"),
   pimlicoApiKey: zod.string().optional().describe("Masked key"),
+  visibleKpis: zod.array(zod.string()).optional(),
 });
 
 /**
@@ -215,6 +215,7 @@ export const UpdateSettingsBody = zod.object({
   maxSlippagePct: zod.number().optional(),
   openaiApiKey: zod.string().optional(),
   pimlicoApiKey: zod.string().optional(),
+  visibleKpis: zod.array(zod.string()).optional(),
 });
 
 export const UpdateSettingsResponse = zod.object({

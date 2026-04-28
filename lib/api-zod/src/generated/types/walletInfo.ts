@@ -5,7 +5,7 @@
  * BrightSky Elite - Flash Loan Arbitrage Engine API
  * OpenAPI spec version: 0.1.0
  */
-import type { WalletInfoSweepMode } from "./walletInfoSweepMode";
+import type { WalletInfoSweepMode } from './walletInfoSweepMode';
 
 export interface WalletInfo {
   address?: string;

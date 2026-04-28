@@ -5,7 +5,7 @@
  * BrightSky Elite - Flash Loan Arbitrage Engine API
  * OpenAPI spec version: 0.1.0
  */
-import type { WalletConfigBodySweepMode } from "./walletConfigBodySweepMode";
+import type { WalletConfigBodySweepMode } from './walletConfigBodySweepMode';
 export interface WalletConfigBody {
     rpcEndpoint?: string;
     privateKey?: string;

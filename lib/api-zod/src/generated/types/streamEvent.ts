@@ -5,7 +5,7 @@
  * BrightSky Elite - Flash Loan Arbitrage Engine API
  * OpenAPI spec version: 0.1.0
  */
-import type { StreamEventType } from "./streamEventType";
+import type { StreamEventType } from './streamEventType';
 
 export interface StreamEvent {
   id: string;
