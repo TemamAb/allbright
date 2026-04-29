@@ -20,7 +20,6 @@ use tokio::io::{AsyncBufReadExt, AsyncRead, AsyncReadExt, AsyncWrite, AsyncWrite
 type HmacSha256 = Hmac<Sha256>;
 use tokio::sync::{broadcast, mpsc, watch};
 use tokio::time::{sleep, timeout};
-use tracing::{error, info, warn, debug};
 
 // Import types from the library
 use brightsky_solver::{benchmarks, SubsystemSpecialist, HealthStatus, BssLevel, DebugIntent, DebuggingOrder, CopilotProposal, SystemPolicy, WatchtowerStats, AutoOptimizer, DashboardSpecialist, InvariantSpecialist, PENDING_PROPOSAL, USED_NONCES, path_cache};
@@ -35,7 +34,7 @@ use brightsky_solver::mev::bss_42_mev_guard::{MEVGuardEngine, MEVGuardSpecialist
 use brightsky_solver::ui::bss_27_ui_gateway::UIGatewaySpecialist;
 use brightsky_solver::metrics::bss_46_metrics::MetricsSpecialist;
 use brightsky_solver::module::bss_41_executor::PrivateExecutorSpecialist;
-use brightsky_solver::p2p::bss_16_p2p_bridge::P2PNBridgeSpecialist;
+use brightsky_solver::module::bss_16_p2p_bridge::P2PNBridgeSpecialist;
 use brightsky_solver::module::bss_40_mempool::{MempoolIntelligenceSpecialist, MempoolEngine};
 use brightsky_solver::sync::bss_05_sync::{subscribe_mempool, subscribe_chain};
 
@@ -614,50 +613,22 @@ impl SubsystemSpecialist for DeploymentEngine {
         HealthStatus::Optimal
     }
     fn run_diagnostic(&self) -> Value {
-        let addr_guard = match self.stats.flashloan_contract_address.read() {
-            Ok(guard) => guard,
-            Err(poisoned) => {
-                error!(target: "bss_34", "Flashloan address RwLock poisoned, recovering");
-                poisoned.into_inner()
-            }
-        };
-        let _addr = addr_guard.clone();
+        let addr = self
+            .stats
+            .flashloan_contract_address
+            .read()
+            .expect("Flashloan address RwLock poisoned")
+            .clone();
         serde_json::json!({ "chain_id": self.target_chain, "contract_ready": true })
     }
     fn execute_remediation(&self, command: &str) -> Result<(), String> {
         if command == "REDEPLOY" {
-            info!(target: "bss_34", "Triggering atomic contract redeployment");
+            println!("[BSS-34] Triggering atomic contract redeployment...");
             let new_address = std::env::var("FLASH_EXECUTOR_ADDRESS")
                 .map(Arc::from)
                 .unwrap_or_else(|_| Arc::from("0x0000000000000000000000000000000000000000"));
 
-            let mut addr_guard = match self.stats.flashloan_contract_address.write() {
-                Ok(guard) => guard,
-                Err(poisoned) => {
-                    error!(target: "bss_34", "Flashloan address RwLock poisoned (write), recovering");
-                    poisoned.into_inner()
-                }
-            };
-            *addr_guard = Some(new_address);
-            return Ok(());
-        }
-        Ok(())
-    }
-    fn execute_remediation(&self, command: &str) -> Result<(), String> {
-        if command == "REDEPLOY" {
-            info!(target: "bss_34", "Triggering atomic contract redeployment");
-            let new_address = std::env::var("FLASH_EXECUTOR_ADDRESS")
-                .map(Arc::from)
-                .unwrap_or_else(|_| Arc::from("0x0000000000000000000000000000000000000000"));
-
-            let mut addr_guard = match self.stats.flashloan_contract_address.write() {
-                Ok(guard) => guard,
-                Err(poisoned) => {
-                    error!(target: "bss_34", "Flashloan address RwLock poisoned (REDEPLOY write), recovering");
-                    poisoned.into_inner()
-                }
-            };
-            *addr_guard = Some(new_address);
+            *self.stats.flashloan_contract_address.write().unwrap() = Some(new_address);
             return Ok(());
         }
         Ok(())
@@ -862,11 +833,17 @@ impl AlphaCopilot {
 
     pub fn generate_insight(stats: &WatchtowerStats) -> String {
         let score = stats.total_weighted_score.load(Ordering::Relaxed) as f64 / 10.0;
+        let win_rate = stats.win_rate_bps.load(Ordering::Relaxed) as f64 / 100.0;
+        let health = if score >= 95.0 { "ELITE" } else if score >= 85.0 { "PRODUCTION" } else { "DEGRADED" };
+        
+        if let Ok(mut log) = stats.event_log.lock() {
+            log.push_back(format!("Copilot Insight: System health is {}. Current Win Rate: {:.2}%", health, win_rate));
+            if log.len() > 50 { log.pop_front(); }
+        }
+
         format!(
-            "MISSION STATUS [Command Protocol]: {} throughput. GES: {:.2}%. Status: {}.",
-            stats.msg_throughput_sec.load(Ordering::Relaxed),
-            score,
-            if score >= 95.0 { "ELITE" } else if score >= 85.0 { "PRODUCTION" } else { "DEGRADED" }
+            "MISSION STATUS [Command Protocol]: {} msg/s. GES: {:.2}%. Win Rate: {:.2}%. Status: {}.",
+            stats.msg_throughput_sec.load(Ordering::Relaxed), score, win_rate, health
         )
     }
 
@@ -886,7 +863,7 @@ impl AlphaCopilot {
 
         serde_json::json!({
             "report_type": "ARCHITECTURAL_BOTTLENECK",
-std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs(),
+            "timestamp": std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs(),
             "findings": bottlenecks
         })
     }
@@ -912,14 +889,8 @@ std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_def
                     suggested_changes: vec![format!("Edit: {}", order.target), "Terminal: cargo build --release".into()],
                 };
 
-                let mut p_guard = match PENDING_PROPOSAL.lock() {
-                    Ok(guard) => guard,
-                    Err(poisoned) => {
-                        error!(target: "alpha_copilot", "Pending proposal lock poisoned, recovering");
-                        poisoned.into_inner()
-                    }
-                };
-                *p_guard = Some(proposal.clone());
+let mut p = PENDING_PROPOSAL.lock().expect("Pending proposal lock poisoned");
+                *p = Some(proposal.clone());
 
                 format!("ALPHA-COPILOT: I have prepared a deployment plan (ID: {}). Impact: {}. Please confirm via Chat to execute.", 
                     proposal.task_id, proposal.impact_analysis)
@@ -990,33 +961,22 @@ impl SecurityModule {
 
         // BSS-32: Nonce-based Replay Protection (One-time use)
         {
-            let mut nonces_guard = match USED_NONCES.lock() {
-                Ok(guard) => guard,
-                Err(poisoned) => {
-                    error!(target: "bss_32", "USED_NONCES lock poisoned, recovering");
-                    poisoned.into_inner()
-                }
-            };
+            let mut nonces = USED_NONCES.lock().expect("Security: Nonce lock poisoned");
             // Prune entries older than 30s window to prevent memory leaks
-            nonces_guard.retain(|_, &mut ts| now <= ts + 30);
+            nonces.retain(|_, &mut ts| now <= ts + 30);
 
-            if nonces_guard.contains_key(&order.nonce) {
+            if nonces.contains_key(&order.nonce) {
                 return false;
             }
-            nonces_guard.insert(order.nonce, order.timestamp);
+            nonces.insert(order.nonce, order.timestamp);
         }
 
         if order.timestamp > now + 5 || now > order.timestamp + 30 {
             return false;
         }
 
-        let mut mac = match HmacSha256::new_from_slice(secret.as_bytes()) {
-            Ok(mac) => mac,
-            Err(e) => {
-                error!(target: "bss_32", error = ?e, "Failed to create HMAC from secret key");
-                return false;
-            }
-        };
+        let mut mac =
+            HmacSha256::new_from_slice(secret.as_bytes()).expect("HMAC can take key of any size");
 
         // Authenticate the target and payload integrity
         mac.update(order.target.as_bytes());
@@ -1050,18 +1010,14 @@ async fn run_api_gateway(
     // BSS-06: Enhanced Telemetry Logging using Domain 7 Specialist
     let dash_specialist = DashboardSpecialist { stats: Arc::clone(&stats) };
     let diagnostic = dash_specialist.run_diagnostic();
-    info!(target: "bss_06", diagnostic = ?diagnostic, "Initializing Telemetry Gateway");
+    println!("[BSS-06] Initializing Telemetry Gateway. Domain 7 Diagnostic: {}", diagnostic);
 
     if let Ok(port) = std::env::var("INTERNAL_BRIDGE_PORT") {
         let addr = format!("0.0.0.0:{port}");
-        let listener = match tokio::net::TcpListener::bind(&addr).await {
-            Ok(l) => l,
-            Err(e) => {
-                error!(target: "bss_06", addr = %addr, error = %e, "Failed to bind TCP listener");
-                std::process::exit(1);
-            }
-        };
-        info!(target: "bss_06", addr = %addr, "Telemetry Gateway active on TCP");
+        let listener = tokio::net::TcpListener::bind(&addr)
+            .await
+            .expect("[BSS-06] Render TCP listener active");
+        println!("[BSS-06] Telemetry Gateway active on TCP: {addr}");
 
         loop {
             if let Ok((socket, _)) = listener.accept().await {
@@ -1080,18 +1036,11 @@ async fn run_api_gateway(
         let socket_path = std::env::var("BRIGHTSKY_SOCKET_PATH")
             .unwrap_or_else(|_| "/tmp/brightsky_bridge.sock".to_string());
         let _ = std::fs::remove_file(&socket_path);
-        let listener = match tokio::net::UnixListener::bind(&socket_path) {
-            Ok(l) => l,
-            Err(e) => {
-                error!(target: "bss_06", path = %socket_path, error = %e, "Failed to bind UDS socket");
-                std::process::exit(1);
-            }
-        };
-        if let Err(e) = std::fs::set_permissions(&socket_path, std::fs::Permissions::from_mode(0o600)) {
-            error!(target: "bss_06", path = %socket_path, error = %e, "Failed to set socket permissions");
-            // Continue anyway - non-critical
-        }
-        info!(target: "bss_06", path = %socket_path, "Telemetry Gateway active on UDS (Protected)");
+        let listener =
+            tokio::net::UnixListener::bind(&socket_path).expect("[BSS-06] UDS socket active");
+        std::fs::set_permissions(&socket_path, std::fs::Permissions::from_mode(0o600))
+            .expect("[BSS-06] Failed to set socket permissions");
+        println!("[BSS-06] Telemetry Gateway active on UDS: {socket_path} (Protected)");
 
         loop {
             if let Ok((socket, _)) = listener.accept().await {
@@ -1108,14 +1057,10 @@ async fn run_api_gateway(
     #[cfg(not(unix))]
     {
         let addr = "127.0.0.1:4003";
-        let listener = match tokio::net::TcpListener::bind(addr).await {
-            Ok(l) => l,
-            Err(e) => {
-                error!(target: "bss_06", addr = %addr, error = %e, "Failed to bind TCP fallback listener");
-                std::process::exit(1);
-            }
-        };
-        info!(target: "bss_06", addr = %addr, "Telemetry Gateway active on TCP (fallback)");
+        let listener = tokio::net::TcpListener::bind(addr)
+            .await
+            .expect("[BSS-06] TCP fallback active");
+        println!("[BSS-06] Telemetry Gateway active on TCP: {addr}");
 
         loop {
             if let Ok((socket, _)) = listener.accept().await {
@@ -1156,7 +1101,11 @@ async fn handle_gateway_connection<S>(
                         if !req_str.contains("GET") && !req_str.contains("POST") {
                             if let Ok(order) = serde_json::from_str::<DebuggingOrder>(&req_str) {
                                 let _ = debug_tx.send(order).await;
-                                let _ = writer.write_all(b"{\"status\":\"order_queued\"}\n// Import types from the library\npub use crate::{SubsystemSpecialist, HealthStatus, BssLevel, DebugIntent, DebuggingOrder, CopilotProposal, SystemPolicy, PENDING_PROPOSAL, USED_NONCES};\n\n// Module type imports\n\nuse crate::module::bss_13_solver::{ArbitrageOpportunity, SolverSpecialist};\nuse crate::module::bss_44_liquidity::LiquidityEngine;\nuse crate::module::bss_43_simulator::{SimulationEngine, SimulationResult, SimulationSpecialist};\nuse crate::module::bss_45_risk::{RiskEngine, RiskSpecialist};\nuse crate::module::bss_42_mev_guard::{MEVGuardEngine, MEVGuardSpecialist};\nuse crate::module::bss_27_ui_gateway::UIGatewaySpecialist;\nuse crate::module::bss_46_metrics::MetricsSpecialist;\nuse crate::module::bss_41_executor::PrivateExecutorSpecialist;\nuse crate::module::bss_16_p2p_bridge::P2PNBridgeSpecialist;\nuse crate::module::bss_40_mempool::{MempoolIntelligenceSpecialist, MempoolEngine};\n\n").await;
+                                if let Ok(mut log) = stats.event_log.lock() {
+                                    log.push_back(format!("Commander Input: Processing request for {}", req_str));
+                                    if log.len() > 50 { log.pop_front(); }
+                                }
+                                let _ = writer.write_all(b"{\"status\":\"order_queued\"}\n").await;
                                 continue;
                             }
                         }
@@ -1168,6 +1117,10 @@ async fn handle_gateway_connection<S>(
                                     stats.min_margin_ratio_bps.store(min_bps, Ordering::Relaxed);
                                     stats.bribe_ratio_bps.store(bribe_bps, Ordering::Relaxed);
                                     println!("[BSS-07] Bribe tuning updated from Node.js: min_margin={}bps, bribe={}bps", min_bps, bribe_bps);
+                                    if let Ok(mut log) = stats.event_log.lock() {
+                                        log.push_back(format!("Auto-Optimization: Bribe ratio tuned to {}bps", bribe_bps));
+                                        if log.len() > 50 { log.pop_front(); }
+                                    }
                                 }
                                 continue;
                             }
@@ -1195,6 +1148,11 @@ async fn handle_gateway_connection<S>(
                             let _ = dash_specialist.get_domain_score();
 
                             let throughput = stats.msg_throughput_sec.load(Ordering::Relaxed);
+                            let event_log = if let Ok(log) = stats.event_log.lock() {
+                                log.iter().cloned().collect::<Vec<String>>()
+                            } else {
+                                vec![]
+                            };
                             let data = serde_json::json!({
                                 "throughput_msg_s": throughput,
                                 "p99_latency_ms": stats.solver_latency_p99_ms.load(Ordering::Relaxed),
@@ -1208,6 +1166,10 @@ async fn handle_gateway_connection<S>(
                                 "domain_score_dashboard": stats.domain_score_dashboard.load(Ordering::Relaxed) as f64 / 10.0,
                                 "domain_score_health": stats.domain_score_health.load(Ordering::Relaxed) as f64 / 10.0,
                                 "total_weighted_score": stats.total_weighted_score.load(Ordering::Relaxed) as f64 / 10.0,
+                                "win_rate_bps": stats.win_rate_bps.load(Ordering::Relaxed),
+                                "total_bribe_eth": stats.total_bribe_milli_eth.load(Ordering::Relaxed) as f64 / 1000.0,
+                                "mempool_backlog": stats.mempool_events_per_sec.load(Ordering::Relaxed),
+                                "event_log": event_log,
                             });
                             ("200 OK", data)
                         };
@@ -1498,7 +1460,8 @@ async fn run_watchtower(
     let mut final_ges = 0.0;
     let mut final_gaps = Vec::new();
 
-    while attempt < MAX_GATE_RETRIES         let gate = SimulationEngine::validate_deployment_gate(&stats, &graph, 100, &benchmarks).await;
+    while attempt < MAX_GATE_RETRIES {
+        let gate = SimulationEngine::validate_deployment_gate(&stats, &graph, 100, &benchmarks).await;
         if gate.passed {
             passed = true;
             final_ges = gate.ges;
@@ -1872,7 +1835,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 payload: None,
                 timestamp: std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap_or_else(|_| std::time::Duration::from_secs(0))
+                    .unwrap()
                     .as_secs(),
                 nonce: 12345,
             })
@@ -1915,14 +1878,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             );
             payload.push(CircuitBreaker::is_tripped(&heartbeat_stats) as u8);
 
-            let addr_guard = match heartbeat_stats.flashloan_contract_address.read() {
-                Ok(guard) => guard,
-                Err(poisoned) => {
-                    error!(target: "bss_34", "Flashloan address RwLock poisoned (heartbeat), using None");
-                    poisoned.into_inner()
-                }
-            };
-            if let Some(s) = addr_guard.as_ref() {
+let addr = heartbeat_stats.flashloan_contract_address.read().expect("Flashloan address RwLock poisoned");
+            if let Some(s) = addr.as_ref() {
                 payload.extend_from_slice(&(s.len() as u16).to_be_bytes());
                 payload.extend_from_slice(s.as_bytes());
             } else {

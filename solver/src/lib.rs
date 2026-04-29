@@ -132,11 +132,13 @@ pub struct WatchtowerStats {
     pub opt_convergence_rate: AtomicU64,
     pub min_profit_bps_adj: AtomicU64,
     pub total_profit_milli_eth: AtomicU64,
+    pub total_bribe_milli_eth: AtomicU64,
     pub mempool_events_per_sec: AtomicUsize,
     pub alpha_decay_avg_ms: AtomicU64,
     pub sim_parity_delta_bps: AtomicU64,
     pub circuit_breaker_recovery_count: AtomicU64,
     pub simulated_tx_success_rate: AtomicUsize,
+    pub win_rate_bps: AtomicU64,
     pub mempool_state_prediction_ready: AtomicBool,
     pub wallet_balance_milli_eth: AtomicU64,
     pub loss_rate_bps: AtomicU64,
@@ -183,6 +185,8 @@ pub struct WatchtowerStats {
     pub reinforcement_meta_learner: Mutex<crate::reinforcement_meta_learner::ReinforcementMetaLearner>,
     // BSS-13: Path caching system
     pub path_cache: Mutex<crate::path_cache::PathCache>,
+    // BSS-21: Live Event Log (Circular Buffer)
+    pub event_log: Mutex<VecDeque<String>>,
     // KPI Improvement Metrics (Phase: Remaining KPI Categories)
     // Sub-block timing metrics
     pub collision_rate_estimate: AtomicU64,        // Estimated collision rate (bps * 100, e.g., 40 = 0.4%)
@@ -232,12 +236,32 @@ impl WatchtowerStats {
         let target = if success { 10000 } else { 0 };
         let new = ((old as f64) * 0.9 + target as f64 * 0.1) as usize;
         self.meta_success_ratio_ema.store(new, Ordering::Relaxed);
+        
+        // Update Win Rate statistic
+        let executed = self.executed_trades_count.load(Ordering::Relaxed) as f64;
+        let opportunities = self.opportunities_found_count.load(Ordering::Relaxed) as f64;
+        if opportunities > 0.0 {
+            let wr = (executed / opportunities) * 10000.0;
+            self.win_rate_bps.store(wr as u64, Ordering::Relaxed);
+        }
 
         // EMA for profit momentum - keep for backward compatibility
         let old_bits = self.meta_profit_momentum.load(Ordering::Relaxed);
         let old_momentum = f64::from_bits(old_bits);
         let new_momentum = old_momentum * 0.9 + profit_eth * 0.1;
         self.meta_profit_momentum.store(new_momentum.to_bits(), Ordering::Relaxed);
+
+        // Add to event log
+        let event = format!(
+            "[{}] Trade Outcome: {} | Profit: {:.4} ETH", 
+            if success { "SUCCESS" } else { "REVERT" }, 
+            if success { "Executed" } else { "Failed" }, 
+            profit_eth
+        );
+        if let Ok(mut log) = self.event_log.lock() {
+            log.push_back(event);
+            if log.len() > 50 { log.pop_front(); }
+        }
 
         // Increment trade counter
         self.meta_trade_count.fetch_add(1, Ordering::Relaxed);
@@ -347,5 +371,6 @@ pub use module::bss_27_ui_gateway::UIGatewaySpecialist;
 pub use module::bss_46_metrics::MetricsSpecialist;
 pub use module::bss_41_executor::PrivateExecutorSpecialist;
 pub use module::bss_16_p2p_bridge::P2PNBridgeSpecialist;
+
 pub use module::bss_40_mempool::{MempoolIntelligenceSpecialist, MempoolEngine};
 pub use module::bss_05_sync::{subscribe_chain, subscribe_mempool};

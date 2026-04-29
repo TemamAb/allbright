@@ -449,3 +449,37 @@ pub struct LearningStats {
     pub total_reward: f64,
 }
 }
+
+impl ReinforcementMetaLearner {
+    /// Get learning statistics for monitoring and debugging
+    pub fn get_learning_stats(&self) -> LearningStats {
+        LearningStats {
+            q_table_size: self.q_table.len(),
+            replay_buffer_size: self.replay_buffer.len(),
+            exploration_rate: self.exploration_rate,
+            current_state: self.current_state.clone(),
+            last_action: self.last_action.clone(),
+            last_reward: self.last_reward,
+            episodes_completed: self.episodes_completed,
+            total_reward: self.total_reward,
+        }
+    }
+
+    /// Reset learning state (useful for testing or when market conditions change significantly)
+    pub fn reset(&mut self) {
+        self.q_table.clear();
+        self.replay_buffer.clear();
+        self.initialize_q_table();
+        self.current_state = None;
+        self.last_action = None;
+        self.last_reward = 0.0;
+        self.episodes_completed = 0;
+        self.total_reward = 0.0;
+    }
+
+    /// Manually trigger learning from replay buffer
+    pub fn force_learning_from_replay(&mut self) {
+        self.learn_from_replay();
+    }
+}
+

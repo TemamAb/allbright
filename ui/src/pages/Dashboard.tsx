@@ -7,6 +7,7 @@ import { useLiveTelemetry } from "../../../api/src/services/useLiveTelemetry";
 import { AnomalyTicker } from "../../../api/src/services/AnomalyTicker";
 import { MarketSentiment } from "../../../api/src/services/MarketSentiment";
 import { motion } from "framer-motion";
+import DashboardHero from "@/components/DashboardHero";
 
 export default function Dashboard() {
   const { state: liveState, isConnected, history } = useLiveTelemetry();
@@ -74,6 +75,9 @@ export default function Dashboard() {
 
   return (
     <div className={`space-y-6 transition-all duration-1000 p-1 ${isWarMode ? 'ring-1 ring-red-500/50 bg-red-950/5 shadow-[inset_0_0_50px_rgba(239,68,68,0.1)]' : ''}`}>
+      {/* Animated Hero Section */}
+      <DashboardHero />
+      
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">

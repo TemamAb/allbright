@@ -5,6 +5,7 @@ import SpecialistDashboard from "../components/SpecialistDashboard";
 import EventTimeline from "../components/EventTimeline";
 import CommandPalette from "../components/CommandPalette";
 import { LucideIcon, Play, Send, Zap, Shield, Activity, Settings, Bolt, Brain } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function Copilot() {
   const [input, setInput] = useState("");
@@ -84,10 +85,10 @@ export default function Copilot() {
       />
 
       {/* Mission Control Header */}
-      <div className="mb-12 text-center">
-        <div className="mx-auto w-24 h-24 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-2xl flex items-center justify-center backdrop-blur-lg border border-primary/30 animate-pulse">
-          <Brain className="w-16 h-16 text-primary opacity-80" />
-        </div>
+        <div className="mb-12 text-center">
+        <div className="mx-auto w-24 h-24 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-2xl flex items-center justify-center backdrop-blur-lg border border-primary/30 animate-pulse shadow-neon">
+           <Brain className="w-16 h-16 text-primary opacity-80" />
+         </div>
         <h1 className="mt-6 text-5xl font-black bg-gradient-to-r from-slate-200 to-slate-100 bg-clip-text text-transparent">
           ALPHA-COPILOT
         </h1>
@@ -110,15 +111,17 @@ export default function Copilot() {
             </div>
           )}
         </div>
-        <div className="mt-6 flex gap-2 justify-center">
-          <button 
-            onClick={() => setIsPaletteOpen(true)}
-            className="flex items-center gap-2 bg-gradient-to-r from-primary/90 to-secondary/90 hover:from-primary/100 hover:to-secondary/100 text-slate-900 font-bold px-6 py-3 rounded-xl shadow-lg hover:shadow-neon transition-all"
-          >
-            <Activity className="w-5 h-5" />
-            Open Command Palette (⌘K)
-          </button>
-        </div>
+         <div className="mt-6 flex gap-2 justify-center">
+           <motion.button 
+             onClick={() => setIsPaletteOpen(true)}
+             whileHover={{ scale: 1.05 }}
+             whileTap={{ scale: 0.95 }}
+             className="flex items-center gap-2 bg-gradient-to-r from-primary/90 to-secondary/90 hover:from-primary/100 hover:to-secondary/100 text-slate-900 font-bold px-6 py-3 rounded-xl shadow-lg hover:shadow-neon transition-all"
+           >
+             <Activity className="w-5 h-5" />
+             Open Command Palette (⌘K)
+           </motion.button>
+         </div>
       </div>
 
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -127,9 +130,15 @@ export default function Copilot() {
           <SpecialistDashboard />
           
           {/* Chat History */}
-          <div className="glass-panel h-[500px] overflow-y-auto">
+          <div className="glass-panel h-[500px] overflow-y-auto transition-all hover:shadow-neon">
             {messages.map((msg, index) => (
-              <div key={index} className={`mb-6 ${msg.role === "user" ? "text-right" : "text-left"}`}>
+              <motion.div 
+                key={index} 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className={`mb-6 ${msg.role === "user" ? "text-right" : "text-left"}`}
+              >
                 <div className={`inline-block max-w-[75%] p-4 rounded-2xl ${
                   msg.role === "user" 
                     ? "bg-gradient-to-r from-blue-500/20 to-indigo-500/20 border border-blue-500/30 ml-auto" 
@@ -140,7 +149,7 @@ export default function Copilot() {
                     {new Date(msg.timestamp).toLocaleTimeString()}
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
             {loading && (
               <div className="text-left mb-6">
@@ -154,25 +163,27 @@ export default function Copilot() {
             )}
           </div>
 
-          {/* Command Input */}
-          <form onSubmit={handleSubmit} className="glass-panel p-4 rounded-2xl border border-slate-800/50">
-            <div className="flex gap-3">
-              <input
-                placeholder="Enter mission command or question..."
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                className="flex-1 bg-slate-900/50 border border-slate-800/50 text-slate-200 placeholder-slate-500 px-5 py-4 rounded-xl focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
-                disabled={loading}
-              />
-              <button
-                type="submit"
-                disabled={loading || !input.trim()}
-                className="w-14 h-14 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-slate-900 rounded-2xl shadow-lg hover:shadow-neon flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? <div className="w-5 h-5 border-2 border-slate-900 border-t-current rounded-full animate-spin" /> : <Send className="w-5 h-5" />}
-              </button>
-            </div>
-          </form>
+           {/* Command Input */}
+           <form onSubmit={handleSubmit} className="glass-panel p-4 rounded-2xl border border-slate-800/50 transition-all hover:shadow-neon">
+             <div className="flex gap-3">
+               <input
+                 placeholder="Enter mission command or question..."
+                 value={input}
+                 onChange={(e) => setInput(e.target.value)}
+                 className="flex-1 bg-slate-900/50 border border-slate-800/50 text-slate-200 placeholder-slate-500 px-5 py-4 rounded-xl focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 transition-all"
+                 disabled={loading}
+               />
+               <motion.button
+                 type="submit"
+                 disabled={loading || !input.trim()}
+                 whileHover={{ scale: 1.05 }}
+                 whileTap={{ scale: 0.95 }}
+                 className="w-14 h-14 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-slate-900 rounded-2xl shadow-lg hover:shadow-neon flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+               >
+                 {loading ? <div className="w-5 h-5 border-2 border-slate-900 border-t-current rounded-full animate-spin" /> : <Send className="w-5 h-5" />}
+               </motion.button>
+             </div>
+           </form>
         </div>
 
         {/* Right Column: Live Data */}
@@ -214,23 +225,31 @@ export default function Copilot() {
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="glass-panel p-6 rounded-2xl">
-            <h4 className="font-bold mb-4 flex items-center gap-2">
-              <Settings className="w-5 h-5" />
-              Quick Mission Actions
-            </h4>
-            <div className="grid grid-cols-2 gap-3">
-              <button className="group flex flex-col items-center p-3 hover:bg-primary/20 rounded-xl transition-all border border-slate-800/50 hover:border-primary/30">
-                <Zap className="w-6 h-6 text-yellow-400 group-hover:scale-110 transition-transform" />
-                <span className="text-sm mt-1 font-medium">Emergency Tune</span>
-              </button>
-              <button className="group flex flex-col items-center p-3 hover:bg-green-500/20 rounded-xl transition-all border border-slate-800/50 hover:border-green-500/30">
-                <Shield className="w-6 h-6 text-green-400 group-hover:scale-110 transition-transform" />
-                <span className="text-sm mt-1 font-medium">Risk Audit</span>
-              </button>
-            </div>
-          </div>
+           {/* Quick Actions */}
+           <div className="glass-panel p-6 rounded-2xl">
+             <h4 className="font-bold mb-4 flex items-center gap-2">
+               <Settings className="w-5 h-5" />
+               Quick Mission Actions
+             </h4>
+             <div className="grid grid-cols-2 gap-3">
+               <motion.button 
+                 whileHover={{ scale: 1.03 }}
+                 whileTap={{ scale: 0.97 }}
+                 className="group flex flex-col items-center p-3 hover:bg-primary/20 rounded-xl transition-all border border-slate-800/50 hover:border-primary/30 hover:shadow-neon"
+               >
+                 <Zap className="w-6 h-6 text-yellow-400 group-hover:scale-110 transition-transform" />
+                 <span className="text-sm mt-1 font-medium">Emergency Tune</span>
+               </motion.button>
+               <motion.button 
+                 whileHover={{ scale: 1.03 }}
+                 whileTap={{ scale: 0.97 }}
+                 className="group flex flex-col items-center p-3 hover:bg-green-500/20 rounded-xl transition-all border border-slate-800/50 hover:border-green-500/30 hover:shadow-neon"
+               >
+                 <Shield className="w-6 h-6 text-green-400 group-hover:scale-110 transition-transform" />
+                 <span className="text-sm mt-1 font-medium">Risk Audit</span>
+               </motion.button>
+             </div>
+           </div>
         </div>
       </div>
     </div>
