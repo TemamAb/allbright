@@ -167,22 +167,3 @@ sharedEngineState.configChecksum = computeConfigChecksum(sharedEngineState);
 
 // Export validation function for external use
 export { validateConfiguration };
-  pimlicoApiKey: null,
-  rpcEndpoint: null,
-  opportunitiesDetected: 0,
-  opportunitiesExecuted: 0,
-  scanInFlight: false,
-  skippedScanCycles: 0,
-  lastScanStartedAt: null,
-  lastScanCompletedAt: null,
-  circuitBreaker: undefined,
-  alphaDecayAvgMs: 0,
-  simParityDeltaBps: 0,
-  successRate: 0.95,
-  msgThroughputCount: 0,
-  currentDailyProfit: 0,
-  avgLatencyMs: 0,
-  currentDrawdown: 0,
-  circuitBreakerOpen: false,
-  chainId: 8453,
-};

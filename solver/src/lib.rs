@@ -97,9 +97,11 @@ pub const TARGET_TOTAL_SCORE_PCT: f64 = 95.0;
 /// Weights from benchmark-36-kpis.md: 25/20/15/10/10/10 (Domains 1-6).
 pub const GES_WEIGHTS: [f64; 6] = [0.25, 0.20, 0.15, 0.10, 0.10, 0.10];
 
+/*
 #[cfg(test)]
 mod tests {
     use super::*;
+*/
     #[test]
     fn test_ges_weights_sum_to_one() {
         let sum: f64 = GES_WEIGHTS.iter().sum();
@@ -244,23 +246,7 @@ mod tests {
         (fastrand::f64() - 0.5) * 1e-12 // Random small effect
     }
 
-        // Brownian motion effects on nanoscale components
-        let brownian_noise = self.estimate_brownian_noise();
-        let circuit_precision = self.timing_precision_ns.load(Ordering::Relaxed) as f64;
 
-        if brownian_noise > circuit_precision * 0.01 { // 1% of timing precision
-            tracing::warn!("Brownian motion noise ({:.2}ns) affects timing precision ({:.1}ns)",
-                brownian_noise, circuit_precision);
-        }
-
-        Ok(())
-    }
-
-        let power_watts = estimated_tdp_watts * cpu_percent;
-        let volume_m3 = chip_area_m2 * chip_thickness_m;
-
-        power_watts / volume_m3
-    }
 
     /// Validate signal propagation delays
     fn validate_signal_propagation(&self) -> Result<f64, String> {
@@ -292,6 +278,8 @@ mod tests {
         1e-10 * 64.0
     }
 }
+}
+*/
 
 // PolicyDelta from MetaLearner → AutoOptimizer
 #[derive(Default, Clone, Copy)]
