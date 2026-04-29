@@ -169,5 +169,7 @@ export const specialists = [
   new HealthSpecialist(),
   new AutoOptSpecialist(),
   new DashboardSpecialist(),
-  new BribeOptimizationSpecialist()
+  new BribeOptimizationSpecialist(),
+  new RustSpecialist()
 ];
+

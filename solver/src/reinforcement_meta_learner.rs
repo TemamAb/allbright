@@ -402,8 +402,6 @@ impl ReinforcementMetaLearner {
         delta
     }
 
-    }
-
     /// Get learning statistics for monitoring and debugging
     pub fn get_learning_stats(&self) -> LearningStats {
         LearningStats {
@@ -447,7 +445,6 @@ pub struct LearningStats {
     pub last_reward: f64,
     pub episodes_completed: u64,
     pub total_reward: f64,
-}
 }
 
 impl ReinforcementMetaLearner {
