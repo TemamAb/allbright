@@ -1,53 +1,49 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-
-interface SpecialistStatus {
-  name: string;
-  status: 'green' | 'yellow' | 'red';
-  score: number;
-  lastTune: string;
-}
+import { Brain, Shield, TrendingUp, Activity, Cpu, Zap, Settings } from "lucide-react";
+import { motion } from "framer-motion";
 
 const SpecialistDashboard: React.FC = () => {
-  const { data: statuses } = useQuery<SpecialistStatus[]>({
-    queryKey: ['specialist-statuses'],
-    queryFn: async () => {
-      // Mock data - replace with API call to /api/copilot/specialists
-      return [
-        { name: 'Profitability', status: 'green' as const, score: 96, lastTune: '2m ago' },
-        { name: 'Risk', status: 'yellow' as const, score: 88, lastTune: '5m ago' },
-        { name: 'Efficiency', status: 'green' as const, score: 94, lastTune: '1m ago' },
-        { name: 'Health', status: 'green' as const, score: 99, lastTune: '10s ago' },
-        { name: 'Performance', status: 'red' as const, score: 82, lastTune: '15m ago' },
-        { name: 'AutoOpt', status: 'green' as const, score: 97, lastTune: '30s ago' },
-        { name: 'Dashboard', status: 'yellow' as const, score: 91, lastTune: '3m ago' },
-      ];
-    },
-    refetchInterval: 5000,
-  });
+  const specialists = [
+    { name: 'Profitability', status: 'green', score: 98, icon: TrendingUp },
+    { name: 'Risk', status: 'green', score: 99, icon: Shield },
+    { name: 'Efficiency', status: 'green', score: 96, icon: Cpu },
+    { name: 'Health', status: 'green', score: 100, icon: Activity },
+    { name: 'Performance', status: 'yellow', score: 92, icon: Zap },
+    { name: 'AutoOpt', status: 'green', score: 97, icon: Brain },
+    { name: 'Dashboard', status: 'yellow', score: 94, icon: Settings },
+  ];
 
-  const getStatusColor = (status: SpecialistStatus['status']) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case 'green': return 'bg-green-500';
-      case 'yellow': return 'bg-yellow-500';
-      case 'red': return 'bg-red-500';
+      case 'green': return 'bg-green-500 ring-green-500/30';
+      case 'yellow': return 'bg-yellow-500 ring-yellow-500/30';
+      case 'red': return 'bg-red-500 ring-red-500/30';
     }
   };
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      {statuses?.map((spec, index) => (
-        <div key={index} className="glass-panel p-4 rounded-lg border hover:shadow-neon">
-          <div className="flex items-center gap-3 mb-2">
-            <div className={`w-3 h-3 rounded-full ${getStatusColor(spec.status)} animate-pulse`} />
-            <h3 className="font-semibold text-slate-200">{spec.name}</h3>
+    <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4">
+      {specialists.map((spec, index) => (
+        <motion.div 
+          key={spec.name} 
+          initial={{ opacity: 0, scale: 0.9 }} 
+          animate={{ opacity: 1, scale: 1 }} 
+          transition={{ delay: index * 0.1 }}
+          className="bg-gray-900/70 border rounded-2xl p-8 border-gray-700 hover:border-primary/50 hover:shadow-2xl transition-all group relative overflow-hidden"
+        >
+          <div className={`absolute -top-4 -right-4 w-24 h-24 rounded-full opacity-20 group-hover:opacity-30 transition-opacity ${getStatusColor(spec.status)}`} />
+          <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-800 to-gray-900 border-4 mx-auto mb-6 flex items-center justify-center shadow-lg ring-4 ring-transparent group-hover:ring-primary/30 transition-all ${getStatusColor(spec.status)}`}>
+            <spec.icon size={32} className="text-white drop-shadow-lg" />
           </div>
-          <div className="text-2xl font-bold text-primary">{spec.score}%</div>
-          <div className="text-xs text-slate-500 mt-1">Last tune: {spec.lastTune}</div>
-          <button className="mt-2 w-full py-1 px-2 bg-primary/20 hover:bg-primary/40 text-xs rounded text-primary transition-all">
-            Tune
+          <h3 className="text-xl font-bold text-white mb-4 text-center">{spec.name}</h3>
+          <div className="text-4xl font-black text-white mb-2 text-center drop-shadow-lg">
+            {spec.score}%
+          </div>
+          <div className="text-lg text-gray-400 text-center">Optimal</div>
+          <button className="w-full mt-6 py-3 bg-primary/20 hover:bg-primary/40 border border-primary/30 text-primary text-lg font-bold rounded-xl transition-all group-hover:scale-[1.02]">
+            Tune Now
           </button>
-        </div>
+        </motion.div>
       ))}
     </div>
   );

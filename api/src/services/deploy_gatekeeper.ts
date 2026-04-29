@@ -8,9 +8,9 @@ const alphaCopilot = new AlphaCopilot();
 
 // Files to verify for deployment readiness
 const RUST_FILES_TO_CHECK = [
-  'solver/src/reinforcement_meta_learner.rs',
-  'solver/src/module/bss_43_simulator.rs',
-  'solver/src/graph/bss_04_graph.rs',
+  'solver/src/lib.rs',
+  'solver/src/main.rs',
+  'solver/src/benchmarks.rs',
   'solver/src/timing/mod.rs',
   'solver/src/timing/sub_block_timing.rs',
 ];
@@ -18,7 +18,7 @@ const RUST_FILES_TO_CHECK = [
 const TYPESCRIPT_FILES_TO_CHECK = [
   'api/src/services/bribeEngine.ts',
   'api/src/services/useLiveTelemetry.ts',
-  'api/src/services/AnomalyTicker.tsx',
+  'ui/src/components/AnomalyTicker.tsx',
   'api/src/services/MarketSentiment.tsx',
   'api/src/services/mockRustBridge.ts',
   'api/src/services/websocketStream.ts',

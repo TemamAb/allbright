@@ -1,16 +1,28 @@
-if (process.env.CI) return;
+#!/usr/bin/env node
 
-const fs = require("node:fs");
+/**
+ * Brightsky Preinstall Hook: Enforce pnpm usage
+ * Prevents npm/yarn usage in workspace
+ */
 
-for (const lockfile of ["package-lock.json", "yarn.lock"]) {
-  try {
-    fs.rmSync(lockfile, { force: true });
-  } catch {}
-}
+const { execSync } = require('child_process');
+const path = require('path');
 
-const userAgent = process.env.npm_config_user_agent || "";
-
-if (!userAgent.startsWith("pnpm/")) {
-  console.error("Use pnpm instead");
+try {
+  // Check if pnpm is installed
+  execSync('pnpm --version', { stdio: 'ignore' });
+} catch (error) {
+  console.error('❌ pnpm is required for Brightsky. Please install: npm install -g pnpm');
   process.exit(1);
 }
+
+const packageManager = process.env.npm_execpath || process.env.npm_node_execpath;
+
+if (packageManager && !packageManager.includes('pnpm')) {
+  console.error('🚫 Brightsky requires pnpm. Detected:', path.basename(packageManager));
+  console.error('💡 Run: pnpm install');
+  process.exit(1);
+}
+
+console.log('✅ pnpm enforced - proceeding with install...');
+

@@ -89,7 +89,7 @@ $lines += "| $ts | $trades | $totalEth | `$$totalUSD` | $mode | $block |"
 $lines += ""
 $lines += "**ETH Price**: ~`$$ethPrice`"
 $gasNote = '$0 (Pimlico paymaster sponsored)'
-$lines += "**Gas Cost**: $gasNote"
+$lines += "**Gas Cost**: `"$gasNote`"
 $lines += ""
 $lines += "---"
 $lines += ""
@@ -106,4 +106,4 @@ $lines += ""
 $lines += "*File auto-updated every 60 seconds from BrightSky API telemetry*"
 
 [System.IO.File]::WriteAllLines($md, $lines, [System.Text.Encoding]::UTF8)
-Write-Host "Profit record updated: $totalEth ETH ($trades trades) at $ts"
+Write-Host "Profit record updated: `$(totalEth) ETH (`$(trades) trades) at `$(ts)"

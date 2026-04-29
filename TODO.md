@@ -1,10 +1,18 @@
-# AI Improvement TODO
+# Brightsky Deploy Progress - Clean Dashboard Complete
 
-1. [ ] Add Vitest deps to package.json via pnpm add -D vitest @vitest/ui jsdom @types/node
-2. [ ] Add "test": "vitest", "test:ui": "vitest --ui" to package.json scripts
-3. [ ] pnpm install
-4. [ ] Create api/src/services/specialists.test.ts w/ specialist tests
-5. [ ] Edit api/src/services/specialists.ts: Impl ProfitabilitySpecialist using TradingAI
-6. [ ] pnpm test
-7. [ ] Set OPENAI_API_KEY=.env.local, pnpm --filter api dev
-8. [ ] Test Copilot UI E2E
+**Phases Completed**:
+- [x] Context & dashboard analysis
+- [x] Welcome removed
+- [x] Dashboard clean: Profit grid (hour/trade/total wallet)
+- [x] GateKeeper clean large cards
+- [x] Specialist clean large cards
+- [x] Wallet page: Key panel + withdrawal auto/manual
+- [x] Vault route removed
+- [x] Local stack 3002 live
+
+**Next**:
+1. Fix PS1 syntax (update-profit.ps1 ** → * )
+2. Git commit/push origin main (prod deploy)
+3. Fill new content "from scratch"
+
+Local UI: localhost:3002/dashboard - clean layout ready.

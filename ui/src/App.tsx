@@ -12,7 +12,7 @@ import AuditReport from "@/pages/AuditReport.tsx";
 import Stream from "@/pages/Stream.tsx";
 import Trades from "@/pages/Trades.tsx";
 import Vault from "@/pages/Vault";
-import Welcome from "@/pages/Welcome";
+
 import Copilot from "@/pages/Copilot";
 import SetupWizard from "@/pages/SetupWizard";
 import Layout from "@/components/Layout";
@@ -106,8 +106,8 @@ export default function App() {
     <AppProviders>
       <Layout>
         <Switch>
-           <Route path="/welcome" component={Welcome} />
-           <Route path="/" component={Welcome} />
+
+<Route path="/" component={Dashboard} />
            <Route path="/dashboard" component={Dashboard} />
            <Route path="/strategies" component={StrategiesPage} />
            <Route path="/stream" component={Stream} />
