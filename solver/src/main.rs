@@ -13,8 +13,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("TIMESTAMP: {}", startup_time);
     println!("==================================================");
     
-    // Get port from environment or default to 4003 as per render.yaml
-    let port = env::var("INTERNAL_BRIDGE_PORT").unwrap_or_else(|_| "4003".to_string());
+    // Prioritize PORT (Render's default) then INTERNAL_BRIDGE_PORT, then fallback to 4003
+    let port = env::var("PORT")
+        .or_else(|_| env::var("INTERNAL_BRIDGE_PORT"))
+        .unwrap_or_else(|_| "4003".to_string());
     let addr = format!("0.0.0.0:{}", port);
     
     println!("Attempting to bind to {}...", addr);
