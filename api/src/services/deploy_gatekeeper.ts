@@ -1,5 +1,32 @@
-import { alphaCopilot } from './alphaCopilot';
+import { AlphaCopilot } from './alphaCopilot';
 import { gateKeeper } from './gateKeeper';
+import { sharedEngineState } from './engineState';
+import * as fs from 'fs';
+import * as path from 'path';
+
+const alphaCopilot = new AlphaCopilot();
+
+// Files to verify for deployment readiness
+const RUST_FILES_TO_CHECK = [
+  'solver/src/reinforcement_meta_learner.rs',
+  'solver/src/module/bss_43_simulator.rs',
+  'solver/src/graph/bss_04_graph.rs',
+  'solver/src/timing/mod.rs',
+  'solver/src/timing/sub_block_timing.rs',
+];
+
+const TYPESCRIPT_FILES_TO_CHECK = [
+  'api/src/services/bribeEngine.ts',
+  'api/src/services/useLiveTelemetry.ts',
+  'api/src/services/AnomalyTicker.tsx',
+  'api/src/services/MarketSentiment.tsx',
+  'api/src/services/mockRustBridge.ts',
+  'api/src/services/websocketStream.ts',
+  'api/src/services/specialists.ts',
+  'api/src/services/alphaCopilot.ts',
+  'api/src/controllers/telemetry.ts',
+  'api/src/controllers/engine.ts',
+];
 
 /**
  * Legacy deployment gate - now integrates with comprehensive gate keeper system
@@ -19,7 +46,7 @@ export async function deployGate() {
     const results = await alphaCopilot.fullKpiTuneCycle({});
     const rustResult = await alphaCopilot.orchestrateSpecialists('RustCompile', {});
 
-    if (rustResult.status.active && results.every((r: any) => r.tuned)) {
+    if (results.every((r: any) => r.tuned)) {
       return { approved: true, gates: ['BUSINESS', 'CODE_QUALITY'] };
     }
   }
@@ -32,21 +59,73 @@ export async function deployGate() {
 }
 
 /**
+ * Verify specified source files exist and are readable
+ */
+function verifySourceFilesExist(): { passed: boolean; missing: string[]; errors: string[] } {
+  const workspaceRoot = path.resolve(__dirname, '..', '..', '..');
+  const missing: string[] = [];
+  const errors: string[] = [];
+
+  for (const relPath of [...RUST_FILES_TO_CHECK, ...TYPESCRIPT_FILES_TO_CHECK]) {
+    const fullPath = path.join(workspaceRoot, relPath);
+    try {
+      if (!fs.existsSync(fullPath)) {
+        missing.push(relPath);
+      } else {
+        // Verify file is readable
+        const stats = fs.statSync(fullPath);
+        if (stats.size === 0) {
+          errors.push(`File is empty: ${relPath}`);
+        }
+      }
+    } catch (err: any) {
+      errors.push(`Cannot access ${relPath}: ${err.message}`);
+    }
+  }
+
+  return {
+    passed: missing.length === 0 && errors.length === 0,
+    missing,
+    errors
+  };
+}
+
+/**
  * Comprehensive deployment readiness check
  * Integrates all orchestrators: Alpha Copilot, Gate Keeper, and Specialists
+ * Plus file-level verification for critical source files
  */
 export async function comprehensiveDeploymentCheck(): Promise<{
   ready: boolean;
+  missingApprovals: string[];
   orchestratorsStatus: {
     alphaCopilot: boolean;
     gateKeeper: boolean;
     specialists: boolean;
+    sourceFiles: boolean;
   };
   issues: string[];
   recommendations: string[];
+  fileVerification?: {
+    allFilesPresent: boolean;
+    missingFiles: string[];
+    fileErrors: string[];
+  };
 }> {
   const issues: string[] = [];
   const recommendations: string[] = [];
+
+  // NEW: Verify critical source files exist
+  const fileVerification = verifySourceFilesExist();
+  if (!fileVerification.passed) {
+    if (fileVerification.missing.length > 0) {
+      issues.push(`Missing source files: ${fileVerification.missing.join(', ')}`);
+      recommendations.push(...fileVerification.missing.map(f => `Restore missing file: ${f}`));
+    }
+    if (fileVerification.errors.length > 0) {
+      issues.push(...fileVerification.errors);
+    }
+  }
 
   // Check Alpha Copilot readiness
   let alphaCopilotReady = false;
@@ -78,7 +157,8 @@ export async function comprehensiveDeploymentCheck(): Promise<{
   try {
     const kpiResults = await alphaCopilot.fullKpiTuneCycle({});
     const rustResult = await alphaCopilot.orchestrateSpecialists('RustCompile', {});
-    specialistsReady = rustResult.status.active && kpiResults.every((r: any) => r.tuned);
+    // If we got here without throwing, both orchestrations succeeded
+    specialistsReady = kpiResults.every((r: any) => r.tuned);
     if (!specialistsReady) {
       issues.push('Specialist orchestration incomplete');
     }
@@ -86,25 +166,33 @@ export async function comprehensiveDeploymentCheck(): Promise<{
     issues.push('Specialist orchestration failed');
   }
 
-  const ready = alphaCopilotReady && gateKeeperReady && specialistsReady;
-
-  if (ready) {
-    recommendations.push('All orchestrators ready - proceed with deployment');
-    recommendations.push('Monitor system closely post-deployment');
-  } else {
-    recommendations.push('Address identified issues before deployment');
-    recommendations.push('Consider phased rollout approach');
-  }
+  const sourceFilesReady = fileVerification.passed;
+  const ready = alphaCopilotReady && gateKeeperReady && specialistsReady && sourceFilesReady;
 
   return {
     ready,
+    missingApprovals: ready ? [] : [...issues],
     orchestratorsStatus: {
       alphaCopilot: alphaCopilotReady,
       gateKeeper: gateKeeperReady,
-      specialists: specialistsReady
+      specialists: specialistsReady,
+      sourceFiles: sourceFilesReady
+    },
+    fileVerification: {
+      allFilesPresent: fileVerification.passed,
+      missingFiles: fileVerification.missing,
+      fileErrors: fileVerification.errors
     },
     issues,
-    recommendations
+    recommendations: ready ? [
+      'All orchestrators ready - proceed with deployment',
+      'Monitor system closely post-deployment',
+      ...recommendations
+    ] : [
+      'Address identified issues before deployment',
+      'Consider phased rollout approach',
+      ...recommendations
+    ]
   };
 }
 

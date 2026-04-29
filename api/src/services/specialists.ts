@@ -37,7 +37,7 @@ export class ProfitabilitySpecialist implements Specialist {
   category = 'Profitability';
 
   async tuneKpis(data: any) {
-    const { tradingAI } = await import('@workspace/lib/ts/ai-agent');
+    const { tradingAI } = await import('../../../lib/ts/ai-agent.ts');
     const marketData = {
       symbol: 'ARB',
       price: data.avgPrice || 0.8,

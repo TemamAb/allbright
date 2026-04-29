@@ -1,8 +1,8 @@
-import { useGetAuditReport } from "@workspace/api-client-react";
 import { AlertCircle, CheckCircle, Shield, Activity } from "lucide-react";
 
 export default function AuditReport() {
-  const { data: audit } = useGetAuditReport();
+  // const { data: audit } = useGetAuditReport();
+  const audit = null; // Mock data until API is implemented
 
   return (
     <div className="space-y-6">

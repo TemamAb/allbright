@@ -33,113 +33,15 @@ import { sql } from "drizzle-orm";
 import * as net from "net";
 import * as crypto from "crypto";
 import { logger } from "../services/logger";
-import { sharedEngineState } from "../services/engineState";
-import { runStartupChecks } from "../services/startup_checks";
-import { checkExecutionGate, createCircuitBreakerState, registerExecutionSuccess, registerExecutionFailure, computeDynamicGasStrategy, simulateOpportunityExecution, simulateOnChain } from "../services/executionControls";
-import { startBlockTracking, stopBlockTracking, fetchCurrentBlock, getBlockStats } from "../services/blockTracker";
-import { scanForOpportunities, type Opportunity } from "../services/opportunityScanner";
-import { getEthPriceUsd } from "../services/priceOracle";
-import { BrightSkyBribeEngine } from "../services/bribeEngine";
-import { alphaCopilot } from "../services/alphaCopilot";
 import { gateKeeper } from "../services/gateKeeper";
+import { comprehensiveDeploymentCheck } from "../services/deploy_gatekeeper";
 
-// Engine runtime state (merged from legacy engineState)
-interface EngineState {
-  running: boolean;
-  mode: "SHADOW" | "LIVE" | "STOPPED";
-  startedAt: Date | null;
-  walletAddress: string | null;
-  walletPrivateKey: string | null;
-  scannerActive: boolean;
-  pimlicoEnabled: boolean;
-  liveCapable: boolean;
-  pimlicoApiKey: string | null;
-  rpcEndpoint: string | null;
-  opportunitiesDetected: number;
-  opportunitiesExecuted: number;
-  gaslessMode: boolean;
-  scanInFlight: boolean;
-  skippedScanCycles: number;
-  lastScanStartedAt: Date | null;
-  lastScanCompletedAt: Date | null;
-  circuitBreaker: ReturnType<typeof createCircuitBreakerState>;
-  flashloanContractAddress: string | null;
-  chainId: number;
-  scanConcurrency: number;
-}
-
-let engineState: EngineState = {
-  running: false,
-  mode: "STOPPED",
-  startedAt: null,
-  walletAddress: null,
-  walletPrivateKey: null,
-  scannerActive: false,
-  pimlicoEnabled: false,
-  liveCapable: false,
-  pimlicoApiKey: null,
-  rpcEndpoint: null,
-  opportunitiesDetected: 0,
-  opportunitiesExecuted: 0,
-  gaslessMode: true,
-  scanInFlight: false,
-  skippedScanCycles: 0,
-  lastScanStartedAt: null,
-  lastScanCompletedAt: null,
-  circuitBreaker: createCircuitBreakerState(),
-  flashloanContractAddress: null,
-  chainId: parseInt(process.env.CHAIN_ID || "8453"),
-  scanConcurrency: parseInt(process.env.SCAN_CONCURRENCY || "8"),
-};
-
-let scannerInterval: NodeJS.Timeout | null = null;
-let cleanupInterval: NodeJS.Timeout | null = null;
-const router = Router();
-
-// Simple ID generator
-function genId(prefix: string): string {
-  const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).slice(2, 8);
-  return `${prefix}_${timestamp}_${random}`;
-}
-
-// Rust bridge connection (stub)
-async function connectToRustBridge(): Promise<void> {
-  logger.info("[BRIDGE] Rust solver connection not implemented");
-}
-
-// Detect LIVE capability from environment
-async function detectLiveCapability(): Promise<{
-  liveCapable: boolean;
-  hasPimlicoKey: boolean;
-  hasPrivateRpc: boolean;
-  pimlicoApiKey: string | null;
-  rpcEndpoint: string | null;
-}> {
-  const pimlicoApiKey = process.env.PIMLICO_API_KEY || null;
-  const rpcEndpoint = process.env.RPC_ENDPOINT || null;
-  const hasPimlicoKey = !!pimlicoApiKey;
-  const hasPrivateRpc = !!rpcEndpoint && !rpcEndpoint.includes("cloudflare") && !rpcEndpoint.includes("public");
-  const liveCapable = hasPimlicoKey && hasPrivateRpc;
-  return { liveCapable, hasPimlicoKey, hasPrivateRpc, pimlicoApiKey, rpcEndpoint };
-}
-
-// Safe database operation wrapper
-async function safeDbOperation<T>(
-  operation: () => Promise<T>,
-  fallback?: T,
-): Promise<T | undefined> {
-  if (!db) {
-    console.warn("[DB] Database not available, skipping operation");
-    return fallback;
-  }
+const broadcastCopilotEvent = (type: string, data: any) => {
   try {
-    return await operation();
-  } catch (err) {
-    console.error("[DB] Database operation failed:", err);
-    return fallback;
-  }
-}
+    const io = (global as any).io;
+    if (io) io.emit('copilot_event', { type, data, timestamp: Date.now() });
+  } catch(e) {}
+};
 
 /**
  * Sends a control message to Rust backend over the IPC bridge (UDS/TCP).
@@ -1247,7 +1149,7 @@ router.post("/gates/emergency-override", async (req, res) => {
     const activated = gateKeeper.activateEmergencyOverride(activator || 'API_USER', reason || 'Emergency override via API');
 
     if (activated) {
-      logger.crit('[ENGINE] Emergency override activated via API');
+      logger.info('[ENGINE] Emergency override activated via API');
       res.json({
         success: true,
         message: "Emergency override activated - all gates bypassed",
@@ -1358,18 +1260,20 @@ router.post("/engine/start", async (req, res) => {
     return;
   }
 
-  // GATE KEEPER: Check deployment authorization before starting engine
-  const deploymentAuth = gateKeeper.isDeploymentAuthorized();
-  if (!deploymentAuth.authorized) {
-    logger.warn('[ENGINE] Deployment blocked by gate keeper', {
-      missingApprovals: deploymentAuth.missingApprovals
-    });
+  // GATE KEEPER: Check comprehensive deployment readiness before starting engine
+  const deploymentCheck = await comprehensiveDeploymentCheck();
+  if (!deploymentCheck.ready) {
+    logger.warn({
+      issues: deploymentCheck.issues,
+      orchestratorsStatus: deploymentCheck.orchestratorsStatus
+    }, '[ENGINE] Deployment blocked by comprehensive gate keeper system');
     return res.status(403).json({
       success: false,
       error: "DEPLOYMENT NOT AUTHORIZED",
-      message: "All gates must be approved before engine deployment",
-      missingApprovals: deploymentAuth.missingApprovals,
-      gateStatuses: deploymentAuth.status
+      message: "Comprehensive deployment check failed",
+      issues: deploymentCheck.issues,
+      recommendations: deploymentCheck.recommendations,
+      orchestratorsStatus: deploymentCheck.orchestratorsStatus
     });
   }
 

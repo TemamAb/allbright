@@ -1,7 +1,19 @@
 import { Router } from "express";
 import { alphaCopilot } from "../services/alphaCopilot";
 
-const router = Router();
+const broadcastCopilotEvent = (type: string, data: any) => {
+  try {
+    const io = (global as any).io;
+    if (io) io.emit('copilot_event', { type, data, timestamp: Date.now() });
+  } catch(e) {}
+};
+
+const broadcastCopilotStatus = (status: string, data: any) => {
+  try {
+    const io = (global as any).io;
+    if (io) io.emit('copilot_status', { status, data, timestamp: Date.now() });
+  } catch(e) {}
+};
 
 /**
  * POST /api/copilot/command

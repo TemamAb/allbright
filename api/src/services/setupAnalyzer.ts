@@ -2,7 +2,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import { existsSync } from 'fs';
 import { logger } from './logger';
-import { alphaCopilot } from './alphaCopilot';
+import { AlphaCopilot } from './alphaCopilot';
 import * as path from 'path';
 
 const execAsync = promisify(exec);

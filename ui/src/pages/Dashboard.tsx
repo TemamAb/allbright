@@ -4,7 +4,7 @@ import { Activity, Zap, Wallet, TrendingUp, Shield, Cpu, Info, AlertTriangle, La
 import { useWallets } from "@/context/WalletContext";
 import { useState, useMemo } from "react";
 import { useLiveTelemetry } from "../../../api/src/services/useLiveTelemetry";
-import { AnomalyTicker } from "../../../api/src/services/AnomalyTicker";
+import { AnomalyTicker } from "../components/AnomalyTicker";
 import { MarketSentiment } from "../../../api/src/services/MarketSentiment";
 import { motion } from "framer-motion";
 import DashboardHero from "@/components/DashboardHero";

@@ -1,6 +1,6 @@
+import { AlphaCopilot } from './alphaCopilot';
 import { sharedEngineState } from './engineState';
 import { logger } from './logger';
-import { alphaCopilot } from './alphaCopilot';
 import { WebsocketStream } from './websocketStream';
 import * as crypto from 'crypto';
 

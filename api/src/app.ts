@@ -24,7 +24,7 @@ const corsOrigins = process.env.CORS_ORIGINS?.split(',') ?? [
 // BSS-06: Initialize Socket.io with restricted CORS
 const io = new Server(httpServer, {
   cors: {
-    origins: corsOrigins,
+    origin: corsOrigins,
     methods: ["GET", "POST"],
     credentials: true,
   },

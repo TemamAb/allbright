@@ -6,38 +6,9 @@
 
 export interface SharedEngineState {
   running: boolean;
-  mode: "SHADOW" | "LIVE" | "STOPPED";
+  mode: string;
   walletAddress: string | null;
-  comparisonMode: "NONE" | "SIM_VS_LIVE" | "SIM_VS_BENCHMARK" | "ALL";
-  visibleKpis: string[]; // IDs of KPIs to monitor (e.g. '1.1', '2.4')
-  liveCapable: boolean;
-  pimlicoEnabled: boolean;
-  gaslessMode: boolean;
-  startedAt: Date | null;
-  chainLatencies: Record<number, number>;
-  pathComplexity: Record<number, number>;
-  lastBackbonePrice: number | null;
-  ipcConnected: boolean;
-  flashloanContractAddress: string | null;
-  shadowModeActive: boolean;
-  // Advanced KPI Analytics for Phase 2
-  winRate: number;
-  riskIndex: number;
-  gasEfficiencyScore: number;
-  anomalyLog: string[];
-  auctionParams: {
-    baseInclusionProb: number;
-    bribeElasticity: number;
-    competitiveFactor: number;
-    maxInclusionProb: number;
-  };
-  subsystemKpis: any[];
-  bottleneckReport: any;
-  minMarginRatioBps: number;
-  bribeRatioBps: number;
-  totalWeightedScore: number;
-  // Runtime fields
-  scannerActive: boolean;
+  comparisonMode: string;
   pimlicoApiKey: string | null;
   rpcEndpoint: string | null;
   opportunitiesDetected: number;
@@ -56,11 +27,32 @@ export interface SharedEngineState {
   currentDrawdown: number;
   circuitBreakerOpen: boolean;
   chainId: number;
-  // Configuration integrity fields
   configVersion: number;
   configChecksum: string;
   configLastValidated: Date | null;
   configDriftDetected: boolean;
+  configValid: boolean;
+  anomalyLog: string[];
+  riskIndex: number;
+  minMarginRatioBps: number;
+  bribeRatioBps: number;
+  totalWeightedScore: number;
+  scannerActive: boolean;
+  auctionParams: any;
+  liveCapable: boolean;
+  ipcConnected: boolean;
+  shadowModeActive: boolean;
+  flashloanContractAddress: string | null;
+  chainLatencies: any;
+  pathComplexity: Record<number, number>;
+  lastBackbonePrice: number | null;
+  winRate: number;
+  gasEfficiencyScore: number;
+  subsystemKpis: any;
+  bottleneckReport: any;
+  visibleKpis: any;
+  startedAt: Date | null;
+  gaslessMode: boolean;
 }
 
 // Configuration validation helper
@@ -92,7 +84,7 @@ function validateConfiguration(): { isValid: boolean; driftDetected: boolean } {
   const driftDetected = currentChecksum !== envChecksum && sharedEngineState.configChecksum !== '';
 
   return {
-    isValid: envConfig.pimlicoApiKey && envConfig.rpcEndpoint,
+    isValid: !!(envConfig.pimlicoApiKey && envConfig.rpcEndpoint),
     driftDetected
   };
 }
@@ -102,18 +94,17 @@ export const sharedEngineState: SharedEngineState = {
   mode: "STOPPED",
   walletAddress: null,
   comparisonMode: "ALL",
-  visibleKpis: [
-    '1.1', '1.2', '1.3', '1.4', '1.5', '1.6',
-    '2.1', '2.2', '2.3', '2.4', '2.5', '2.6',
-    '3.1', '3.2', '3.3', '3.4', '3.5', '3.6',
-    '4.1', '4.2', '4.3', '4.4', '4.5', '4.6',
-    '5.1', '5.2', '5.3', '5.4', '5.5', '5.6',
-    '6.1', '6.2', '6.3',
-    '7.1', '7.2', '7.3'
-  ],
-  liveCapable: false,
-  pimlicoEnabled: false,
-  gaslessMode: true,
+   visibleKpis: [
+     '1.1', '1.2', '1.3', '1.4', '1.5', '1.6',
+     '2.1', '2.2', '2.3', '2.4', '2.5', '2.6',
+     '3.1', '3.2', '3.3', '3.4', '3.5', '3.6',
+     '4.1', '4.2', '4.3', '4.4', '4.5', '4.6',
+     '5.1', '5.2', '5.3', '5.4', '5.5', '5.6',
+     '6.1', '6.2', '6.3',
+     '7.1', '7.2', '7.3'
+   ],
+   liveCapable: false,
+   gaslessMode: true,
   startedAt: null,
   chainLatencies: {},
   pathComplexity: { 2: 0, 3: 0, 4: 0, 5: 0 },
@@ -160,6 +151,7 @@ export const sharedEngineState: SharedEngineState = {
   configChecksum: '',
   configLastValidated: null,
   configDriftDetected: false,
+  configValid: true
 };
 
 // Initialize configuration checksum
