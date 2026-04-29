@@ -31,6 +31,8 @@ services:
         value: info
       - key: INTERNAL_BRIDGE_PORT
         value: "4003"
+      - key: PORT
+        value: "4003"
 
   # BrightSky API Server (Node.js + TypeScript)
   - type: web
