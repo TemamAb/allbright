@@ -38,16 +38,33 @@ export function useLiveTelemetry() {
         const message = JSON.parse(event.data);
         if (message.type === 'SNAPSHOT' || message.type === 'UPDATE') {
           setEngineState(message.payload);
-          
-          // Update history buffer for real-time charts (keep last 30 points)
+
+          // Update history buffer with memory-bounded growth (O(1) space)
           setHistory(prev => {
+            // Validate input data to prevent NaN/infinite values
+            const profit = Number.isFinite(message.payload.currentDailyProfit) ?
+              message.payload.currentDailyProfit : 0;
+            const parityDelta = Number.isFinite(message.payload.simParityDeltaBps) ?
+              message.payload.simParityDeltaBps : 0;
+            const opportunities = Number.isFinite(message.payload.opportunitiesDetected) ?
+              message.payload.opportunitiesDetected : 0;
+
             const newPoint = {
-              time: new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-              profit: message.payload.currentDailyProfit || 0,
-              predictedProfit: (message.payload.currentDailyProfit || 0) * (1 + (message.payload.simParityDeltaBps || 0) / 10000),
-              opportunities: message.payload.opportunitiesDetected || 0
+              time: new Date().toLocaleTimeString([], {
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+              }),
+              profit: Math.max(-1000000, Math.min(1000000, profit)), // Clamp to reasonable bounds
+              predictedProfit: Math.max(-1000000, Math.min(1000000,
+                profit * (1 + parityDelta / 10000))),
+              opportunities: Math.max(0, Math.min(10000, opportunities)) // Clamp to reasonable bounds
             };
-            return [...prev, newPoint].slice(-30);
+
+            // Use efficient array replacement instead of spread to prevent memory leaks
+            const newHistory = prev.length >= 30 ? [...prev.slice(1), newPoint] : [...prev, newPoint];
+            return newHistory;
           });
         }
       } catch (err) {

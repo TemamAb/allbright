@@ -171,12 +171,12 @@ router.get("/telemetry", async (req, res) => {
     },
 
     tradesPerHour,
-    // Latency is in ms (real), NOT A�s (previous implementation was wrong)
+    // Latency measurements - all in milliseconds (ms) for consistency
+    // Removed legacy µs conversions to prevent measurement inconsistency
     p99LatencyMs: p99LatencyMs ?? 0,
     avgLatencyMs: avgLatencyMs ?? 0,
-    // Legacy A�s fields kept for frontend compatibility �?" converted from real ms values
-    p99LatencyUs: p99LatencyMs != null ? p99LatencyMs * 1000 : null,
-    avgLatencyUs: avgLatencyMs != null ? avgLatencyMs * 1000 : null,
+    // DEPRECATED: Remove p99LatencyUs and avgLatencyUs from API response
+    // Frontend must migrate to millisecond-based measurements
     memoryUsageMb: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
     // Real CPU �?" NOT Math.random()
     cpuPercent: getRealCpuPercent(),

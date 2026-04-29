@@ -60,4 +60,100 @@ router.get("/status", async (req, res) => {
   }
 });
 
+/**
+ * GET /api/copilot/orchestrator-status
+ * Get the comprehensive orchestrator integration status.
+ */
+router.get("/orchestrator-status", async (req, res) => {
+  try {
+    const orchestratorStatus = await alphaCopilot.getOrchestratorIntegrationStatus();
+    res.json({
+      success: true,
+      orchestratorStatus,
+    });
+  } catch (err) {
+    console.error("Orchestrator status error:", err);
+    res.status(500).json({ success: false, error: String(err) });
+  }
+});
+
+/**
+ * POST /api/copilot/orchestrate
+ * Orchestrate specialists with optional gate approval integration.
+ */
+router.post("/orchestrate", async (req, res) => {
+  try {
+    const { category, kpiData, requireGateApproval = false } = req.body;
+
+    const result = await alphaCopilot.orchestrateWithGateApproval(
+      category,
+      kpiData,
+      requireGateApproval
+    );
+
+    res.json({
+      success: true,
+      orchestration: result,
+    });
+  } catch (err) {
+    console.error("Orchestration error:", err);
+    res.status(500).json({ success: false, error: String(err) });
+  }
+});
+
+/**
+ * POST /api/copilot/orchestrate-kpi
+ * Orchestrate specialist by specific KPI name.
+ */
+router.post("/orchestrate-kpi", async (req, res) => {
+  try {
+    const { kpiName, kpiData } = req.body;
+
+    const result = await alphaCopilot.orchestrateByKPI(kpiName, kpiData);
+
+    res.json({
+      success: true,
+      kpiOrchestration: result,
+    });
+  } catch (err) {
+    console.error("KPI orchestration error:", err);
+    res.status(500).json({ success: false, error: String(err) });
+  }
+});
+
+/**
+ * GET /api/copilot/kpi-specialists
+ * Get comprehensive KPI specialist integration overview.
+ */
+router.get("/kpi-specialists", async (req, res) => {
+  try {
+    const overview = await alphaCopilot.getKPISpecialistOverview();
+
+    res.json({
+      success: true,
+      kpiSpecialists: overview,
+    });
+  } catch (err) {
+    console.error("KPI specialists overview error:", err);
+    res.status(500).json({ success: false, error: String(err) });
+  }
+});
+
+/**
+ * GET /api/copilot/specialist-gate-integration
+ * Get comprehensive specialist-gate keeper integration status.
+ */
+router.get("/specialist-gate-integration", async (req, res) => {
+  try {
+    const integrationStatus = await alphaCopilot.getSpecialistGateIntegrationStatus();
+    res.json({
+      success: true,
+      integrationStatus,
+    });
+  } catch (err) {
+    console.error("Specialist-gate integration status error:", err);
+    res.status(500).json({ success: false, error: String(err) });
+  }
+});
+
 export default router;

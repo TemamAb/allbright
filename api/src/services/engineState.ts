@@ -56,6 +56,45 @@ export interface SharedEngineState {
   currentDrawdown: number;
   circuitBreakerOpen: boolean;
   chainId: number;
+  // Configuration integrity fields
+  configVersion: number;
+  configChecksum: string;
+  configLastValidated: Date | null;
+  configDriftDetected: boolean;
+}
+
+// Configuration validation helper
+function computeConfigChecksum(config: Partial<SharedEngineState>): string {
+  const crypto = require('crypto');
+  const configStr = JSON.stringify({
+    pimlicoApiKey: config.pimlicoApiKey,
+    rpcEndpoint: config.rpcEndpoint,
+    chainId: config.chainId,
+    minMarginRatioBps: config.minMarginRatioBps,
+    bribeRatioBps: config.bribeRatioBps,
+  });
+  return crypto.createHash('sha256').update(configStr).digest('hex');
+}
+
+// Validate configuration against environment variables
+function validateConfiguration(): { isValid: boolean; driftDetected: boolean } {
+  const envConfig = {
+    pimlicoApiKey: process.env.PIMLICO_API_KEY,
+    rpcEndpoint: process.env.RPC_ENDPOINT,
+    chainId: parseInt(process.env.CHAIN_ID || '1'),
+    minMarginRatioBps: parseInt(process.env.MIN_MARGIN_RATIO_BPS || '1000'),
+    bribeRatioBps: parseInt(process.env.BRIBE_RATIO_BPS || '500'),
+  };
+
+  const currentChecksum = computeConfigChecksum(sharedEngineState);
+  const envChecksum = computeConfigChecksum(envConfig);
+
+  const driftDetected = currentChecksum !== envChecksum && sharedEngineState.configChecksum !== '';
+
+  return {
+    isValid: envConfig.pimlicoApiKey && envConfig.rpcEndpoint,
+    driftDetected
+  };
 }
 
 export const sharedEngineState: SharedEngineState = {
@@ -98,6 +137,36 @@ export const sharedEngineState: SharedEngineState = {
   bribeRatioBps: 500,
   totalWeightedScore: 0,
   scannerActive: false,
+  // Configuration integrity initialization
+  pimlicoApiKey: process.env.PIMLICO_API_KEY || null,
+  rpcEndpoint: process.env.RPC_ENDPOINT || null,
+  opportunitiesDetected: 0,
+  opportunitiesExecuted: 0,
+  scanInFlight: false,
+  skippedScanCycles: 0,
+  lastScanStartedAt: null,
+  lastScanCompletedAt: null,
+  circuitBreaker: null,
+  alphaDecayAvgMs: 0,
+  simParityDeltaBps: 0,
+  successRate: 0,
+  msgThroughputCount: 0,
+  currentDailyProfit: 0,
+  avgLatencyMs: 0,
+  currentDrawdown: 0,
+  circuitBreakerOpen: false,
+  chainId: parseInt(process.env.CHAIN_ID || '1'),
+  configVersion: 1,
+  configChecksum: '',
+  configLastValidated: null,
+  configDriftDetected: false,
+};
+
+// Initialize configuration checksum
+sharedEngineState.configChecksum = computeConfigChecksum(sharedEngineState);
+
+// Export validation function for external use
+export { validateConfiguration };
   pimlicoApiKey: null,
   rpcEndpoint: null,
   opportunitiesDetected: 0,

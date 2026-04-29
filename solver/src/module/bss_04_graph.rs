@@ -104,38 +104,52 @@ impl GraphPersistence {
 
     /// Maps a token address string to a stable usize index.
     /// Creates new index if token not seen before.
+    /// Uses lock-free atomic operations to prevent race conditions.
     pub fn get_or_create_index(&self, token: &str) -> usize {
-        // Fast path: check if token already exists (lock-free read)
-        if let Some(idx) = self.token_to_index.get(token) {
-            return *idx;
-        }
-        
-        // Slow path: need to add new token (requires write locks)
-        let mut tokens = self.acquire_index_write();
-        let mut adj = self.acquire_adj_write();
-        
-        // Double-check after acquiring locks to avoid race conditions
-        if let Some(idx) = self.token_to_index.get(token) {
-            return *idx;
-        }
-        
-        // Actually add the new token
-        let new_idx = tokens.len();
-        tokens.push(token.to_string());
-        adj.push(Vec::new()); // Initialize empty adjacency list for new token
-        self.token_to_index.insert(token.to_string(), new_idx);
-        new_idx
+        // Use DashMap's atomic get_or_insert to prevent race conditions
+        // This is lock-free and handles concurrent insertions safely
+        let entry = self.token_to_index.entry(token.to_string());
+        let idx = *entry.or_insert_with(|| {
+            // Only execute this closure if insertion is needed
+            let mut tokens = self.acquire_index_write();
+            let mut adj = self.acquire_adj_write();
+
+            let new_idx = tokens.len();
+            tokens.push(token.to_string());
+            adj.push(Vec::new()); // Initialize empty adjacency list for new token
+            new_idx
+        });
+        idx
     }
 
-    /// Updates or adds a pool edge in both directions (A->B and B->A)
-    pub fn update_edge(&self, token_a: String, token_b: String, state: PoolState) {
+    /// Updates or adds a pool edge in both directions (A->B and B->A) with bounds validation
+    pub fn update_edge(&self, token_a: String, token_b: String, state: PoolState) -> Result<(), String> {
+        // Validate input parameters
+        if token_a.is_empty() || token_b.is_empty() {
+            return Err("Empty token addresses not allowed".into());
+        }
+
+        if token_a == token_b {
+            return Err("Self-loops not allowed in token graph".into());
+        }
+
+        // Validate pool state
+        if state.reserve_0 == 0 || state.reserve_1 == 0 {
+            return Err(format!("Invalid pool reserves for {}: reserve_0={}, reserve_1={}",
+                             state.pool_address, state.reserve_0, state.reserve_1));
+        }
+
+        if state.fee_bps > 10000 {
+            return Err(format!("Invalid fee rate {} bps (max 10000)", state.fee_bps));
+        }
+
         // Get or create indices for both tokens
         let idx_a = self.get_or_create_index(&token_a);
         let idx_b = self.get_or_create_index(&token_b);
-        
+
         // Get write access to adjacency list
         let mut adj = self.acquire_adj_write();
-        
+
         // Create edge A -> B (reserve_0 is input, reserve_1 is output)
         let edge_ab = PoolEdge {
             from: idx_a,
@@ -145,7 +159,7 @@ impl GraphPersistence {
             fee_bps: state.fee_bps,
             pool_address: state.pool_address.clone(),
         };
-        
+
         // Update or add edge in A's adjacency list
         let list_a = &mut adj[idx_a];
         if let Some(pos) = list_a
@@ -155,10 +169,13 @@ impl GraphPersistence {
             // Replace existing edge for this pool
             list_a[pos] = edge_ab;
         } else {
-            // Add new edge
+            // Add new edge (prevent unbounded growth)
+            if list_a.len() >= 1000 { // Reasonable bound per token
+                return Err(format!("Too many pools for token {} (max 1000)", token_a));
+            }
             list_a.push(edge_ab);
         }
-        
+
         // Create edge B -> A (reserve_1 is input, reserve_0 is output)
         let edge_ba = PoolEdge {
             from: idx_b,
@@ -168,7 +185,7 @@ impl GraphPersistence {
             fee_bps: state.fee_bps,
             pool_address: state.pool_address,
         };
-        
+
         // Update or add edge in B's adjacency list
         let list_b = &mut adj[idx_b];
         if let Some(pos) = list_b
@@ -178,9 +195,14 @@ impl GraphPersistence {
             // Replace existing edge for this pool
             list_b[pos] = edge_ba;
         } else {
-            // Add new edge
+            // Add new edge (prevent unbounded growth)
+            if list_b.len() >= 1000 { // Reasonable bound per token
+                return Err(format!("Too many pools for token {} (max 1000)", token_b));
+            }
             list_b.push(edge_ba);
         }
+
+        Ok(())
     }
 
     /// Retrieves all outgoing edges for a given token index

@@ -16,19 +16,72 @@ export class BrightSkyBribeEngine {
   /**
    * BSS-20 Integration: Allows the autonomous feedback loop to tweak
    * performance parameters 24/7 based on real-world success rates.
-   * Writes new values to sharedEngineState, which Rust synchronizes via IPC.
+   * Includes validation bounds and circuit breakers to prevent destructive updates.
    */
   static updateTuning(newParams: { minMarginRatio?: number; bribeRatio?: number }) {
+    const errors: string[] = [];
+    let updated = false;
+
+    // VALIDATION BOUNDS: Prevent destructive parameter updates
+    const MARGIN_MIN = 0.001; // 0.1% minimum margin
+    const MARGIN_MAX = 0.10;  // 10% maximum margin
+    const BRIBE_MIN = 0.001;  // 0.1% minimum bribe
+    const BRIBE_MAX = 0.50;   // 50% maximum bribe (circuit breaker)
+
     if (newParams.minMarginRatio !== undefined) {
-      sharedEngineState.minMarginRatioBps = Math.round(newParams.minMarginRatio * 10000);
+      const margin = newParams.minMarginRatio;
+      if (!isFinite(margin) || margin < MARGIN_MIN || margin > MARGIN_MAX) {
+        errors.push(`minMarginRatio ${margin} out of bounds [${MARGIN_MIN}, ${MARGIN_MAX}]`);
+      } else {
+        const oldValue = sharedEngineState.minMarginRatioBps;
+        sharedEngineState.minMarginRatioBps = Math.round(margin * 10000);
+        updated = true;
+
+        // AUDIT LOG: Track parameter changes
+        console.log("[BRIBE_ENGINE] Margin ratio updated:", {
+          old: oldValue / 10000,
+          new: margin,
+          change: ((margin - oldValue / 10000) / (oldValue / 10000)) * 100 + "%"
+        });
+      }
     }
+
     if (newParams.bribeRatio !== undefined) {
-      sharedEngineState.bribeRatioBps = Math.round(newParams.bribeRatio * 10000);
+      const bribe = newParams.bribeRatio;
+      if (!isFinite(bribe) || bribe < BRIBE_MIN || bribe > BRIBE_MAX) {
+        errors.push(`bribeRatio ${bribe} out of bounds [${BRIBE_MIN}, ${BRIBE_MAX}]`);
+      } else {
+        const oldValue = sharedEngineState.bribeRatioBps;
+        sharedEngineState.bribeRatioBps = Math.round(bribe * 10000);
+        updated = true;
+
+        // AUDIT LOG: Track parameter changes
+        console.log("[BRIBE_ENGINE] Bribe ratio updated:", {
+          old: oldValue / 10000,
+          new: bribe,
+          change: ((bribe - oldValue / 10000) / (oldValue / 10000)) * 100 + "%"
+        });
+
+        // CIRCUIT BREAKER: Alert on extreme bribe ratios
+        if (bribe > 0.25) { // 25% threshold
+          console.error("[BRIBE_ENGINE] ⚠️ CRITICAL: Bribe ratio exceeds 25% - manual review required");
+        }
+      }
     }
-    console.log("[LEARNING_LOOP] Parameters optimized:", {
-      minMarginRatio: sharedEngineState.minMarginRatioBps / 10000,
-      bribeRatio: sharedEngineState.bribeRatioBps / 10000,
-    });
+
+    if (errors.length > 0) {
+      console.error("[BRIBE_ENGINE] Parameter update REJECTED:", errors);
+      return false;
+    }
+
+    if (updated) {
+      console.log("[LEARNING_LOOP] Parameters safely updated:", {
+        minMarginRatio: sharedEngineState.minMarginRatioBps / 10000,
+        bribeRatio: sharedEngineState.bribeRatioBps / 10000,
+      });
+    }
+
+    return updated;
   }
 
   static getTuning() {

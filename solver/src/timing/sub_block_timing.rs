@@ -16,32 +16,40 @@ impl SubBlockTimingEngine {
             nanosecond_precision: true,
             queue_position_estimator: true,
             market_pressure_detector: true,
+            _padding: [0; 64 - 3], // Initialize padding
         }
     }
 
     /// Predicts the optimal nanosecond offset within a block to submit a bundle.
     /// Aims to hit the target inclusion latency (65ms) while avoiding collisions.
+    /// Uses entropy to prevent timing attack predictability.
     pub fn predict_execution_window(&self, stats: &WatchtowerStats) -> u64 {
         let pressure = stats.market_pressure_factor.load(Ordering::Relaxed);
         let collision_rate = stats.collision_rate_estimate.load(Ordering::Relaxed);
-        
-        // Base offset (in nanoseconds) - start slightly after block start
-        // Target: 65ms = 65,000,000ns
-        let mut target_offset_ns = 55_000_000; 
 
-        // Adjust for market pressure (0-1000)
+        // Base offset (in nanoseconds) with entropy to prevent timing attacks
+        // Target: 65ms = 65,000,000ns, but add random jitter
+        let base_offset_ns = 55_000_000;
+        let entropy_factor = (fastrand::u64(0..10000) as f64 - 5000.0) / 5000.0; // ±1.0 range
+        let mut target_offset_ns = (base_offset_ns as f64 * (1.0 + entropy_factor * 0.1)) as u64;
+
+        // Adjust for market pressure (0-1000) with additional entropy
         if pressure > 800 {
-            // High pressure: attempt to front-run the peak congestion window
-            target_offset_ns = target_offset_ns.saturating_sub(5_000_000); 
+            // High pressure: attempt to front-run with randomized timing
+            let pressure_entropy = fastrand::u64(0..2000000); // 0-2ms random
+            target_offset_ns = target_offset_ns.saturating_sub(5_000_000 + pressure_entropy);
         }
 
-        // Adjust for collision rate (bps * 100, e.g. 400 = 4.0%)
-        if collision_rate > 300 { 
-            // High collision: shift window to find a less crowded micro-slot
-            target_offset_ns += 12_000_000;
+        // Adjust for collision rate (bps * 100, e.g. 400 = 4.0%) with entropy
+        if collision_rate > 300 {
+            // High collision: shift window with randomization to avoid patterns
+            let collision_entropy = fastrand::u64(0..8000000); // 0-8ms random
+            target_offset_ns += 12_000_000 + collision_entropy;
         }
 
-        target_offset_ns
+        // Add final entropy layer to prevent statistical analysis
+        let final_entropy = fastrand::u64(0..5000000); // 0-5ms random
+        target_offset_ns + final_entropy
     }
 
     /// Updates performance metrics after a block execution cycle to improve future predictions.

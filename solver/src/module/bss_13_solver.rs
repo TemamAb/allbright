@@ -10,6 +10,7 @@ use std::sync::Arc;
 use tracing::{error, warn, debug};
 
 #[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
 pub struct ArbitrageOpportunity {
     pub path: Vec<usize>,
     pub log_weight: f64,

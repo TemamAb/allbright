@@ -16,6 +16,7 @@ import Welcome from "@/pages/Welcome";
 import Copilot from "@/pages/Copilot";
 import SetupWizard from "@/pages/SetupWizard";
 import Layout from "@/components/Layout";
+import { GateKeeperDashboard } from "@/components/GateKeeperDashboard";
 import { WalletProvider } from "@/context/WalletContext";
 import { StrategiesProvider } from "@/context/StrategiesContext";
 import { setBaseUrl } from "@workspace/api-client-react";
@@ -111,10 +112,15 @@ export default function App() {
            <Route path="/strategies" component={StrategiesPage} />
            <Route path="/stream" component={Stream} />
            <Route path="/trades" component={Trades} />
-           <Route path="/vault" component={Vault} />
-           <Route path="/wallet" component={WalletPage} />
-           <Route path="/settings" component={SettingsPage} />
-           <Route path="/audit" component={AuditReport} />
+            <Route path="/vault" component={Vault} />
+
+            <Route path="/gates" component={GateKeeperDashboard} />
+
+            <Route path="/wallet" component={WalletPage} />
+
+            <Route path="/settings" component={SettingsPage} />
+
+            <Route path="/audit" component={AuditReport} />
   <Route path="/copilot" component={Copilot} />
   <Route path="/setup" component={SetupWizard} />
            <Route component={NotFound} />
