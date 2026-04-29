@@ -888,8 +888,8 @@ impl AlphaCopilot {
                     impact_analysis: "Requires re-deployment. Potential 2-second downtime during binary swap.".to_string(),
                     suggested_changes: vec![format!("Edit: {}", order.target), "Terminal: cargo build --release".into()],
                 };
-
-let mut p = PENDING_PROPOSAL.lock().expect("Pending proposal lock poisoned");
+                
+                let mut p = PENDING_PROPOSAL.lock().expect("Pending proposal lock poisoned");
                 *p = Some(proposal.clone());
 
                 format!("ALPHA-COPILOT: I have prepared a deployment plan (ID: {}). Impact: {}. Please confirm via Chat to execute.", 
@@ -1552,6 +1552,12 @@ async fn run_watchtower(
             let report = AlphaCopilot::generate_insight(&stats);
             println!("[ALPHA-COPILOT] {report}");
 
+            // BSS-21: Active Strategic Deep Dive
+            let copilot = AlphaCopilot;
+            if let Some(proposal) = copilot.perform_deep_dive(&stats) {
+                println!("[ALPHA-COPILOT] STRATEGIC ALERT: {} | Priority: {} | Cause: {}", proposal.category, proposal.priority, proposal.root_cause);
+            }
+
             let bottleneck_json = AlphaCopilot::generate_bottleneck_report(&specialists);
             if let Ok(json_str) = serde_json::to_string(&bottleneck_json) {
                 println!("[BSS-21] BOTTLENECK_REPORT: {json_str}");
@@ -1878,7 +1884,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             );
             payload.push(CircuitBreaker::is_tripped(&heartbeat_stats) as u8);
 
-let addr = heartbeat_stats.flashloan_contract_address.read().expect("Flashloan address RwLock poisoned");
+stem : articulate these intents of mine             let addr = heartbeat_stats
+                .flashloan_contract_address
+                .read()
+                .expect("Flashloan address RwLock poisoned");
             if let Some(s) = addr.as_ref() {
                 payload.extend_from_slice(&(s.len() as u16).to_be_bytes());
                 payload.extend_from_slice(s.as_bytes());

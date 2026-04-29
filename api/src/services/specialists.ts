@@ -24,7 +24,19 @@ function logAnomaly(category: string, message: string) {
 export class ProfitabilitySpecialist implements Specialist {
   name = 'ProfitabilitySpecialist';
   category = 'Profitability';
-  async tuneKpis(data: any) { return { tuned: true, nrp_target: 22.5 }; }
+async tuneKpis(data: any) {
+    const { tradingAI } = await import('@workspace/lib/ts/ai-agent');
+    const marketData = {
+      symbol: 'ARB',
+      price: data.avgPrice || 0.8,
+      volume: data.volume || 1e6,
+      change24h: data.nrpChange || 0,
+    };
+    const analysis = await tradingAI.analyzeMarket(marketData);
+    const targetNrp = 22.5 + (analysis.confidence / 100) * 2.5; // Boost target based on confidence
+    logAnomaly('PROFIT', `Analysis: ${analysis.reasoning.substring(0,100)}`);
+    return { tuned: true, nrp_target: targetNrp, analysis };
+  }
   async status() { return { active: true }; }
 }
 

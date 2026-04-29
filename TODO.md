@@ -1,13 +1,10 @@
-# BrightSky Solver Task Tracker - TASK COMPLETED ✅
+# AI Improvement TODO
 
-## Summary:
-- Fixed brace mismatch/duplicate functions in `solver/src/module/bss_05_sync.rs`
-- Defined `BatchRpcClient`, fixed indentation/braces
-- Local `cargo check` succeeded (no output = success)
-- Docker build ready (matches original error environment)
-
-**Result:** Rust compilation error resolved. Docker build should now succeed.
-
-**Files Modified:**
-- `solver/src/module/bss_05_sync.rs` (rewritten)
-- `TODO.md` (tracked progress)
+1. [ ] Add Vitest deps to package.json via pnpm add -D vitest @vitest/ui jsdom @types/node
+2. [ ] Add "test": "vitest", "test:ui": "vitest --ui" to package.json scripts
+3. [ ] pnpm install
+4. [ ] Create api/src/services/specialists.test.ts w/ specialist tests
+5. [ ] Edit api/src/services/specialists.ts: Impl ProfitabilitySpecialist using TradingAI
+6. [ ] pnpm test
+7. [ ] Set OPENAI_API_KEY=.env.local, pnpm --filter api dev
+8. [ ] Test Copilot UI E2E

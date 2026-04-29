@@ -1,5 +1,5 @@
 // BSS-36: Auto-Optimizer Subsystem
-use crate::{SubsystemSpecialist, HealthStatus, WatchtowerStats};
+use crate::{SubsystemSpecialist, HealthStatus, WatchtowerStats, GES_WEIGHTS};
 use serde_json::Value;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
