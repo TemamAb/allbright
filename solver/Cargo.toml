@@ -3,6 +3,9 @@ name = "brightsky-solver"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "brightsky_solver"
+
 [[bin]]
 name = "brightsky"
 path = "src/main.rs"
