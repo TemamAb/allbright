@@ -8,14 +8,11 @@ import Dashboard from "@/pages/Dashboard";
 import StrategiesPage from "@/pages/StrategiesPage";
 import WalletPage from "@/pages/WalletPage";
 import SettingsPage from "@/pages/SettingsPage";
-import AuditReport from "@/pages/AuditReport.tsx";
 import Telemetry from "@/pages/Telemetry";
 import Stream from "@/pages/Stream.tsx";
 import Trades from "@/pages/Trades.tsx";
 import Vault from "@/pages/Vault";
-
 import Copilot from "@/pages/Copilot";
-import SetupWizard from "@/pages/SetupWizard";
 import Layout from "@/components/Layout";
 import { GateKeeperDashboard } from "@/components/GateKeeperDashboard";
 import { WalletProvider } from "@/context/WalletContext";
@@ -88,7 +85,8 @@ function SocketProvider({ children }: { children: ReactNode }) {
 
 function AppProviders({ children }: { children: ReactNode }) {
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} themes={['dark', 'light', 'colorblind']}>
+  <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} forcedTheme="dark" themes={['dark']}>
+
       <QueryClientProvider client={queryClient}>
         <StrategiesProvider>
           <WalletProvider>
@@ -118,12 +116,10 @@ export default function App() {
             <Route path="/gates" component={GateKeeperDashboard} />
 
             <Route path="/wallet" component={WalletPage} />
-
             <Route path="/settings" component={SettingsPage} />
-
-            <Route path="/audit" component={AuditReport} />
-  <Route path="/copilot" component={Copilot} />
-  <Route path="/setup" component={SetupWizard} />\n          <Route path="/telemetry" component={Telemetry} />\n           <Route component={NotFound} />
+            <Route path="/copilot" component={Copilot} />
+            <Route path="/telemetry" component={Telemetry} />
+            <Route component={NotFound} />
  </Switch>
       </Layout>
       <Toaster position="bottom-right" richColors />

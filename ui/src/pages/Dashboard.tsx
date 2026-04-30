@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useSocket } from "../App";
 import { useGetEngineStatus } from "@workspace/api-client-react";
@@ -44,11 +44,11 @@ export default function Dashboard() {
 
   const getStatusColor = (status: string) => {
     const colors = {
-      good: 'bg-green-500',
-      warn: 'bg-yellow-500',
-      bad: 'bg-red-500'
+      good: 'bg-grafana-green text-grafana-bg',
+      warn: 'bg-grafana-yellow text-grafana-bg', 
+      bad: 'bg-grafana-red text-grafana-bg'
     };
-    return colors[status as keyof typeof colors] || 'bg-gray-500';
+    return colors[status as keyof typeof colors] || 'bg-grafana-ash text-grafana-text';
   };
 
   const engineStatusText = engineStatus ? (
@@ -60,34 +60,28 @@ export default function Dashboard() {
   return (
     <div className="space-y-8 p-6 max-w-7xl mx-auto">
       {/* GES Header */}
-      <Card>
-        <CardHeader className="text-center pb-2">
-          <CardTitle className="text-5xl font-black text-primary">{kpis.ges.toFixed(1)}%</CardTitle>
-          <p className="text-2xl font-bold text-muted-foreground uppercase tracking-wide">Global Efficiency Score</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Last Update: {kpis.timestamp.toLocaleTimeString()}
-            {isConnected && <span className="ml-2 text-green-500 font-bold">● LIVE</span>}
-          </p>
-        </CardHeader>
-      </Card>
+      <div className="bg-grafana-panel border border-grafana-ash rounded-xl p-12 text-center shadow-2xl hover:border-grafana-ash-light transition-all">
+        <h1 className="text-6xl font-black text-grafana-green mb-4 drop-shadow-lg">{kpis.ges.toFixed(1)}%</h1>
+        <p className="text-2xl font-bold text-grafana-text-dim uppercase tracking-widest mb-2">Global Efficiency Score</p>
+        <p className="text-lg text-grafana-text-dim">
+          Last Update: {kpis.timestamp.toLocaleTimeString()}
+          {isConnected && <span className="ml-2 bg-grafana-green/20 text-grafana-green font-bold px-3 py-1 rounded-full text-sm">● LIVE</span>}
+        </p>
+      </div>
 
       {/* Engine Status */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Engine Status</CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className={`text-xl font-bold p-4 rounded-lg text-center ${
-            engineStatus?.running 
-              ? engineStatus.mode?.toLowerCase() === 'live' 
-                ? 'bg-green-500/10 border-green-500/30 text-green-600' 
-                : 'bg-yellow-500/10 border-yellow-500/30 text-yellow-600' 
-              : 'bg-gray-500/10 border-gray-500/30 text-gray-500'
-          }`}>
-            {engineStatusText}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="bg-grafana-panel border border-grafana-ash rounded-xl p-10 shadow-xl hover:border-grafana-ash-light">
+        <h3 className="text-xl font-bold text-grafana-text mb-6 uppercase tracking-wide">Engine Status</h3>
+        <div className={`text-2xl font-black px-8 py-6 rounded-xl text-center shadow-grafana-glow ${
+          engineStatus?.running 
+            ? engineStatus.mode?.toLowerCase() === 'live' 
+              ? 'bg-grafana-green/10 border-2 border-grafana-green/30 text-grafana-green' 
+              : 'bg-grafana-yellow/20 border-2 border-grafana-yellow/30 text-grafana-yellow' 
+            : 'bg-grafana-ash/50 border-2 border-grafana-ash-light/50 text-grafana-text-dim'
+        }`}>
+          {engineStatusText}
+        </div>
+      </div>
 
       {/* Search */}
       <Input
@@ -152,7 +146,7 @@ export default function Dashboard() {
                         <TableCell className="font-mono">{kpi.target}</TableCell>
                         <TableCell className="font-mono text-sm opacity-75">N/A</TableCell>
                         <TableCell>
-                          <Badge className={getStatusColor(kpi.status)} className="text-xs px-2 py-0.5">{kpi.status.toUpperCase()}</Badge>
+                          <Badge className={`${getStatusColor(kpi.status)} text-xs px-2 py-0.5`}>{kpi.status.toUpperCase()}</Badge>
                         </TableCell>
                         <TableCell />
                       </TableRow>

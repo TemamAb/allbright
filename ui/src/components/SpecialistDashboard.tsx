@@ -15,9 +15,9 @@ const SpecialistDashboard: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'green': return 'bg-green-500 ring-green-500/30';
-      case 'yellow': return 'bg-yellow-500 ring-yellow-500/30';
-      case 'red': return 'bg-red-500 ring-red-500/30';
+      case 'green': return 'bg-grafana-green ring-grafana-green/20';
+      case 'yellow': return 'bg-grafana-yellow ring-grafana-yellow/20';
+      case 'red': return 'bg-grafana-red ring-grafana-red/20';
     }
   };
 
@@ -26,10 +26,10 @@ const SpecialistDashboard: React.FC = () => {
       {specialists.map((spec, index) => (
         <motion.div 
           key={spec.name} 
-          initial={{ opacity: 0, scale: 0.9 }} 
+          initial={{ opacity: 0, scale: 0.95 }} 
           animate={{ opacity: 1, scale: 1 }} 
           transition={{ delay: index * 0.1 }}
-          className="bg-gray-900/70 border rounded-2xl p-8 border-gray-700 hover:border-primary/50 hover:shadow-2xl transition-all group relative overflow-hidden"
+          className="bg-grafana-panel border border-grafana-ash rounded-2xl p-10 shadow-2xl hover:border-grafana-ash-light hover:shadow-grafana-glow/50 transition-all group relative overflow-hidden hover:shadow-xl"
         >
           <div className={`absolute -top-4 -right-4 w-24 h-24 rounded-full opacity-20 group-hover:opacity-30 transition-opacity ${getStatusColor(spec.status)}`} />
           <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-800 to-gray-900 border-4 mx-auto mb-6 flex items-center justify-center shadow-lg ring-4 ring-transparent group-hover:ring-primary/30 transition-all ${getStatusColor(spec.status)}`}>

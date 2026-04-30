@@ -4,25 +4,23 @@ import { Shield, CheckCircle, AlertCircle } from "lucide-react";
 export const GateKeeperDashboard: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto p-8 space-y-8">
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-12 text-white text-center">
-        <Shield size={64} className="mx-auto mb-6 opacity-90" />
-        <h1 className="text-4xl font-bold mb-4">Gate Keeper System</h1>
-        <p className="text-xl text-indigo-100">Multi-layer Deployment Protection</p>
-        <div className="mt-8">
-          <div className="inline-flex items-center px-8 py-4 bg-green-500/20 border-2 border-green-500 rounded-full text-lg font-bold">
-            <CheckCircle size={24} className="mr-3 text-green-400" />
-            READY FOR DEPLOYMENT
-          </div>
+      <div className="bg-grafana-card/80 border-2 border-grafana-ash-light rounded-2xl p-12 text-center shadow-2xl backdrop-blur-xl">
+        <Shield size={64} className="mx-auto mb-6 text-grafana-green opacity-90 drop-shadow-lg" />
+        <h1 className="text-4xl font-black text-grafana-text mb-4 drop-shadow-lg">Gate Keeper System</h1>
+        <p className="text-xl text-grafana-text mb-8">Multi-layer Deployment Protection</p>
+        <div className="inline-flex items-center px-10 py-5 bg-grafana-green/20 border-2 border-grafana-green rounded-2xl text-xl font-black text-grafana-green shadow-grafana-glow">
+          <CheckCircle size={28} className="mr-4" />
+          READY FOR DEPLOYMENT
         </div>
       </div>
 
       {/* Clean Status Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <div className="bg-gray-900/50 border-2 border-green-500/30 rounded-2xl p-10 text-center hover:shadow-xl">
-          <CheckCircle size={56} className="mx-auto mb-6 text-green-500" />
-          <h3 className="text-2xl font-bold text-white mb-4">Code Quality</h3>
-          <div className="text-4xl font-black text-green-400 mb-4">PASS</div>
-          <p className="text-lg text-gray-300">All builds clean</p>
+        <div className="bg-grafana-panel border-2 border-grafana-ash rounded-2xl p-10 text-center shadow-xl hover:border-grafana-ash-light hover:shadow-grafana-glow/50 transition-all">
+          <CheckCircle size={56} className="mx-auto mb-6 text-grafana-green drop-shadow-lg" />
+          <h3 className="text-2xl font-black text-grafana-text mb-6 uppercase tracking-wide">Code Quality</h3>
+          <div className="text-5xl font-black text-grafana-green mb-4 drop-shadow-2xl">PASS</div>
+          <p className="text-xl text-grafana-text-dim">All builds clean</p>
         </div>
 
         <div className="bg-gray-900/50 border-2 border-blue-500/30 rounded-2xl p-10 text-center hover:shadow-xl">

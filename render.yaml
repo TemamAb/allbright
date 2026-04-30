@@ -99,7 +99,7 @@ services:
     healthCheckPath: /
     healthCheckTimeout: 10
     envVars:
-      - key: VITE_API_URL
+      - key: VITE_API_BASE_URL
         value: https://brightsky-api.onrender.com
       - key: NODE_ENV
         value: production

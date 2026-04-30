@@ -10,7 +10,7 @@ const navItems = [
   { path: '/trades', label: 'Trades', icon: <BarChart size={18} /> },
   { path: '/vault', label: 'Vault', icon: <Wallet size={18} /> },
   { path: '/settings', label: 'Settings', icon: <Settings size={18} /> },
-  { path: '/audit', label: 'Audit', icon: <Bot size={18} /> },
+  { path: '/copilot', label: 'Copilot', icon: <Bot size={18} /> },
 ];
 
 export default function Sidebar() {

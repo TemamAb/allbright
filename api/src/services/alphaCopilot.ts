@@ -438,6 +438,52 @@ export class AlphaCopilot {
      return { integration: 'healthy', gates: ['CODE_QUALITY', 'INFRASTRUCTURE', 'SECURITY', 'PERFORMANCE', 'BUSINESS'] };
    }
 
+   async askLLM(prompt: string): Promise<string> {
+     try {
+       const apiKey = process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY;
+       if (!apiKey) {
+         return "I am currently running in offline mock mode. To unlock my full AI capabilities, please configure OPENROUTER_API_KEY or OPENAI_API_KEY in the environment.";
+       }
+       
+       const isOpenRouter = !!process.env.OPENROUTER_API_KEY;
+       const baseUrl = isOpenRouter ? "https://openrouter.ai/api/v1/chat/completions" : "https://api.openai.com/v1/chat/completions";
+       const model = isOpenRouter ? "mistralai/mistral-7b-instruct:free" : "gpt-3.5-turbo";
+       
+       const systemPrompt = `You are Alpha-Copilot, an elite AI assistant for the BrightSky Arbitrage Engine. 
+The system state:
+- Live Mode Capable: ${sharedEngineState.liveCapable}
+- Running Mode: ${sharedEngineState.mode}
+Provide a concise, professional, and highly technical response.`;
+
+       const response = await fetch(baseUrl, {
+         method: "POST",
+         headers: {
+           "Content-Type": "application/json",
+           "Authorization": `Bearer ${apiKey}`,
+           ...(isOpenRouter ? { "HTTP-Referer": "https://brightsky.app", "X-Title": "BrightSky" } : {})
+         },
+         body: JSON.stringify({
+           model,
+           messages: [
+             { role: "system", content: systemPrompt },
+             { role: "user", content: prompt }
+           ],
+           max_tokens: 300,
+         })
+       });
+       
+       if (!response.ok) {
+         const err = await response.text();
+         return `API Error: ${response.status} - ${err}`;
+       }
+       
+       const data = await response.json();
+       return data.choices[0]?.message?.content || "No response generated.";
+     } catch (err) {
+       return `Failed to connect to AI provider: ${String(err)}`;
+     }
+   }
+
    async executeMissionCommand(command: any): Promise<any> {
      return { executed: true, command };
    }

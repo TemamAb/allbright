@@ -9,12 +9,12 @@ interface Props {
 
 const KPIGrid: React.FC<Props> = ({ kpis }) => {
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-black text-white">Global Efficiency Score</h2>
-        <Badge variant="secondary" className="text-3xl">
+    <div className="bg-grafana-panel border border-grafana-ash rounded-xl p-8 shadow-2xl">
+      <div className="flex justify-between items-center mb-8">
+        <h2 className="text-4xl font-black text-grafana-green drop-shadow-lg">Global Efficiency Score</h2>
+        <div className="bg-grafana-green text-grafana-bg px-8 py-4 rounded-xl text-3xl font-black shadow-grafana-glow">
           {kpis.ges.toFixed(1)}%
-        </Badge>
+        </div>
       </div>
       <Table>
         <TableHeader>
@@ -33,9 +33,9 @@ const KPIGrid: React.FC<Props> = ({ kpis }) => {
               <TableRow key={cat.id}>
                 <TableCell className="font-bold">{cat.label}</TableCell>
                 <TableCell>
-                  <Badge className={score > 90 ? 'bg-green-500' : score > 75 ? 'bg-yellow-500' : 'bg-red-500'}>
+                  <div className={`px-6 py-2 rounded-xl font-black text-lg shadow-grafana-glow ${score > 90 ? 'bg-grafana-green text-grafana-bg' : score > 75 ? 'bg-grafana-yellow text-grafana-bg' : 'bg-grafana-red text-grafana-bg'}`}>
                     {score.toFixed(1)}%
-                  </Badge>
+                  </div>
                 </TableCell>
                 <TableCell>{(cat.weight * 100).toFixed(0)}%</TableCell>
                 <TableCell>{contrib.toFixed(1)}%</TableCell>

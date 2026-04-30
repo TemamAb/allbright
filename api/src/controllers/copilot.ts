@@ -38,7 +38,7 @@ router.post("/command", async (req, res) => {
       const dispatchResult = await alphaCopilot.handleRouteDispatch({ target: 'bss_16', intent: 'Audit', payload: command });
       report = `Debug order dispatched. Result: ${JSON.stringify(dispatchResult)}`;
     } else {
-      report = await alphaCopilot.analyzePerformance();
+      report = await alphaCopilot.askLLM(command);
     }
 
     broadcastCopilotStatus();

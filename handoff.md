@@ -1,6 +1,6 @@
 # BrightSky Complete Handoff - RenderCloud Deployed (v4e80f7a)
 
-**Deployment Status**: ✅ LIVE on RenderCloud (git push successful 2026-04-30)
+**Deployment Status**: 🛠️ TROUBLESHOOTING - Dashboard Crash (White Page)
 
 ## Final Fixes Applied
 - **Gates**: RPC Docker-safe (host.docker.internal fallback), Rust compilation Docker WARN
@@ -12,10 +12,10 @@
 ## Stack Status
 | Component | Status | Notes |
 |-----------|--------|-------|
-| **UI Dashboard** | 🟢 Ready | GES card, KPI grid, engine controls |
+| **UI Dashboard** | 🔴 CRASHED | Runtime error in WalletPage.tsx (Invalid Lucide import) |
 | **API/DB** | 🟢 Ready | GateKeeper + AlphaCopilot orchestration |
 | **Rust Solver** | 🟢 Ready | render.yaml cargo build |
-| **Readiness** | 🟢 READY_FOR_DEPLOYMENT | All 5 gates AUTO_APPROVED |
+| **Readiness** | 🔴 BLOCKED | Frontend runtime error prevents dashboard access |
 
 ## Render Deploy
 - **URL**: Check render.com dashboard (render.yaml triggered)
@@ -23,9 +23,8 @@
 - **Env**: Same placeholders (RPC_ENDPOINT, *_APPROVED=true)
 
 ## Next Ops
-1. Verify Render logs/build success
-2. Test live endpoints (GES/KPIs)
-3. Scale: Adjust concurrency in render.yaml
+1. **Fix `ui/src/pages/WalletPage.tsx`**: Remove invalid `Switch` import from `lucide-react`.
+2. **Verify Vite Config**: Confirm `VITE_API_BASE_URL` is injected at build time.
+3. **Clean Cache**: `pnpm exec vite optimize` to clear pre-bundling conflicts.
 
 **Production handoff complete! 🚀 Engine running at GES 85%+.**
-
