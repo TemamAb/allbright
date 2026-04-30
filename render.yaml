@@ -92,15 +92,14 @@ services:
   # BrightSky Dashboard (React/Vite static build)
   - type: web
     name: brightsky-dashboard
-    env: static
+    env: docker
+    plan: starter
     branch: main
     rootDir: ui
     buildCommand: pnpm install && pnpm build
-    publishPath: dist
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+    runCommand: nginx -g "daemon off;"
+    healthCheckPath: /
+    healthCheckTimeout: 10
     envVars:
       - key: VITE_API_URL
         value: https://brightsky-api.onrender.com

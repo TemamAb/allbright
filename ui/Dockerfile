@@ -1,11 +1,9 @@
 FROM nginx:1.27-alpine
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy nginx configuration to templates folder so envsubst can inject $PORT
+COPY nginx.conf /etc/nginx/templates/default.conf.template
 
 # Copy built static assets (Render will run `pnpm build` before Docker build)
 COPY dist /usr/share/nginx/html
-
-EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]
