@@ -6,6 +6,7 @@ import { AlphaCopilot } from './alphaCopilot';
 import * as path from 'path';
 
 const execAsync = promisify(exec);
+const alphaCopilot = new AlphaCopilot();
 
 export interface ReadinessCheck {
   name: string;

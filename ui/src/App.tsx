@@ -9,6 +9,7 @@ import StrategiesPage from "@/pages/StrategiesPage";
 import WalletPage from "@/pages/WalletPage";
 import SettingsPage from "@/pages/SettingsPage";
 import AuditReport from "@/pages/AuditReport.tsx";
+import Telemetry from "@/pages/Telemetry";
 import Stream from "@/pages/Stream.tsx";
 import Trades from "@/pages/Trades.tsx";
 import Vault from "@/pages/Vault";
@@ -122,8 +123,7 @@ export default function App() {
 
             <Route path="/audit" component={AuditReport} />
   <Route path="/copilot" component={Copilot} />
-  <Route path="/setup" component={SetupWizard} />
-           <Route component={NotFound} />
+  <Route path="/setup" component={SetupWizard} />\n          <Route path="/telemetry" component={Telemetry} />\n           <Route component={NotFound} />
  </Switch>
       </Layout>
       <Toaster position="bottom-right" richColors />

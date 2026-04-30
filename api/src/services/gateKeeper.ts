@@ -1,80 +1,403 @@
 /**
  * BrightSky Gate Keeper System
- * Multi-Layer Approval and Authorization Framework
- *
- * GATES IMPLEMENTED:
- * 1. Code Quality Gate - Compilation, Security, Testing
- * 2. Infrastructure Gate - Environment, Database, Networking
- * 3. Security Gate - Authentication, Authorization, Audit
- * 4. Performance Gate - Benchmarks, KPIs, Scalability
- * 5. Business Gate - ROI, Risk, Final Go-Live Approval
- * 6. Runtime Gates - Circuit Breakers, Risk Limits, Emergency Stops
- * 7. Compliance Gates - Regulatory Requirements, Audit Trails
- * 8. Operational Gates - Monitoring, Alerting, Incident Response
+ * Hardened deployment approval and authorization framework.
  */
 
 import { logger } from './logger';
-import { sharedEngineState } from './engineState';
-import * as crypto from 'crypto';
+import { sharedEngineState, validateConfiguration } from './engineState';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as net from 'net';
 import * as fs from 'fs';
 import * as path from 'path';
-
 const execAsync = promisify(exec);
+
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const workspaceRoot = path.resolve(__dirname, '..', '..', '..');
+
+const stateFilePath = path.join(workspaceRoot, 'api', '.gatekeeper-state.json');
+const rustWorkspacePath = path.join(workspaceRoot, 'solver');
+const apiWorkspacePath = path.join(workspaceRoot, 'api');
+
+export const DEPLOYMENT_MODULE_ROOTS = [
+  'api/src',
+  'solver/src',
+  'ui/src',
+  'lib/ts',
+  'lib/db/src',
+  'lib/api-zod/src',
+  'lib/api-client-react/src'
+];
+
+const DEPLOYMENT_SOURCE_EXTENSIONS = new Set(['.ts', '.tsx', '.rs', '.css']);
+const DEPLOYMENT_SOURCE_EXCLUDES = [
+  /\.test\./i,
+  /README\.md$/i,
+  /(^|\/)target\//i
+];
+
+function shouldIncludeDeploymentFile(relPath: string): boolean {
+  if (DEPLOYMENT_SOURCE_EXCLUDES.some(pattern => pattern.test(relPath))) {
+    return false;
+  }
+
+  return DEPLOYMENT_SOURCE_EXTENSIONS.has(path.extname(relPath));
+}
+
+function collectFilesRecursively(rootRelativePath: string): string[] {
+  const rootAbsolutePath = path.join(workspaceRoot, rootRelativePath);
+  if (!fs.existsSync(rootAbsolutePath)) {
+    return [];
+  }
+
+  const collected: string[] = [];
+  const visit = (absoluteDir: string) => {
+    for (const entry of fs.readdirSync(absoluteDir, { withFileTypes: true })) {
+      const absolutePath = path.join(absoluteDir, entry.name);
+      const relativePath = path.relative(workspaceRoot, absolutePath).replace(/\\/g, '/');
+
+      if (entry.isDirectory()) {
+        visit(absolutePath);
+        continue;
+      }
+
+      if (shouldIncludeDeploymentFile(relativePath)) {
+        collected.push(relativePath);
+      }
+    }
+  };
+
+  visit(rootAbsolutePath);
+  return collected;
+}
+
+export function getDeploymentCriticalFiles(): string[] {
+  return DEPLOYMENT_MODULE_ROOTS
+    .flatMap(rootPath => collectFilesRecursively(rootPath))
+    .sort((left, right) => left.localeCompare(right));
+}
+
+export const CRITICAL_SOURCE_FILES = getDeploymentCriticalFiles();
+
+type CheckStatus = 'PASS' | 'FAIL' | 'WARN';
+type CheckSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+type GateRole = 'viewer' | 'requester' | 'system' | 'approver' | 'executive';
+type GateActorSource = 'api' | 'internal' | 'system';
+
+export interface GateActor {
+  id: string;
+  source: GateActorSource;
+  roles: GateRole[];
+  displayName?: string;
+}
 
 export interface GateApproval {
   gateId: string;
   gateName: string;
+  status: GateStatus;
   approved: boolean;
+  requestedBy: string;
   approvedBy: string;
-  approvedAt: Date;
+  requestedAt: Date;
+  approvedAt: Date | null;
   approvalReason: string;
   riskAssessment: RiskLevel;
   automatedChecks: AutomatedCheckResult[];
   requiresHumanApproval: boolean;
+  context: Record<string, unknown>;
 }
 
 export interface AutomatedCheckResult {
   checkId: string;
   checkName: string;
-  status: 'PASS' | 'FAIL' | 'WARN';
+  status: CheckStatus;
   details: string;
-  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  severity: CheckSeverity;
 }
 
-export enum RiskLevel {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH',
-  CRITICAL = 'CRITICAL'
+interface GateDefinition {
+  gateId: string;
+  gateName: string;
+  checks: Array<{ checkId: string; checkName: string; severity: CheckSeverity }>;
 }
 
-export enum GateStatus {
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-  EXPIRED = 'EXPIRED',
-  BYPASSED = 'BYPASSED'
+interface GateRequestInput {
+  gateId: string;
+  requester: string;
+  actor?: string | GateActor;
+  context: Record<string, unknown>;
 }
+
+interface PersistedOverrideState {
+  active: boolean;
+  activatedBy: string;
+  activatedAt: string;
+  reason: string;
+}
+
+interface PersistedGateState {
+  approvals: Record<string, GateApproval[]>;
+  emergencyOverride: PersistedOverrideState | null;
+}
+
+const RiskLevel = {
+  LOW: 'LOW' as const,
+  MEDIUM: 'MEDIUM' as const,
+  HIGH: 'HIGH' as const,
+  CRITICAL: 'CRITICAL' as const
+} as const;
+
+type RiskLevel = typeof RiskLevel[keyof typeof RiskLevel];
+
+const GateStatus = {
+  PENDING: 'PENDING' as const,
+  APPROVED: 'APPROVED' as const,
+  REJECTED: 'REJECTED' as const,
+  EXPIRED: 'EXPIRED' as const,
+  BYPASSED: 'BYPASSED' as const
+} as const;
+
+type GateStatus = typeof GateStatus[keyof typeof GateStatus];
 
 export class GateKeeperSystem {
-  private approvals: Map<string, GateApproval[]> = new Map();
-  private emergencyOverride: boolean = false;
-  private emergencyOverrideReason: string = '';
+  private definitions = new Map<string, GateDefinition>();
+  private approvals = new Map<string, GateApproval[]>();
+  private emergencyOverride:
+    | { active: true; activatedBy: string; activatedAt: Date; reason: string }
+    | null = null;
 
   constructor() {
     this.initializeGates();
+    this.loadState();
   }
 
-  /**
-   * Initialize all gate definitions
-   */
-  private initializeGates(): void {
-    logger.info('[GATE-KEEPER] Initializing comprehensive gate system');
+  public buildApiActor(clientId?: string, displayName?: string): GateActor {
+    const actorId = clientId || 'anonymous-api-client';
+    const roles = this.resolveApiRoles(actorId);
 
-    // Define all gates with their requirements
+    return {
+      id: actorId,
+      source: 'api',
+      roles,
+      displayName
+    };
+  }
+
+  public getEmergencyOverrideStatus() {
+    return this.emergencyOverride;
+  }
+
+  public async requestGateApproval(
+    gateId: string,
+    requesterOrContext?: string | Record<string, unknown>,
+    maybeContext?: Record<string, unknown>
+  ): Promise<{ approved: boolean; gateStatus: GateStatus; approvalDetails: GateApproval | null }> {
+    const input = this.normalizeGateRequest(gateId, requesterOrContext, maybeContext);
+    const gate = this.definitions.get(gateId);
+    if (!gate) {
+      throw new Error(`Unknown gate: ${gateId}`);
+    }
+
+    logger.info(`[GATE-KEEPER] Approval requested for gate: ${gateId} by ${input.requester}`);
+
+    const automatedResults = await this.runAutomatedChecks(gateId, input.context);
+    const requiresHumanApproval = this.requiresHumanApproval(gateId, automatedResults);
+    const approval: GateApproval = {
+      gateId,
+      gateName: gate.gateName,
+      status: GateStatus.PENDING,
+      approved: false,
+      requestedBy: input.requester,
+      approvedBy: '',
+      requestedAt: new Date(),
+      approvedAt: null,
+      approvalReason: '',
+      riskAssessment: this.calculateRiskLevel(automatedResults),
+      automatedChecks: automatedResults,
+      requiresHumanApproval,
+      context: input.context
+    };
+
+    const gateApprovals = this.approvals.get(gateId) || [];
+    gateApprovals.push(approval);
+    this.approvals.set(gateId, gateApprovals);
+    this.persistState();
+
+    if (!requiresHumanApproval && this.allChecksPass(automatedResults)) {
+      return this.approveGate(gateId, 'AUTOMATED_SYSTEM', 'All automated checks passed', approval);
+    }
+
+    return {
+      approved: false,
+      gateStatus: GateStatus.PENDING,
+      approvalDetails: approval
+    };
+  }
+
+  public async approveGate(
+    gateId: string,
+    approver: string | GateActor,
+    reason: string,
+    existingApproval?: GateApproval
+  ): Promise<{ approved: boolean; gateStatus: GateStatus; approvalDetails: GateApproval | null }> {
+    const gateApprovals = this.approvals.get(gateId);
+    if (!gateApprovals || gateApprovals.length === 0) {
+      return {
+        approved: false,
+        gateStatus: GateStatus.PENDING,
+        approvalDetails: null
+      };
+    }
+
+    const latestApproval = existingApproval || gateApprovals[gateApprovals.length - 1];
+    const actor = this.normalizeActor(approver);
+
+    if (!this.isAuthorizedForGate(actor, latestApproval)) {
+      logger.warn(`[GATE-KEEPER] Unauthorized approval attempt: ${actor.id} for gate ${gateId}`);
+      return {
+        approved: false,
+        gateStatus: GateStatus.REJECTED,
+        approvalDetails: latestApproval
+      };
+    }
+
+    latestApproval.approved = true;
+    latestApproval.status = GateStatus.APPROVED;
+    latestApproval.approvedBy = actor.id;
+    latestApproval.approvedAt = new Date();
+    latestApproval.approvalReason = reason;
+
+    logger.info(`[GATE-KEEPER] Gate ${gateId} APPROVED by ${actor.id}: ${reason}`);
+
+    await this.executeGateActions(gateId, true, latestApproval);
+    this.persistState();
+
+    return {
+      approved: true,
+      gateStatus: GateStatus.APPROVED,
+      approvalDetails: latestApproval
+    };
+  }
+
+  public async rejectGate(
+    gateId: string,
+    rejector: string | GateActor,
+    reason: string
+  ): Promise<{ approved: boolean; gateStatus: GateStatus; rejectionDetails: any }> {
+    const gateApprovals = this.approvals.get(gateId);
+    if (!gateApprovals || gateApprovals.length === 0) {
+      return {
+        approved: false,
+        gateStatus: GateStatus.PENDING,
+        rejectionDetails: { error: 'No approval request found' }
+      };
+    }
+
+    const actor = this.normalizeActor(rejector);
+    const latestApproval = gateApprovals[gateApprovals.length - 1];
+
+    latestApproval.approved = false;
+    latestApproval.status = GateStatus.REJECTED;
+    latestApproval.approvedBy = actor.id;
+    latestApproval.approvedAt = new Date();
+    latestApproval.approvalReason = reason;
+
+    logger.warn(`[GATE-KEEPER] Gate ${gateId} REJECTED by ${actor.id}: ${reason}`);
+
+    await this.executeGateActions(gateId, false, latestApproval);
+    this.persistState();
+
+    return {
+      approved: false,
+      gateStatus: GateStatus.REJECTED,
+      rejectionDetails: {
+        gateId,
+        rejectedBy: actor.id,
+        reason,
+        timestamp: new Date()
+      }
+    };
+  }
+
+  public isDeploymentAuthorized(): {
+    authorized: boolean;
+    authorizationMode: 'standard' | 'emergency_override' | 'blocked';
+    missingApprovals: string[];
+    status: Record<string, unknown>;
+    emergencyOverride: PersistedOverrideState | null;
+  } {
+    const requiredGates = ['CODE_QUALITY', 'INFRASTRUCTURE', 'SECURITY', 'PERFORMANCE', 'BUSINESS'];
+    const missingApprovals: string[] = [];
+    const status: Record<string, unknown> = {};
+
+    for (const gateId of requiredGates) {
+      const gateApprovals = this.approvals.get(gateId) || [];
+      const latestApproval = gateApprovals[gateApprovals.length - 1];
+
+      if (!latestApproval || !latestApproval.approved) {
+        missingApprovals.push(gateId);
+        status[gateId] = { status: 'PENDING_OR_REJECTED', latestApproval };
+      } else {
+        status[gateId] = { status: 'APPROVED', latestApproval };
+      }
+    }
+
+    const overrideState = this.emergencyOverride
+      ? {
+          active: true,
+          activatedBy: this.emergencyOverride.activatedBy,
+          activatedAt: this.emergencyOverride.activatedAt.toISOString(),
+          reason: this.emergencyOverride.reason
+        }
+      : null;
+
+    if (this.emergencyOverride?.active) {
+      return {
+        authorized: true,
+        authorizationMode: 'emergency_override',
+        missingApprovals,
+        status,
+        emergencyOverride: overrideState
+      };
+    }
+
+    const authorized = missingApprovals.length === 0;
+    return {
+      authorized,
+      authorizationMode: authorized ? 'standard' : 'blocked',
+      missingApprovals,
+      status,
+      emergencyOverride: null
+    };
+  }
+
+  public activateEmergencyOverride(activator: string | GateActor, reason: string): boolean {
+    const actor = this.normalizeActor(activator);
+    if (!this.isEmergencyOverrideAuthorized(actor)) {
+      logger.error(`[GATE-KEEPER] Unauthorized emergency override attempt by ${actor.id}`);
+      return false;
+    }
+
+    this.emergencyOverride = {
+      active: true,
+      activatedBy: actor.id,
+      activatedAt: new Date(),
+      reason
+    };
+    this.persistState();
+
+    logger.warn(`[GATE-KEEPER] EMERGENCY OVERRIDE ACTIVATED by ${actor.id}: ${reason}`);
+    logger.warn('[GATE-KEEPER] Deployment authorization is now bypassing standard gate state');
+
+    return true;
+  }
+
+  private initializeGates(): void {
+    logger.info('[GATE-KEEPER] Initializing hardened gate system');
+
     this.defineGate('CODE_QUALITY', 'Code Quality Gate', [
       { checkId: 'compilation', checkName: 'Rust Compilation', severity: 'CRITICAL' },
       { checkId: 'typescript', checkName: 'TypeScript Compilation', severity: 'HIGH' },
@@ -115,501 +438,431 @@ export class GateKeeperSystem {
       { checkId: 'stakeholder_approval', checkName: 'Stakeholder Approval', severity: 'CRITICAL' },
       { checkId: 'go_live_decision', checkName: 'Go-Live Decision', severity: 'CRITICAL' }
     ]);
-
-    this.defineGate('RUNTIME_SECURITY', 'Runtime Security Gate', [
-      { checkId: 'circuit_breaker', checkName: 'Circuit Breaker Status', severity: 'CRITICAL' },
-      { checkId: 'rate_limits', checkName: 'Rate Limiting', severity: 'HIGH' },
-      { checkId: 'intrusion_detection', checkName: 'Intrusion Detection', severity: 'HIGH' },
-      { checkId: 'anomaly_detection', checkName: 'Anomaly Detection', severity: 'MEDIUM' }
-    ]);
-
-    this.defineGate('COMPLIANCE', 'Regulatory Compliance Gate', [
-      { checkId: 'kyc_verification', checkName: 'KYC Verification', severity: 'CRITICAL' },
-      { checkId: 'regulatory_reporting', checkName: 'Regulatory Reporting', severity: 'HIGH' },
-      { checkId: 'audit_trails', checkName: 'Audit Trails', severity: 'HIGH' },
-      { checkId: 'data_privacy', checkName: 'Data Privacy Compliance', severity: 'CRITICAL' }
-    ]);
-
-    this.defineGate('OPERATIONAL', 'Operational Readiness Gate', [
-      { checkId: 'monitoring_systems', checkName: 'Monitoring Systems', severity: 'HIGH' },
-      { checkId: 'alerting_systems', checkName: 'Alerting Systems', severity: 'HIGH' },
-      { checkId: 'incident_response', checkName: 'Incident Response Plan', severity: 'MEDIUM' },
-      { checkId: 'documentation', checkName: 'Operational Documentation', severity: 'MEDIUM' }
-    ]);
   }
 
-  /**
-   * Define a gate with its automated checks
-   */
-  private defineGate(gateId: string, gateName: string, checks: Omit<AutomatedCheckResult, 'status' | 'details'>[]): void {
-    // Initialize empty approvals for this gate
-    this.approvals.set(gateId, []);
-
-    logger.info(`[GATE-KEEPER] Defined gate: ${gateName} (${gateId}) with ${checks.length} checks`);
-  }
-
-  /**
-   * Request approval for a specific gate
-   */
-  public async requestGateApproval(
+  private defineGate(
     gateId: string,
-    requester: string,
-    context: any = {}
-  ): Promise<{ approved: boolean; gateStatus: GateStatus; approvalDetails: GateApproval | null }> {
-    logger.info(`[GATE-KEEPER] Approval requested for gate: ${gateId} by ${requester}`);
-
-    // Run automated checks for this gate
-    const automatedResults = await this.runAutomatedChecks(gateId, context);
-
-    // Determine if human approval is required
-    const requiresHumanApproval = this.requiresHumanApproval(gateId, automatedResults);
-
-    // Create approval record
-    const approval: GateApproval = {
-      gateId,
-      gateName: this.getGateName(gateId),
-      approved: false,
-      approvedBy: '',
-      approvedAt: new Date(),
-      approvalReason: '',
-      riskAssessment: this.calculateRiskLevel(automatedResults),
-      automatedChecks: automatedResults,
-      requiresHumanApproval
-    };
-
-    // Store approval request
-    const gateApprovals = this.approvals.get(gateId) || [];
-    gateApprovals.push(approval);
-    this.approvals.set(gateId, gateApprovals);
-
-    // Auto-approve if all checks pass and no human approval required
-    if (!requiresHumanApproval && this.allChecksPass(automatedResults)) {
-      return await this.approveGate(gateId, 'AUTOMATED_SYSTEM', 'All automated checks passed', approval);
+    gateName: string,
+    checks: GateDefinition['checks']
+  ): void {
+    this.definitions.set(gateId, { gateId, gateName, checks });
+    if (!this.approvals.has(gateId)) {
+      this.approvals.set(gateId, []);
     }
-
-    return {
-      approved: false,
-      gateStatus: GateStatus.PENDING,
-      approvalDetails: approval
-    };
   }
 
-  /**
-   * Approve a gate (requires proper authorization)
-   */
-  public async approveGate(
+  private normalizeGateRequest(
     gateId: string,
-    approver: string,
-    reason: string,
-    existingApproval?: GateApproval
-  ): Promise<{ approved: boolean; gateStatus: GateStatus; approvalDetails: GateApproval | null }> {
-    const gateApprovals = this.approvals.get(gateId);
-    if (!gateApprovals || gateApprovals.length === 0) {
+    requesterOrContext?: string | Record<string, unknown>,
+    maybeContext?: Record<string, unknown>
+  ): GateRequestInput {
+    if (typeof requesterOrContext === 'string') {
       return {
-        approved: false,
-        gateStatus: GateStatus.PENDING,
-        approvalDetails: null
-      };
-    }
-
-    // Get the latest approval request
-    const latestApproval = existingApproval || gateApprovals[gateApprovals.length - 1];
-
-    // Verify authorization for this gate
-    if (!this.isAuthorizedForGate(approver, gateId)) {
-      logger.warn(`[GATE-KEEPER] Unauthorized approval attempt: ${approver} for gate ${gateId}`);
-      return {
-        approved: false,
-        gateStatus: GateStatus.REJECTED,
-        approvalDetails: latestApproval
-      };
-    }
-
-    // Update approval
-    latestApproval.approved = true;
-    latestApproval.approvedBy = approver;
-    latestApproval.approvedAt = new Date();
-    latestApproval.approvalReason = reason;
-
-    logger.info(`[GATE-KEEPER] Gate ${gateId} APPROVED by ${approver}: ${reason}`);
-
-    // Execute gate-specific actions on approval
-    await this.executeGateActions(gateId, true, latestApproval);
-
-    return {
-      approved: true,
-      gateStatus: GateStatus.APPROVED,
-      approvalDetails: latestApproval
-    };
-  }
-
-  /**
-   * Reject a gate
-   */
-  public async rejectGate(
-    gateId: string,
-    rejector: string,
-    reason: string
-  ): Promise<{ approved: boolean; gateStatus: GateStatus; rejectionDetails: any }> {
-    const gateApprovals = this.approvals.get(gateId);
-    if (!gateApprovals || gateApprovals.length === 0) {
-      return {
-        approved: false,
-        gateStatus: GateStatus.PENDING,
-        rejectionDetails: { error: 'No approval request found' }
-      };
-    }
-
-    const latestApproval = gateApprovals[gateApprovals.length - 1];
-    latestApproval.approved = false;
-    latestApproval.approvedBy = rejector;
-    latestApproval.approvedAt = new Date();
-    latestApproval.approvalReason = reason;
-
-    logger.warn(`[GATE-KEEPER] Gate ${gateId} REJECTED by ${rejector}: ${reason}`);
-
-    // Execute gate-specific rejection actions
-    await this.executeGateActions(gateId, false, latestApproval);
-
-    return {
-      approved: false,
-      gateStatus: GateStatus.REJECTED,
-      rejectionDetails: {
         gateId,
-        rejectedBy: rejector,
-        reason,
-        timestamp: new Date()
-      }
-    };
-  }
-
-  /**
-   * Check if all gates are approved for deployment
-   */
-  public isDeploymentAuthorized(): { authorized: boolean; missingApprovals: string[]; status: any } {
-    const requiredGates = ['CODE_QUALITY', 'INFRASTRUCTURE', 'SECURITY', 'PERFORMANCE', 'BUSINESS'];
-    const missingApprovals: string[] = [];
-    const status: any = {};
-
-    for (const gateId of requiredGates) {
-      const gateApprovals = this.approvals.get(gateId) || [];
-      const latestApproval = gateApprovals[gateApprovals.length - 1];
-
-      if (!latestApproval || !latestApproval.approved) {
-        missingApprovals.push(gateId);
-        status[gateId] = { status: 'PENDING_OR_REJECTED', latestApproval };
-      } else {
-        status[gateId] = { status: 'APPROVED', latestApproval };
-      }
+        requester: requesterOrContext,
+        context: maybeContext || {}
+      };
     }
-
-    const authorized = missingApprovals.length === 0 && !this.emergencyOverride;
 
     return {
-      authorized,
-      missingApprovals,
-      status
+      gateId,
+      requester: 'SYSTEM_INTERNAL',
+      context: requesterOrContext || {}
     };
   }
 
-  /**
-   * Emergency override (requires specific authorization)
-   */
-  public activateEmergencyOverride(activator: string, reason: string): boolean {
-    if (!this.isEmergencyOverrideAuthorized(activator)) {
-      logger.error(`[GATE-KEEPER] Unauthorized emergency override attempt by ${activator}`);
-      return false;
+  private normalizeActor(actor: string | GateActor): GateActor {
+    if (typeof actor !== 'string') {
+      return {
+        id: actor.id,
+        source: actor.source,
+        roles: [...new Set(actor.roles)],
+        displayName: actor.displayName
+      };
     }
 
-    this.emergencyOverride = true;
-    this.emergencyOverrideReason = reason;
+    const internalActors: Record<string, GateActor> = {
+      AUTOMATED_SYSTEM: { id: 'AUTOMATED_SYSTEM', source: 'system', roles: ['system'] },
+      SYSTEM_INTERNAL: { id: 'SYSTEM_INTERNAL', source: 'internal', roles: ['system'] },
+      AlphaCopilot: { id: 'AlphaCopilot', source: 'system', roles: ['system'] },
+      SYSTEM_ADMIN: { id: 'SYSTEM_ADMIN', source: 'internal', roles: ['approver', 'executive'] },
+      CTO: { id: 'CTO', source: 'internal', roles: ['approver', 'executive'] },
+      CEO: { id: 'CEO', source: 'internal', roles: ['approver', 'executive'] }
+    };
 
-    logger.info(`[GATE-KEEPER] 🚨 EMERGENCY OVERRIDE ACTIVATED by ${activator}: ${reason}`);
-    logger.info('[GATE-KEEPER] All gate approvals bypassed - extreme caution required');
-
-    return true;
+    return internalActors[actor] || {
+      id: actor,
+      source: 'internal',
+      roles: ['viewer']
+    };
   }
 
-  // Private helper methods
+  private resolveApiRoles(clientId: string): GateRole[] {
+    const executiveClientIds = this.readEnvSet('GATEKEEPER_EXEC_CLIENT_IDS');
+    const approverClientIds = this.readEnvSet('GATEKEEPER_APPROVER_CLIENT_IDS');
 
-  private async runAutomatedChecks(gateId: string, context: any): Promise<AutomatedCheckResult[]> {
-    const results: AutomatedCheckResult[] = [];
+    if (executiveClientIds.has(clientId)) {
+      return ['requester', 'approver', 'executive'];
+    }
 
+    if (approverClientIds.has(clientId)) {
+      return ['requester', 'approver'];
+    }
+
+    return ['requester'];
+  }
+
+  private readEnvSet(envName: string): Set<string> {
+    return new Set(
+      (process.env[envName] || '')
+        .split(',')
+        .map(value => value.trim())
+        .filter(Boolean)
+    );
+  }
+
+  private loadState(): void {
+    try {
+      if (!fs.existsSync(stateFilePath)) {
+        return;
+      }
+
+      const rawState = fs.readFileSync(stateFilePath, 'utf8');
+      const parsed = JSON.parse(rawState) as PersistedGateState;
+
+      for (const gateId of Object.keys(parsed.approvals || {})) {
+        const restoredApprovals = (parsed.approvals[gateId] || []).map(approval => ({
+          ...approval,
+          requestedAt: new Date(approval.requestedAt),
+          approvedAt: approval.approvedAt ? new Date(approval.approvedAt) : null
+        }));
+        this.approvals.set(gateId, restoredApprovals);
+      }
+
+      if (parsed.emergencyOverride?.active) {
+        this.emergencyOverride = {
+          active: true,
+          activatedBy: parsed.emergencyOverride.activatedBy,
+          activatedAt: new Date(parsed.emergencyOverride.activatedAt),
+          reason: parsed.emergencyOverride.reason
+        };
+      }
+    } catch (error: any) {
+      logger.error(`[GATE-KEEPER] Failed to load persisted state: ${error.message}`);
+    }
+  }
+
+  private persistState(): void {
+    try {
+      fs.mkdirSync(path.dirname(stateFilePath), { recursive: true });
+
+      const approvals: Record<string, GateApproval[]> = {};
+      for (const [gateId, gateApprovals] of this.approvals.entries()) {
+        approvals[gateId] = gateApprovals;
+      }
+
+      const state: PersistedGateState = {
+        approvals,
+        emergencyOverride: this.emergencyOverride
+          ? {
+              active: true,
+              activatedBy: this.emergencyOverride.activatedBy,
+              activatedAt: this.emergencyOverride.activatedAt.toISOString(),
+              reason: this.emergencyOverride.reason
+            }
+          : null
+      };
+
+      fs.writeFileSync(stateFilePath, JSON.stringify(state, null, 2), 'utf8');
+    } catch (error: any) {
+      logger.error(`[GATE-KEEPER] Failed to persist state: ${error.message}`);
+    }
+  }
+
+  private async runAutomatedChecks(
+    gateId: string,
+    context: Record<string, unknown>
+  ): Promise<AutomatedCheckResult[]> {
     switch (gateId) {
       case 'CODE_QUALITY':
-        results.push(await this.checkCompilation());
-        results.push(await this.checkTypeScript());
-        results.push(await this.checkFileIntegrity());
-        results.push(await this.checkSecurityAudit());
-        break;
-
+        return [
+          await this.checkCompilation(),
+          await this.checkTypeScript(),
+          await this.checkFileIntegrity(),
+          await this.checkLinting(),
+          await this.checkSecurityAudit(),
+          await this.checkTestCoverage()
+        ];
       case 'INFRASTRUCTURE':
-        results.push(await this.checkEnvironmentConfig());
-        results.push(await this.checkDatabaseConnectivity());
-        results.push(await this.checkNetworkConfig());
-        break;
-
+        return [
+          await this.checkEnvironmentConfig(),
+          await this.checkDatabaseConnectivity(),
+          await this.checkNetworkConfig(),
+          await this.checkResourceLimits(),
+          await this.checkBackupSystems()
+        ];
       case 'SECURITY':
-        results.push(await this.checkAuthentication());
-        results.push(await this.checkAuthorization());
-        results.push(await this.checkEncryption());
-        break;
-
+        return [
+          await this.checkAuthentication(),
+          await this.checkAuthorization(),
+          await this.checkEncryption(),
+          await this.checkAuditLogging(),
+          await this.checkVulnerabilityScan()
+        ];
       case 'PERFORMANCE':
-        results.push(await this.checkKPIs());
-        results.push(await this.checkBenchmarks());
-        results.push(await this.checkScalability());
-        break;
-
+        return [
+          await this.checkKPIs(),
+          await this.checkGlobalEfficiencyScore(), // New check for GES
+          await this.checkBenchmarks(),
+          await this.checkScalability(),
+          await this.checkLoadTesting(context),
+          await this.checkStressTesting(context)
+        ];
       case 'BUSINESS':
-        results.push(await this.checkROI());
-        results.push(await this.checkRiskAssessment());
-        results.push(await this.checkCompliance());
-        break;
-
+        return [
+          await this.checkROI(),
+          await this.checkRiskAssessment(),
+          await this.checkCompliance(),
+          await this.checkStakeholderApproval(),
+          await this.checkGoLiveDecision()
+        ];
       default:
-        results.push({
-          checkId: 'unknown',
-          checkName: 'Unknown Check',
-          status: 'FAIL',
-          details: `No automated checks defined for gate: ${gateId}`,
-          severity: 'HIGH'
-        });
+        return [
+          {
+            checkId: 'unknown',
+            checkName: 'Unknown Check',
+            status: 'FAIL',
+            details: `No automated checks defined for gate: ${gateId}`,
+            severity: 'HIGH'
+          }
+        ];
     }
-
-    return results;
   }
 
   private requiresHumanApproval(gateId: string, results: AutomatedCheckResult[]): boolean {
-    // Business and security gates always require human approval
-    if (['BUSINESS', 'SECURITY', 'COMPLIANCE'].includes(gateId)) {
+    if (['BUSINESS', 'SECURITY'].includes(gateId)) {
       return true;
     }
 
-    // Require human approval if any critical checks fail
-    return results.some(r => r.status === 'FAIL' && r.severity === 'CRITICAL');
+    return results.some(result => result.status === 'FAIL' && result.severity === 'CRITICAL');
   }
 
   private allChecksPass(results: AutomatedCheckResult[]): boolean {
-    return results.every(r => r.status === 'PASS');
+    return results.every(result => result.status === 'PASS');
   }
 
   private calculateRiskLevel(results: AutomatedCheckResult[]): RiskLevel {
-    const criticalFails = results.filter(r => r.status === 'FAIL' && r.severity === 'CRITICAL').length;
-    const highFails = results.filter(r => r.status === 'FAIL' && r.severity === 'HIGH').length;
+    const criticalFails = results.filter(result => result.status === 'FAIL' && result.severity === 'CRITICAL').length;
+    const highFails = results.filter(result => result.status === 'FAIL' && result.severity === 'HIGH').length;
 
     if (criticalFails > 0) return RiskLevel.CRITICAL;
     if (highFails > 0) return RiskLevel.HIGH;
-    if (results.some(r => r.status === 'WARN')) return RiskLevel.MEDIUM;
-
+    if (results.some(result => result.status === 'WARN')) return RiskLevel.MEDIUM;
     return RiskLevel.LOW;
   }
 
-  private getGateName(gateId: string): string {
-    const names: Record<string, string> = {
-      'CODE_QUALITY': 'Code Quality Gate',
-      'INFRASTRUCTURE': 'Infrastructure Readiness Gate',
-      'SECURITY': 'Security Approval Gate',
-      'PERFORMANCE': 'Performance Benchmark Gate',
-      'BUSINESS': 'Business Approval Gate',
-      'RUNTIME_SECURITY': 'Runtime Security Gate',
-      'COMPLIANCE': 'Regulatory Compliance Gate',
-      'OPERATIONAL': 'Operational Readiness Gate'
-    };
-    return names[gateId] || 'Unknown Gate';
-  }
+  private isAuthorizedForGate(actor: GateActor, approval: GateApproval): boolean {
+    const hasApproverRole = actor.roles.includes('approver') || actor.roles.includes('executive');
+    const hasExecutiveRole = actor.roles.includes('executive');
+    const isSystemActor = actor.roles.includes('system');
 
-  private isAuthorizedForGate(approver: string, gateId: string): boolean {
-    // Implement authorization logic based on roles/permissions
-    // This is a simplified version - in production, check against user roles
-    const authorizedApprovers = ['SYSTEM_ADMIN', 'CTO', 'CEO', 'AUTOMATED_SYSTEM'];
-
-    // Business and compliance gates require executive approval
-    if (['BUSINESS', 'COMPLIANCE'].includes(gateId)) {
-      return ['SYSTEM_ADMIN', 'CEO'].includes(approver);
+    if (actor.source === 'api' && !hasApproverRole && !hasExecutiveRole) {
+      return false;
     }
 
-    return authorizedApprovers.includes(approver);
+    if (approval.requiresHumanApproval && isSystemActor) {
+      return false;
+    }
+
+    if (['BUSINESS', 'SECURITY'].includes(approval.gateId) && !hasExecutiveRole) {
+      return false;
+    }
+
+    if (approval.riskAssessment === RiskLevel.CRITICAL && !hasExecutiveRole) {
+      return false;
+    }
+
+    return hasApproverRole || hasExecutiveRole || isSystemActor;
   }
 
   private async executeGateActions(gateId: string, approved: boolean, approval: GateApproval): Promise<void> {
     if (!approved) {
-      // Handle rejection actions
       logger.warn(`[GATE-KEEPER] Gate ${gateId} rejection actions executed`);
       return;
     }
 
-    // Handle approval actions
     switch (gateId) {
       case 'BUSINESS':
-        logger.info('[GATE-KEEPER] Business gate approved - deployment authorized');
-        // Could trigger deployment pipeline here
+        logger.info('[GATE-KEEPER] Business gate approved - deployment authorization may proceed');
         break;
-
       case 'SECURITY':
-        logger.info('[GATE-KEEPER] Security gate approved - enabling production security controls');
-        // Could enable additional security measures
+        logger.info('[GATE-KEEPER] Security gate approved - production security controls remain enforced');
         break;
-
       case 'PERFORMANCE':
-        logger.info('[GATE-KEEPER] Performance gate approved - updating production benchmarks');
-        // Could update monitoring baselines
+        logger.info('[GATE-KEEPER] Performance gate approved - baselines accepted');
         break;
-
       default:
         logger.info(`[GATE-KEEPER] Gate ${gateId} approved - proceeding to next gate`);
     }
   }
 
-  private isEmergencyOverrideAuthorized(activator: string): boolean {
-    // Only top-level executives can activate emergency override
-    return ['CEO', 'CTO', 'SYSTEM_ADMIN'].includes(activator);
+  private isEmergencyOverrideAuthorized(actor: GateActor): boolean {
+    return actor.roles.includes('executive');
   }
 
-  // Automated check implementations
+  private async runCommand(command: string, cwd: string, timeoutMs = 120000) {
+    return execAsync(command, { cwd, timeout: timeoutMs, windowsHide: true, maxBuffer: 2 * 1024 * 1024 });
+  }
+
+  private makeCheck(
+    checkId: string,
+    checkName: string,
+    status: CheckStatus,
+    details: string,
+    severity: CheckSeverity
+  ): AutomatedCheckResult {
+    return { checkId, checkName, status, details, severity };
+  }
+
   private async checkCompilation(): Promise<AutomatedCheckResult> {
     try {
-      await execAsync('cargo check --quiet');
-      return {
-        checkId: 'compilation',
-        checkName: 'Rust Compilation',
-        status: 'PASS',
-        details: 'All Rust code compiles successfully',
-        severity: 'CRITICAL'
-      };
+      await this.runCommand('cargo check --quiet', rustWorkspacePath, 180000);
+      return this.makeCheck('compilation', 'Rust Compilation', 'PASS', 'All Rust code compiles successfully', 'CRITICAL');
     } catch (error: any) {
-      return {
-        checkId: 'compilation',
-        checkName: 'Rust Compilation',
-        status: 'FAIL',
-        details: `Rust compilation failed: ${error.message}`,
-        severity: 'CRITICAL'
-      };
+      return this.makeCheck('compilation', 'Rust Compilation', 'FAIL', `Rust compilation failed: ${error.message}`, 'CRITICAL');
     }
-  }
-
-  private async checkFileIntegrity(): Promise<AutomatedCheckResult> {
-    const filesToCheck = [
-      'solver/src/reinforcement_meta_learner.rs',
-      'solver/src/module/bss_43_simulator.rs',
-      'solver/src/graph/bss_04_graph.rs',
-      'solver/src/timing/mod.rs',
-      'solver/src/timing/sub_block_timing.rs',
-      'api/src/services/bribeEngine.ts',
-      'api/src/services/useLiveTelemetry.ts',
-      'api/src/services/AnomalyTicker.tsx',
-      'api/src/services/MarketSentiment.tsx',
-      'api/src/services/mockRustBridge.ts',
-      'api/src/services/websocketStream.ts',
-      'api/src/services/specialists.ts',
-      'api/src/services/alphaCopilot.ts',
-      'api/src/controllers/telemetry.ts',
-      'api/src/controllers/engine.ts'
-    ];
-
-    const workspaceRoot = path.resolve(__dirname, '..', '..', '..');
-    const missing: string[] = [];
-    const errors: string[] = [];
-
-    for (const relPath of filesToCheck) {
-      const fullPath = path.join(workspaceRoot, relPath);
-      try {
-        if (!fs.existsSync(fullPath)) {
-          missing.push(relPath);
-        } else {
-          const stats = fs.statSync(fullPath);
-          if (stats.size === 0) {
-            errors.push(`File is empty: ${relPath}`);
-          }
-        }
-      } catch (err: any) {
-        errors.push(`Cannot access ${relPath}: ${err.message}`);
-      }
-    }
-
-    if (missing.length > 0 || errors.length > 0) {
-      return {
-        checkId: 'file_integrity',
-        checkName: 'Source File Integrity',
-        status: 'FAIL',
-        details: `Missing: ${missing.join(', ')}. Errors: ${errors.join('; ')}`,
-        severity: 'CRITICAL'
-      };
-    }
-
-    return {
-      checkId: 'file_integrity',
-      checkName: 'Source File Integrity',
-      status: 'PASS',
-      details: 'All critical source files present and readable',
-      severity: 'CRITICAL'
-    };
   }
 
   private async checkTypeScript(): Promise<AutomatedCheckResult> {
     try {
-      await execAsync('cd ../api && pnpm typecheck');
-      return {
-        checkId: 'typescript',
-        checkName: 'TypeScript Compilation',
-        status: 'PASS',
-        details: 'All TypeScript code compiles successfully',
-        severity: 'HIGH'
-      };
+      await this.runCommand('pnpm typecheck', apiWorkspacePath, 180000);
+      return this.makeCheck('typescript', 'TypeScript Compilation', 'PASS', 'All TypeScript code compiles successfully', 'HIGH');
     } catch (error: any) {
-      return {
-        checkId: 'typescript',
-        checkName: 'TypeScript Compilation',
-        status: 'FAIL',
-        details: `TypeScript compilation failed: ${error.message}`,
-        severity: 'HIGH'
-      };
+      return this.makeCheck('typescript', 'TypeScript Compilation', 'FAIL', `TypeScript compilation failed: ${error.message}`, 'HIGH');
     }
   }
 
+  private async checkFileIntegrity(): Promise<AutomatedCheckResult> {
+    const missing: string[] = [];
+    const empty: string[] = [];
+
+    for (const relPath of getDeploymentCriticalFiles()) {
+      const fullPath = path.join(workspaceRoot, relPath);
+      if (!fs.existsSync(fullPath)) {
+        missing.push(relPath);
+        continue;
+      }
+
+      if (fs.statSync(fullPath).size === 0) {
+        empty.push(relPath);
+      }
+    }
+
+    if (missing.length > 0 || empty.length > 0) {
+      return this.makeCheck(
+        'file_integrity',
+        'Source File Integrity',
+        'FAIL',
+        `Missing: ${missing.join(', ') || 'none'}. Empty: ${empty.join(', ') || 'none'}`,
+        'CRITICAL'
+      );
+    }
+
+    return this.makeCheck('file_integrity', 'Source File Integrity', 'PASS', 'All critical source files present and readable', 'CRITICAL');
+  }
+
+  private async checkLinting(): Promise<AutomatedCheckResult> {
+    const packageJsonPath = path.join(apiWorkspacePath, 'package.json');
+    if (!fs.existsSync(packageJsonPath)) {
+      return this.makeCheck('linting', 'Code Linting', 'WARN', 'api/package.json not found; lint script could not be verified', 'MEDIUM');
+    }
+
+    try {
+      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+      const hasLintScript = !!packageJson?.scripts?.lint;
+      return this.makeCheck(
+        'linting',
+        'Code Linting',
+        hasLintScript ? 'PASS' : 'WARN',
+        hasLintScript ? 'Lint script is configured' : 'Lint script missing; linting is not enforced by the gate',
+        'MEDIUM'
+      );
+    } catch (error: any) {
+      return this.makeCheck('linting', 'Code Linting', 'WARN', `Unable to inspect lint configuration: ${error.message}`, 'MEDIUM');
+    }
+  }
+
+  private async checkTestCoverage(): Promise<AutomatedCheckResult> {
+    const packageJsonPath = path.join(apiWorkspacePath, 'package.json');
+    const cargoTomlPath = path.join(rustWorkspacePath, 'Cargo.toml');
+    const hasCargoProject = fs.existsSync(cargoTomlPath);
+    let hasTestScript = false;
+
+    try {
+      if (fs.existsSync(packageJsonPath)) {
+        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+        hasTestScript = !!packageJson?.scripts?.test;
+      }
+    } catch {}
+
+    const status: CheckStatus = hasCargoProject || hasTestScript ? 'PASS' : 'WARN';
+    const details = hasCargoProject || hasTestScript
+      ? 'Test entry points detected in repository'
+      : 'No test script or Rust test project metadata detected';
+
+    return this.makeCheck('test_coverage', 'Test Coverage', status, details, 'HIGH');
+  }
+
   private async checkSecurityAudit(): Promise<AutomatedCheckResult> {
-    return {
-      checkId: 'security_audit',
-      checkName: 'Security Audit',
-      status: 'PASS',
-      details: 'No critical security vulnerabilities found',
-      severity: 'CRITICAL'
-    };
+    const authMiddlewarePath = path.join(apiWorkspacePath, 'src', 'middleware', 'auth.ts');
+    const loggerPath = path.join(apiWorkspacePath, 'src', 'services', 'logger.ts');
+    const authExists = fs.existsSync(authMiddlewarePath);
+    const loggerRedactsAuth = fs.existsSync(loggerPath)
+      && fs.readFileSync(loggerPath, 'utf8').includes('req.headers.authorization');
+
+    if (authExists && loggerRedactsAuth) {
+      return this.makeCheck('security_audit', 'Security Audit', 'PASS', 'Auth middleware and auth-header redaction are both present', 'CRITICAL');
+    }
+
+    return this.makeCheck(
+      'security_audit',
+      'Security Audit',
+      authExists ? 'WARN' : 'FAIL',
+      authExists ? 'Auth middleware present but authorization header redaction is missing' : 'Auth middleware is missing',
+      'CRITICAL'
+    );
   }
 
   private async checkEnvironmentConfig(): Promise<AutomatedCheckResult> {
+    const validation = validateConfiguration();
     const requiredVars = ['DATABASE_URL', 'RPC_ENDPOINT', 'PIMLICO_API_KEY'];
-    const missing = requiredVars.filter(v => !process.env[v]);
+    const missing = requiredVars.filter(variableName => !process.env[variableName]);
 
-    return {
-      checkId: 'environment_config',
-      checkName: 'Environment Configuration',
-      status: missing.length === 0 ? 'PASS' : 'FAIL',
-      details: missing.length === 0 ? 'All required environment variables present' : `Missing: ${missing.join(', ')}`,
-      severity: 'CRITICAL'
-    };
+    if (missing.length > 0) {
+      return this.makeCheck('environment_config', 'Environment Configuration', 'FAIL', `Missing: ${missing.join(', ')}`, 'CRITICAL');
+    }
+
+    return this.makeCheck(
+      'environment_config',
+      'Environment Configuration',
+      validation.driftDetected ? 'WARN' : 'PASS',
+      validation.driftDetected ? 'Runtime config drift detected between environment and engine state' : 'Required environment variables present and aligned',
+      'CRITICAL'
+    );
   }
 
   private async checkDatabaseConnectivity(): Promise<AutomatedCheckResult> {
     const dbUrl = process.env.DATABASE_URL;
     if (!dbUrl) {
-      return {
-        checkId: 'database_connectivity',
-        checkName: 'Database Connectivity',
-        status: 'FAIL',
-        details: 'Database URL missing',
-        severity: 'CRITICAL'
-      };
+      return this.makeCheck('database_connectivity', 'Database Connectivity', 'FAIL', 'Database URL missing', 'CRITICAL');
     }
 
     try {
-      // Parse the DATABASE_URL to extract host and port
       const url = new URL(dbUrl);
       const host = url.hostname;
-      const port = parseInt(url.port) || 5432;
+      const port = parseInt(url.port, 10) || 5432;
 
-      // Test TCP connection to database host
-      const isReachable = await new Promise<boolean>((resolve) => {
+      const isReachable = await new Promise<boolean>(resolve => {
         const socket = net.createConnection({ host, port }, () => {
           socket.end();
           resolve(true);
@@ -621,168 +874,264 @@ export class GateKeeperSystem {
         });
       });
 
-      return {
-        checkId: 'database_connectivity',
-        checkName: 'Database Connectivity',
-        status: isReachable ? 'PASS' : 'FAIL',
-        details: isReachable ? `Database reachable at ${host}:${port}` : `Cannot connect to database at ${host}:${port}`,
-        severity: 'CRITICAL'
-      };
+      return this.makeCheck(
+        'database_connectivity',
+        'Database Connectivity',
+        isReachable ? 'PASS' : 'FAIL',
+        isReachable ? `Database reachable at ${host}:${port}` : `Cannot connect to database at ${host}:${port}`,
+        'CRITICAL'
+      );
     } catch (error: any) {
-      return {
-        checkId: 'database_connectivity',
-        checkName: 'Database Connectivity',
-        status: 'FAIL',
-        details: `Database URL parsing failed: ${error.message}`,
-        severity: 'CRITICAL'
-      };
+      return this.makeCheck('database_connectivity', 'Database Connectivity', 'FAIL', `Database URL parsing failed: ${error.message}`, 'CRITICAL');
     }
   }
 
   private async checkNetworkConfig(): Promise<AutomatedCheckResult> {
     const rpcEndpoint = process.env.RPC_ENDPOINT;
     if (!rpcEndpoint) {
-      return {
-        checkId: 'networking',
-        checkName: 'Network Configuration',
-        status: 'FAIL',
-        details: 'RPC endpoint missing',
-        severity: 'HIGH'
-      };
+      return this.makeCheck('networking', 'Network Configuration', 'FAIL', 'RPC endpoint missing', 'HIGH');
     }
 
     try {
-      // Test if RPC endpoint is reachable (simple HTTP HEAD request)
       const response = await fetch(rpcEndpoint, {
         method: 'HEAD',
         signal: AbortSignal.timeout(5000)
       });
 
-      return {
-        checkId: 'networking',
-        checkName: 'Network Configuration',
-        status: response.ok ? 'PASS' : 'WARN',
-        details: response.ok ? `RPC endpoint reachable: ${rpcEndpoint}` : `RPC endpoint responded with ${response.status}`,
-        severity: 'HIGH'
-      };
+      return this.makeCheck(
+        'networking',
+        'Network Configuration',
+        response.ok ? 'PASS' : 'WARN',
+        response.ok ? `RPC endpoint reachable: ${rpcEndpoint}` : `RPC endpoint responded with ${response.status}`,
+        'HIGH'
+      );
     } catch (error: any) {
-      return {
-        checkId: 'networking',
-        checkName: 'Network Configuration',
-        status: 'FAIL',
-        details: `RPC endpoint unreachable: ${error.message}`,
-        severity: 'HIGH'
-      };
+      return this.makeCheck('networking', 'Network Configuration', 'FAIL', `RPC endpoint unreachable: ${error.message}`, 'HIGH');
     }
+  }
+
+  private async checkResourceLimits(): Promise<AutomatedCheckResult> {
+    const scanBackpressure = sharedEngineState.skippedScanCycles > 25;
+    const status: CheckStatus = scanBackpressure ? 'WARN' : 'PASS';
+    const details = scanBackpressure
+      ? `Scanner is dropping cycles (${sharedEngineState.skippedScanCycles})`
+      : 'No obvious resource backpressure from scanner state';
+    return this.makeCheck('resource_limits', 'Resource Limits', status, details, 'MEDIUM');
+  }
+
+  private async checkBackupSystems(): Promise<AutomatedCheckResult> {
+    const backupConfigured = (process.env.BACKUP_CONFIGURED || '').toLowerCase() === 'true';
+    return this.makeCheck(
+      'backup_systems',
+      'Backup Systems',
+      backupConfigured ? 'PASS' : 'WARN',
+      backupConfigured ? 'Backup configuration explicitly enabled' : 'Backup configuration not explicitly declared via BACKUP_CONFIGURED=true',
+      'HIGH'
+    );
   }
 
   private async checkAuthentication(): Promise<AutomatedCheckResult> {
     const hasApiKeys = !!(process.env.API_KEYS || process.env.API_KEY);
-
-    return {
-      checkId: 'authentication',
-      checkName: 'Authentication Systems',
-      status: hasApiKeys ? 'PASS' : 'FAIL',
-      details: hasApiKeys ? 'API authentication configured' : 'API authentication not configured',
-      severity: 'CRITICAL'
-    };
+    return this.makeCheck(
+      'authentication',
+      'Authentication Systems',
+      hasApiKeys ? 'PASS' : 'FAIL',
+      hasApiKeys ? 'API authentication configured' : 'API authentication not configured',
+      'CRITICAL'
+    );
   }
 
   private async checkAuthorization(): Promise<AutomatedCheckResult> {
-    // Check if authorization middleware is properly configured
-    return {
-      checkId: 'authorization',
-      checkName: 'Authorization Controls',
-      status: 'PASS', // Assume properly configured
-      details: 'Authorization controls implemented',
-      severity: 'CRITICAL'
-    };
+    const appPath = path.join(apiWorkspacePath, 'src', 'app.ts');
+    const authMiddlewarePath = path.join(apiWorkspacePath, 'src', 'middleware', 'auth.ts');
+    if (!fs.existsSync(appPath) || !fs.existsSync(authMiddlewarePath)) {
+      return this.makeCheck('authorization', 'Authorization Controls', 'FAIL', 'Auth middleware or app wiring is missing', 'CRITICAL');
+    }
+
+    const appSource = fs.readFileSync(appPath, 'utf8');
+    const usesAuthenticate = appSource.includes('apiRouter.use(authenticate)');
+
+    return this.makeCheck(
+      'authorization',
+      'Authorization Controls',
+      usesAuthenticate ? 'PASS' : 'FAIL',
+      usesAuthenticate ? 'Authenticated middleware is applied to API routes' : 'API routes are not guarded by authenticate middleware',
+      'CRITICAL'
+    );
   }
 
   private async checkEncryption(): Promise<AutomatedCheckResult> {
-    // Check encryption configuration
-    return {
-      checkId: 'encryption',
-      checkName: 'Data Encryption',
-      status: 'PASS',
-      details: 'Encryption protocols configured',
-      severity: 'HIGH'
-    };
+    const rpcEndpoint = process.env.RPC_ENDPOINT || '';
+    const secureTransport = rpcEndpoint.startsWith('https://') || rpcEndpoint.startsWith('wss://') || rpcEndpoint.startsWith('http://localhost');
+
+    return this.makeCheck(
+      'encryption',
+      'Data Encryption',
+      secureTransport ? 'PASS' : 'WARN',
+      secureTransport ? 'Network transport uses a secure or local endpoint' : 'RPC endpoint does not appear to use secure transport',
+      'HIGH'
+    );
+  }
+
+  private async checkAuditLogging(): Promise<AutomatedCheckResult> {
+    const loggerPath = path.join(apiWorkspacePath, 'src', 'services', 'logger.ts');
+    if (!fs.existsSync(loggerPath)) {
+      return this.makeCheck('audit_logging', 'Audit Logging', 'FAIL', 'Logger configuration missing', 'HIGH');
+    }
+
+    const loggerSource = fs.readFileSync(loggerPath, 'utf8');
+    const redactsAuth = loggerSource.includes('req.headers.authorization');
+    return this.makeCheck(
+      'audit_logging',
+      'Audit Logging',
+      redactsAuth ? 'PASS' : 'WARN',
+      redactsAuth ? 'Sensitive authorization headers are redacted in logs' : 'Authorization header redaction not found in logger config',
+      'HIGH'
+    );
+  }
+
+  private async checkVulnerabilityScan(): Promise<AutomatedCheckResult> {
+    const lockfilePath = path.join(apiWorkspacePath, 'pnpm-lock.yaml');
+    const hasLockfile = fs.existsSync(lockfilePath);
+
+    return this.makeCheck(
+      'vulnerability_scan',
+      'Vulnerability Scanning',
+      hasLockfile ? 'WARN' : 'FAIL',
+      hasLockfile ? 'Dependency lockfile found; external vulnerability scan still required in CI' : 'Dependency lockfile missing; reproducible security scan is not possible',
+      'CRITICAL'
+    );
   }
 
   private async checkKPIs(): Promise<AutomatedCheckResult> {
-    // Check if KPIs meet targets
-    const profitTarget = 15.0; // bps
+    const profitTarget = 15.0;
     const currentProfit = sharedEngineState.currentDailyProfit || 0;
-
-    return {
-      checkId: 'kpi_validation',
-      checkName: 'KPI Target Validation',
-      status: currentProfit >= profitTarget ? 'PASS' : 'WARN',
-      details: `Current profit: ${currentProfit} bps, Target: ${profitTarget} bps`,
-      severity: 'HIGH'
-    };
+    return this.makeCheck(
+      'kpi_validation',
+      'KPI Target Validation',
+      currentProfit >= profitTarget ? 'PASS' : 'WARN',
+      `Current profit: ${currentProfit} bps, Target: ${profitTarget} bps`,
+      'HIGH'
+    );
   }
 
+  /**
+   * Automated check for the Global Efficiency Score (GES).
+   * Requires GES to be above a certain threshold (e.g., 82.5%).
+   */
+  private async checkGlobalEfficiencyScore(): Promise<AutomatedCheckResult> {
+    const gesThreshold = 82.5; // As per checkReadiness.ts CLI tool's implied threshold
+    const currentGes = sharedEngineState.totalWeightedScore;
+    const status: CheckStatus = currentGes >= gesThreshold ? 'PASS' : 'FAIL';
+    const severity: CheckSeverity = currentGes >= gesThreshold ? 'LOW' : 'CRITICAL'; // GES failure is critical
+    return this.makeCheck(
+      'global_efficiency_score',
+      'Global Efficiency Score (GES)',
+      status,
+      `Current GES: ${currentGes.toFixed(2)}%, Required: ${gesThreshold.toFixed(2)}%`,
+      severity
+    );
+  }
   private async checkBenchmarks(): Promise<AutomatedCheckResult> {
-    const latencyTarget = 50; // ms
+    const latencyTarget = 50;
     const currentLatency = sharedEngineState.avgLatencyMs || 0;
-
-    return {
-      checkId: 'benchmark_tests',
-      checkName: 'Performance Benchmarks',
-      status: currentLatency <= latencyTarget ? 'PASS' : 'WARN',
-      details: `Current latency: ${currentLatency}ms, Target: ${latencyTarget}ms`,
-      severity: 'HIGH'
-    };
+    return this.makeCheck(
+      'benchmark_tests',
+      'Performance Benchmarks',
+      currentLatency > 0 && currentLatency <= latencyTarget ? 'PASS' : 'WARN',
+      `Current latency: ${currentLatency}ms, Target: ${latencyTarget}ms`,
+      'HIGH'
+    );
   }
 
   private async checkScalability(): Promise<AutomatedCheckResult> {
-    // Check scalability metrics
-    return {
-      checkId: 'scalability_test',
-      checkName: 'Scalability Testing',
-      status: 'PASS', // Assume passes
-      details: 'Scalability requirements met',
-      severity: 'MEDIUM'
-    };
+    const throughput = sharedEngineState.msgThroughputCount || 0;
+    const scanInFlight = sharedEngineState.scanInFlight;
+    const status: CheckStatus = throughput > 0 && !scanInFlight ? 'PASS' : 'WARN';
+    const details = status === 'PASS'
+      ? `Observed throughput: ${throughput} messages in current window`
+      : 'Scalability evidence is weak: throughput is zero or scanner is continuously busy';
+    return this.makeCheck('scalability_test', 'Scalability Testing', status, details, 'MEDIUM');
+  }
+
+  private async checkLoadTesting(context: Record<string, unknown>): Promise<AutomatedCheckResult> {
+    const reported = context.loadTestPassed === true;
+    return this.makeCheck(
+      'load_testing',
+      'Load Testing',
+      reported ? 'PASS' : 'WARN',
+      reported ? 'Load test evidence supplied by caller context' : 'No explicit load test evidence supplied to gate request',
+      'HIGH'
+    );
+  }
+
+  private async checkStressTesting(context: Record<string, unknown>): Promise<AutomatedCheckResult> {
+    const reported = context.stressTestPassed === true;
+    return this.makeCheck(
+      'stress_testing',
+      'Stress Testing',
+      reported ? 'PASS' : 'WARN',
+      reported ? 'Stress test evidence supplied by caller context' : 'No explicit stress test evidence supplied to gate request',
+      'MEDIUM'
+    );
   }
 
   private async checkROI(): Promise<AutomatedCheckResult> {
-    // Check ROI calculations
-    return {
-      checkId: 'roi_validation',
-      checkName: 'ROI Validation',
-      status: 'PASS',
-      details: 'ROI projections validated',
-      severity: 'HIGH'
-    };
+    const currentProfit = sharedEngineState.currentDailyProfit || 0;
+    const currentDrawdown = sharedEngineState.currentDrawdown || 0;
+    const status: CheckStatus = currentProfit > 0 && currentDrawdown < currentProfit ? 'PASS' : 'WARN';
+    return this.makeCheck(
+      'roi_validation',
+      'ROI Validation',
+      status,
+      `Profit: ${currentProfit}, Drawdown: ${currentDrawdown}`,
+      'HIGH'
+    );
   }
 
   private async checkRiskAssessment(): Promise<AutomatedCheckResult> {
-    // Check risk assessment
     const riskLevel = sharedEngineState.riskIndex || 0;
-
-    return {
-      checkId: 'risk_assessment',
-      checkName: 'Risk Assessment',
-      status: riskLevel < 0.1 ? 'PASS' : 'WARN',
-      details: `Current risk index: ${riskLevel}`,
-      severity: 'CRITICAL'
-    };
+    return this.makeCheck(
+      'risk_assessment',
+      'Risk Assessment',
+      riskLevel < 0.1 ? 'PASS' : riskLevel < 0.2 ? 'WARN' : 'FAIL',
+      `Current risk index: ${riskLevel}`,
+      'CRITICAL'
+    );
   }
 
   private async checkCompliance(): Promise<AutomatedCheckResult> {
-    // Check regulatory compliance
-    return {
-      checkId: 'compliance_review',
-      checkName: 'Compliance Review',
-      status: 'PASS',
-      details: 'Regulatory compliance verified',
-      severity: 'CRITICAL'
-    };
+    const complianceApproved = (process.env.COMPLIANCE_APPROVED || '').toLowerCase() === 'true';
+    return this.makeCheck(
+      'compliance_review',
+      'Compliance Review',
+      complianceApproved ? 'PASS' : 'WARN',
+      complianceApproved ? 'Compliance approval declared in environment' : 'Compliance approval not declared via COMPLIANCE_APPROVED=true',
+      'CRITICAL'
+    );
+  }
+
+  private async checkStakeholderApproval(): Promise<AutomatedCheckResult> {
+    const stakeholderApproved = (process.env.STAKEHOLDER_APPROVED || '').toLowerCase() === 'true';
+    return this.makeCheck(
+      'stakeholder_approval',
+      'Stakeholder Approval',
+      stakeholderApproved ? 'PASS' : 'WARN',
+      stakeholderApproved ? 'Stakeholder approval declared in environment' : 'Stakeholder approval not declared via STAKEHOLDER_APPROVED=true',
+      'CRITICAL'
+    );
+  }
+
+  private async checkGoLiveDecision(): Promise<AutomatedCheckResult> {
+    const goLiveApproved = (process.env.GO_LIVE_APPROVED || '').toLowerCase() === 'true';
+    return this.makeCheck(
+      'go_live_decision',
+      'Go-Live Decision',
+      goLiveApproved ? 'PASS' : 'WARN',
+      goLiveApproved ? 'Go-live approval declared in environment' : 'Go-live approval not declared via GO_LIVE_APPROVED=true',
+      'CRITICAL'
+    );
   }
 }
 
-// Export singleton instance
 export const gateKeeper = new GateKeeperSystem();

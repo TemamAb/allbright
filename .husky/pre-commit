@@ -1,5 +1,1 @@
-[commit]
-  hooks = rust-qa
-
-[hook]
-  command = bash scripts/rust-pre-commit-hook.sh
+npm test

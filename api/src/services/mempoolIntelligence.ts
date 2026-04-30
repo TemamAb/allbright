@@ -45,7 +45,8 @@ export class MempoolIntelligenceService {
         throw new Error('No real data available');
       }
     } catch (error) {
-      console.warn('[MempoolIntelligence] Failed to collect real mempool data, using simulation:', error.message);
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn('[MempoolIntelligence] Failed to collect real mempool data, using simulation:', message);
 
       // Fallback to simulation
       if (now - this.mempoolStats.lastUpdated > 12000) { // Update every 12 seconds
@@ -128,7 +129,8 @@ export class MempoolIntelligenceService {
           };
         }
       } catch (error) {
-        console.debug(`[MempoolIntelligence] Failed RPC call to ${rpcUrl}:`, error.message);
+        const message = error instanceof Error ? error.message : String(error);
+        console.debug(`[MempoolIntelligence] Failed RPC call to ${rpcUrl}:`, message);
         continue;
       }
     }

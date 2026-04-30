@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { alphaCopilot } from "../services/alphaCopilot";
+const router = Router();
 
 const broadcastCopilotEvent = (type: string, data: any) => {
   try {
@@ -8,7 +9,7 @@ const broadcastCopilotEvent = (type: string, data: any) => {
   } catch(e) {}
 };
 
-const broadcastCopilotStatus = (status: string, data: any) => {
+const broadcastCopilotStatus = (status?: string, data?: any) => {
   try {
     const io = (global as any).io;
     if (io) io.emit('copilot_status', { status, data, timestamp: Date.now() });
@@ -32,7 +33,7 @@ router.post("/command", async (req, res) => {
     if (command.toLowerCase().includes('tune') || command.toLowerCase().includes('kpi')) {
       const result = await alphaCopilot.fullKpiTuneCycle({});
       report = `Full KPI tune cycle complete. Results:\\n${JSON.stringify(result, null, 2)}`;
-      broadcastCopilotEvent('success', 'KPI Tune Cycle Complete', result);
+      broadcastCopilotEvent('success', { message: 'KPI Tune Cycle Complete', result });
     } else if (command.toLowerCase().includes('dispatch') || command.toLowerCase().includes('debug')) {
       const dispatchResult = await alphaCopilot.handleRouteDispatch({ target: 'bss_16', intent: 'Audit', payload: command });
       report = `Debug order dispatched. Result: ${JSON.stringify(dispatchResult)}`;
@@ -48,7 +49,7 @@ router.post("/command", async (req, res) => {
       command,
     });
   } catch (err) {
-    broadcastCopilotEvent('error', 'Command execution failed', { error: String(err) });
+    broadcastCopilotEvent('error', { message: 'Command execution failed', error: String(err) });
     console.error("Alpha-Copilot command error:", err);
     res.status(500).json({ success: false, error: String(err) });
   }

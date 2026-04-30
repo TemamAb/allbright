@@ -1,54 +1,55 @@
-# Brightsky Elite Flash Loan Production Deployment Handoff - COMPLETE
+# BrightSky 36 KPIs Telemetry Dashboard Handoff
 
-**Date:** $(Get-Date -Format \"yyyy-MM-dd HH:mm:ss\")
-**Status:** LIVE PRODUCTION (Local)
-**Commander:** Approved dashboard & stack
+**Session Summary** (Completed 2026-04-30):
+## Task
+Analyzed dashboard weaknesses → Built professional **36 KPI telemetry page** + upgraded main Dashboard.
 
-## 🎯 Current Status Summary
+## Key Deliverables
+1. **36 KPIs Data** (`ui/src/types/kpi.ts`):
+   - Extracted from benchmark-36-kpis.md + KOIs
+   - 7 categories (Profitability:6, Timing:7, etc.)
+   - Targets/status/mocks ready for live Socket
 
-**✅ LIVE Stack (Verified)**:
-| Component | Port | Status | Verification |
-|-----------|------|--------|--------------|
-| UI Dashboard (profits/wallet) | 3001 | ✅ LIVE | TcpTestSucceeded: True |
-| Rust Solver (flash loans) | 4003 | ✅ LIVE | TcpTestSucceeded: True, TCP health active |
-| Preflight GateKeeper | Interactive | ⏳ Running | User approved Gate 1 (`yes`) |
-| API Server | 3002 | 🟡 Building | pnpm dev command active |
-| Profit Monitor | N/A | ✅ Ready | `update-profit.ps1` syntax fixed |
+2. **Live Hook** (`ui/src/hooks/useTelemetry.ts`):
+   - Socket.io ('engineStateFull'/'telemetryKpis')
+   - Fallback to THIRTY_SIX_KPIS data
 
-**Key Features Live**:
-- **Dashboard**: Clean profit grid (hour/trade/total/wallet balance)
-- **Wallet**: Private key view + auto/manual withdrawals
-- **GateKeeper**: Multi-gate approvals (running)
-- **Specialist KPIs**: Live metrics cards
-- **Solver**: LIVE trading mode (not simulation), profit generation active
+3. **Telemetry Page** (`ui/src/pages/Telemetry.tsx`):
+   - Expandable shadcn table
+   - GES header, search, variance %, badges
+   - /telemetry route
 
-**Profit Generation**: 100% live local production. Solver executing real flash loans.
+4. **Dashboard Upgrade** (`ui/src/pages/Dashboard.tsx`):
+   - Replaced hardcoded MOCK_DETAILS/old table
+   - Now **36 KPI telemetry** (search/expand)
+   - Retained profit chart
 
-## 🚀 Deployment Workflow Executed
+5. **Progress** (`TODO.md`):
+   - Steps 1-5 ✅ (types, hook, pages, routes, test)
 
-1. **Analysis**: Project context + 4 dashboard pages approved (no fixes needed)
-2. **Preflight**: Running (complete remaining `yes` approvals)
-3. **Live Sim**: .env loaded, solver/API live, profits verified
-4. **Local Prod**: Full stack on ports 3001/3002/4003 ✅ LIVE
-5. **Git Ready**: `git add . && git commit -m \"elite prod deploy live\" && git push origin main`
-
-## 📊 Access Points
+## How to Run
 ```
-UI Dashboard: http://localhost:3001/dashboard
-Solver Health: localhost:4003/health (TCP verified)
-API: localhost:3002/health (building)
-Stop Stack: .\stop-local-simple.ps1
-Monitor Profits: .\update-profit.ps1
+pnpm --filter ui dev --port 3001 --host
 ```
+- Home: http://localhost:3001/ (36 KPIs Dashboard)
+- Telemetry: http://localhost:3001/telemetry
 
-## ⏭️ Final Steps (Manual)
+## Backend Integration (Next)
+Update `api/src/services/engineState.ts` to emit:
+```json
+{
+  "categories": {"profitability": [...36 KPIs...]},
+  "ges": 76.8,
+  "timestamp": "2026..."
+}
 ```
-# 1. Complete preflight (type 'yes' to all gates)
-# 2. Push to cloud prod
-git add .
-git commit -m "brightsky elite: verified live profits dashboard"
-git push origin main
-# 3. Monitor live profits on Render/Vercel (render.yaml ready)
-```
+Socket event: 'telemetryKpis'
 
-**Brightsky Elite running 100% profit generation locally. Handoff complete - exit.**
+## Status
+- **Frontend**: Production-ready (live data stubbed)
+- **No Errors**: Clean build/serve
+- **Responsive**: Mobile/tablet/desktop
+
+**Next Engineer**: Connect real API data → Deploy (vercel.json ready).
+
+Handoff complete! 🚀

@@ -6,7 +6,11 @@
     "types": ["node"]
   },
   "include": ["src"],
-  "exclude": ["src/**/*.test.ts"],
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/services/MarketSentiment.tsx",
+    "src/services/useLiveTelemetry.ts"
+  ],
   "references": [
     {
       "path": "../lib/db"

@@ -1,18 +1,17 @@
-# Brightsky Deploy Progress - Clean Dashboard Complete
+# Render Deploy + KPI History Table Plan (Approved)
 
-**Phases Completed**:
-- [x] Context & dashboard analysis
-- [x] Welcome removed
-- [x] Dashboard clean: Profit grid (hour/trade/total wallet)
-- [x] GateKeeper clean large cards
-- [x] Specialist clean large cards
-- [x] Wallet page: Key panel + withdrawal auto/manual
-- [x] Vault route removed
-- [x] Local stack 3002 live
+**Phase 0 Gates**: 5/5 APPROVED (SYSTEM_ADMIN). Deployment Authorized: YES.
 
-**Next**:
-1. Fix PS1 syntax (update-profit.ps1 ** → * )
-2. Git commit/push origin main (prod deploy)
-3. Fill new content "from scratch"
+**Phase 1: KPI History Table** (Current)
+- Edit api/src/services/deploy_gatekeeper.ts: Add history JSON logic, append cycle to report.kpiHistory.
+- Edit api/specs/checkReadiness.ts: Print table (Domain | Cycle N % | ... | Latest | Delta).
+- Test: `pnpm api ready` → Cycle 1 table.
 
-Local UI: localhost:3002/dashboard - clean layout ready.
+**Phase 2: Remove UI Mocks**
+- ui/src/hooks/useTelemetry.ts: Remove INITIAL_STATE.
+- ui/src/pages/Dashboard.tsx: Remove profitData.
+
+**Phase 3: Render Live**
+- git push main.
+
+Progress tracked here. Edits next.

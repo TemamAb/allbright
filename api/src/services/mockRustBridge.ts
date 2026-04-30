@@ -1,4 +1,4 @@
-import { AlphaCopilot } from './alphaCopilot';
+import { alphaCopilot } from './alphaCopilot';
 import { sharedEngineState } from './engineState';
 import { logger } from './logger';
 import { WebsocketStream } from './websocketStream';
@@ -54,11 +54,11 @@ export function startMockRustBridge(): void {
       .digest('hex');
 
     if (currentChecksum !== lastChecksum && lastChecksum !== '') {
-      logger.warn('[MOCK-RUST] State drift detected', {
+      logger.warn({
         version: stateVersion,
         previousChecksum: lastChecksum.substring(0, 8),
         currentChecksum: currentChecksum.substring(0, 8)
-      });
+      }, '[MOCK-RUST] State drift detected');
     }
     lastChecksum = currentChecksum;
     sharedEngineState.stateVersion = stateVersion;
@@ -67,15 +67,15 @@ export function startMockRustBridge(): void {
     // Trigger AI tuning cycle with error handling
     alphaCopilot.fullKpiTuneCycle(sharedEngineState)
       .then(() => WebsocketStream.broadcast())
-      .catch(e => logger.error(e, 'AI Cycle failed - state reconciliation active'));
+      .catch(e => logger.error({ err: e }, 'AI Cycle failed - state reconciliation active'));
 
     // Log with version info
     if (Math.random() < 0.05) { // Reduced frequency
-      logger.info('[MOCK-RUST] Bridge active', {
+      logger.info({
         version: stateVersion,
         checksum: currentChecksum.substring(0, 8),
         ipc: sharedEngineState.ipcConnected
-      });
+      }, '[MOCK-RUST] Bridge active');
     }
   }, 2000); // Every 2s like real Rust
 }

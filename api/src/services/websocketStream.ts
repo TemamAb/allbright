@@ -1,6 +1,12 @@
-import { WebSocketServer, WebSocket } from 'ws';
 import { sharedEngineState } from './engineState';
 import { logger } from './logger';
+
+const wsLib = require('ws') as {
+  WebSocketServer: any;
+  WebSocket: { OPEN: number };
+};
+const WebSocketServer = wsLib.WebSocketServer;
+const WebSocket = wsLib.WebSocket;
 
 /**
  * Phase 4: Live Data & Alerts
@@ -8,7 +14,7 @@ import { logger } from './logger';
  * that streams the shared engine state directly to dashboard UI clients.
  */
 export class WebsocketStream {
-  private static wss: WebSocketServer | null = null;
+  private static wss: any = null;
   private static sequenceNumber = 0;
   private static lastBroadcastState: string = '';
 
@@ -18,7 +24,7 @@ export class WebsocketStream {
   static init(server: any) {
     this.wss = new WebSocketServer({ server, path: '/api/v1/stream' });
 
-    this.wss.on('connection', (ws) => {
+    this.wss.on('connection', (ws: any) => {
       logger.info('Dashboard UI connected to live telemetry stream');
 
       // Immediately push a full snapshot upon connection with sequence number
@@ -59,12 +65,13 @@ export class WebsocketStream {
       const messageString = JSON.stringify(message);
 
       // Send to all clients with error handling
-      this.wss.clients.forEach((client) => {
+      this.wss.clients.forEach((client: any) => {
         if (client.readyState === WebSocket.OPEN) {
           try {
             client.send(messageString);
           } catch (error) {
-            logger.warn('WebSocket send failed', { error: error.message });
+            const message = error instanceof Error ? error.message : String(error);
+            logger.warn({ error: message }, 'WebSocket send failed');
           }
         }
       });
@@ -73,11 +80,11 @@ export class WebsocketStream {
 
       // Log sequence info occasionally
       if (this.sequenceNumber % 100 === 0) {
-        logger.info('WebSocket broadcast', {
+        logger.info({
           sequence: this.sequenceNumber,
           clients: this.wss.clients.size,
           checksum: message.checksum
-        });
+        }, 'WebSocket broadcast');
       }
     }
   }

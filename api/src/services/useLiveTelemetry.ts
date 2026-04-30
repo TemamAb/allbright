@@ -96,6 +96,10 @@ export function useLiveTelemetry() {
     state: engineState,
     isConnected,
     latency: engineState?.avgLatencyMs || 0,
-    history
+    history,
+    // Calculated field for real-time UI countdowns
+    nextOptimizationIn: engineState?.nextOptimizationCycle 
+      ? Math.max(0, engineState.nextOptimizationCycle - Math.floor(Date.now() / 1000)) 
+      : null
   };
 }

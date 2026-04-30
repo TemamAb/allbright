@@ -34,7 +34,90 @@ import * as net from "net";
 import * as crypto from "crypto";
 import { logger } from "../services/logger";
 import { gateKeeper } from "../services/gateKeeper";
-import { comprehensiveDeploymentCheck } from "../services/deploy_gatekeeper";
+import { comprehensiveDeploymentCheck, runMasterDeploymentReadinessAnalysis } from "../services/deploy_gatekeeper";
+import { sharedEngineState } from "../services/engineState";
+import { alphaCopilot } from "../services/alphaCopilot";
+import { runStartupChecks } from "../services/startup_checks";
+import { startBlockTracking, stopBlockTracking, fetchCurrentBlock, getBlockStats } from "../services/blockTracker";
+import { getEthPriceUsd } from "../services/priceOracle";
+import { scanForOpportunities } from "../services/opportunityScanner";
+import { BrightSkyBribeEngine } from "../services/bribeEngine";
+import {
+  checkExecutionGate,
+  createCircuitBreakerState,
+  registerExecutionFailure,
+  registerExecutionSuccess,
+  simulateOnChain,
+  simulateOpportunityExecution,
+  computeDynamicGasStrategy
+} from "../services/executionControls";
+
+const router = Router();
+
+type EngineMode = "STOPPED" | "SHADOW" | "LIVE";
+type DetectCapabilityResult = {
+  liveCapable: boolean;
+  hasPimlicoKey: boolean;
+  hasPrivateRpc: boolean;
+  pimlicoApiKey: string | null;
+  rpcEndpoint: string | null;
+};
+
+type EngineRuntimeState = typeof sharedEngineState & {
+  walletPrivateKey: string | null;
+  pimlicoEnabled: boolean;
+  scanConcurrency: number;
+  flashloanContractAddress: string | null;
+};
+
+const engineState: EngineRuntimeState = {
+  ...sharedEngineState,
+  walletPrivateKey: null,
+  pimlicoEnabled: false,
+  scanConcurrency: parseInt(process.env.SCAN_CONCURRENCY || "8", 10),
+  flashloanContractAddress: sharedEngineState.flashloanContractAddress
+};
+
+let scannerInterval: ReturnType<typeof setInterval> | null = null;
+let cleanupInterval: ReturnType<typeof setInterval> | null = null;
+
+function genId(prefix: string): string {
+  return `${prefix}_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
+}
+
+async function safeDbOperation<T>(fn: () => Promise<T>, fallback?: T): Promise<T> {
+  if (!db) {
+    if (fallback !== undefined) {
+      return fallback;
+    }
+    throw new Error("Database not initialized");
+  }
+
+  try {
+    return await fn();
+  } catch (error) {
+    logger.warn({ err: error }, "[ENGINE] Database operation failed");
+    if (fallback !== undefined) {
+      return fallback;
+    }
+    throw error;
+  }
+}
+
+async function detectLiveCapability(): Promise<DetectCapabilityResult> {
+  const pimlicoApiKey = process.env.PIMLICO_API_KEY || null;
+  const rpcEndpoint = process.env.RPC_ENDPOINT || null;
+  const hasPimlicoKey = !!pimlicoApiKey;
+  const hasPrivateRpc = !!rpcEndpoint;
+
+  return {
+    liveCapable: hasPimlicoKey && hasPrivateRpc,
+    hasPimlicoKey,
+    hasPrivateRpc,
+    pimlicoApiKey,
+    rpcEndpoint
+  };
+}
 
 const broadcastCopilotEvent = (type: string, data: any) => {
   try {
@@ -85,8 +168,12 @@ async function sendControlToRust(msg: any): Promise<void> {
 // KPI Snapshot persistence — inserts into kpi_snapshots table
 async function handleKpiSnapshot(snapshot: any) {
   try {
-    // sharedEngineState update for real-time dashboard
-    sharedEngineState.totalWeightedScore = snapshot.total_weighted_score / 10; // scaled back to 0-100
+    // BSS-43: Rust transmits the GES as an integer (e.g. 825 for 82.5%)
+    // We map it to the shared state for the GateKeeper and Dashboard
+    sharedEngineState.totalWeightedScore = snapshot.total_weighted_score / 10;
+
+    // BSS-36: Capture next optimization timestamp for real-time UI countdown
+    sharedEngineState.nextOptimizationCycle = snapshot.next_opt_cycle || null;
 
     // Persist to DB (async, non-blocking)
     await safeDbOperation(async () =>
@@ -147,11 +234,38 @@ function handleRustMessage(opp: any) {
   }
 }
 
-connectToRustBridge();
 import { startMockRustBridge } from "../services/mockRustBridge";
 
-// Disabled: Use real Rust solver instead of mock
-// startMockRustBridge();
+// Start mock Rust bridge for development (simulates TCP IPC on port 4003)
+// In production, the actual Rust solver connects on BRIGHTSKY_TCP_HOST:BRIGHTSKY_TCP_PORT
+startMockRustBridge();
+
+async function connectToRustBridge() {
+  const useTcp = process.env.USE_TCP_BRIDGE === "true" || process.platform === "win32";
+  const port = parseInt(process.env.INTERNAL_BRIDGE_PORT || process.env.BRIGHTSKY_TCP_PORT || "4003");
+  const host = useTcp ? (process.env.BRIGHTSKY_TCP_HOST || "127.0.0.1") : undefined;
+  
+  logger.info(`[BRIDGE] Connecting to Rust solver at ${host || 'Unix socket'}:${port}`);
+  
+  try {
+    if (useTcp) {
+      // Test TCP connectivity to Rust solver
+      const net = await import('net');
+      const socket = net.createConnection({ host: host!, port }, () => {
+        logger.info('[BRIDGE] TCP connection to Rust solver established');
+        socket.end();
+      });
+      socket.on('error', () => {
+        logger.warn('[BRIDGE] Rust solver not reachable via TCP, mock bridge active');
+      });
+      socket.setTimeout(3000);
+    }
+  } catch (err) {
+    logger.warn({ err }, '[BRIDGE] Rust bridge connection failed, using mock bridge');
+  }
+}
+
+connectToRustBridge();
 
 async function autoStartEngine() {
   // Run startup checks (non-blocking)
@@ -1068,8 +1182,12 @@ router.post("/gates/request/:gateId", async (req, res) => {
   try {
     const { gateId } = req.params;
     const { requester, context } = req.body;
+    const actor = gateKeeper.buildApiActor((req as any).clientId, requester);
 
-    const result = await gateKeeper.requestGateApproval(gateId, requester || 'API_USER', context);
+    const result = await gateKeeper.requestGateApproval(gateId, actor.id, {
+      ...(context || {}),
+      requestedByLabel: requester || actor.displayName || actor.id
+    });
 
     res.json({
       success: true,
@@ -1089,11 +1207,13 @@ router.post("/gates/approve/:gateId", async (req, res) => {
   try {
     const { gateId } = req.params;
     const { approver, reason } = req.body;
+    const actor = gateKeeper.buildApiActor((req as any).clientId, approver);
 
-    const result = await gateKeeper.approveGate(gateId, approver || 'API_USER', reason || 'Approved via API');
+    const result = await gateKeeper.approveGate(gateId, actor, reason || 'Approved via API');
 
-    res.json({
-      success: true,
+    const statusCode = result.approved ? 200 : 403;
+    res.status(statusCode).json({
+      success: result.approved,
       gateId,
       approved: result.approved,
       status: result.gateStatus,
@@ -1109,8 +1229,9 @@ router.post("/gates/reject/:gateId", async (req, res) => {
   try {
     const { gateId } = req.params;
     const { rejector, reason } = req.body;
+    const actor = gateKeeper.buildApiActor((req as any).clientId, rejector);
 
-    const result = await gateKeeper.rejectGate(gateId, rejector || 'API_USER', reason || 'Rejected via API');
+    const result = await gateKeeper.rejectGate(gateId, actor, reason || 'Rejected via API');
 
     res.json({
       success: true,
@@ -1132,9 +1253,10 @@ router.get("/gates/status", async (req, res) => {
     res.json({
       success: true,
       deploymentAuthorized: deploymentStatus.authorized,
+      authorizationMode: deploymentStatus.authorizationMode,
       missingApprovals: deploymentStatus.missingApprovals,
       gateStatuses: deploymentStatus.status,
-      emergencyOverride: false // For now
+      emergencyOverride: deploymentStatus.emergencyOverride
     });
   } catch (error: any) {
     logger.error('[ENGINE] Gate status check failed', error);
@@ -1145,8 +1267,9 @@ router.get("/gates/status", async (req, res) => {
 router.post("/gates/emergency-override", async (req, res) => {
   try {
     const { activator, reason } = req.body;
+    const actor = gateKeeper.buildApiActor((req as any).clientId, activator);
 
-    const activated = gateKeeper.activateEmergencyOverride(activator || 'API_USER', reason || 'Emergency override via API');
+    const activated = gateKeeper.activateEmergencyOverride(actor, reason || 'Emergency override via API');
 
     if (activated) {
       logger.info('[ENGINE] Emergency override activated via API');
@@ -1168,52 +1291,29 @@ router.post("/gates/emergency-override", async (req, res) => {
   }
 });
 
+async function handleMasterReadinessAnalysis(res: any) {
+  const readinessReport = await runMasterDeploymentReadinessAnalysis();
+
+  res.json({
+    success: true,
+    readinessReport
+  });
+}
+
 router.get("/deployment/readiness", async (_req, res) => {
   try {
-    const deploymentAuth = gateKeeper.isDeploymentAuthorized();
-
-    // Gather comprehensive deployment readiness data
-    const readinessReport = {
-      timestamp: new Date(),
-      overallStatus: deploymentAuth.authorized ? 'READY_FOR_DEPLOYMENT' : 'DEPLOYMENT_BLOCKED',
-      authorizationStatus: deploymentAuth,
-
-      systemHealth: {
-        codeQuality: 'PASS', // Would check actual compilation status
-        infrastructure: 'PASS', // Would check actual connectivity
-        security: 'PASS', // Would check actual security scans
-        performance: 'PASS', // Would check actual benchmarks
-      },
-
-      deploymentGates: {
-        codeQualityGate: { status: 'APPROVED', approvedAt: new Date(), approvedBy: 'CI/CD' },
-        infrastructureGate: { status: 'APPROVED', approvedAt: new Date(), approvedBy: 'DevOps' },
-        securityGate: { status: 'PENDING', approvedAt: null, approvedBy: null },
-        performanceGate: { status: 'APPROVED', approvedAt: new Date(), approvedBy: 'QA' },
-        businessGate: { status: 'PENDING', approvedAt: null, approvedBy: null },
-      },
-
-      riskAssessment: {
-        overallRisk: deploymentAuth.authorized ? 'LOW' : 'HIGH',
-        blockingIssues: deploymentAuth.missingApprovals,
-        recommendations: deploymentAuth.authorized ?
-          ['Proceed with deployment', 'Monitor system closely post-deployment'] :
-          ['Complete all gate approvals', 'Address blocking issues', 'Re-run readiness assessment']
-      },
-
-      complianceStatus: {
-        regulatoryCompliance: 'VERIFIED',
-        auditRequirements: 'MET',
-        securityStandards: 'COMPLIANT'
-      }
-    };
-
-    res.json({
-      success: true,
-      readinessReport
-    });
+    await handleMasterReadinessAnalysis(res);
   } catch (error: any) {
     logger.error('[ENGINE] Deployment readiness check failed', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.post("/deployment/readiness/run", async (_req, res) => {
+  try {
+    await handleMasterReadinessAnalysis(res);
+  } catch (error: any) {
+    logger.error('[ENGINE] Master deployment readiness run failed', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

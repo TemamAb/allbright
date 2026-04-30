@@ -1,75 +1,161 @@
-import { useState } from "react";
-import { TrendingUp, Clock, Wallet as WalletIcon } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { useSocket } from "../App";
+import { GESState, CATEGORIES, THIRTY_SIX_KPIS, FullKPIState } from "../types/kpi";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useTelemetry } from '../hooks/useTelemetry';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
+
+const profitData = [
+  { time: '00:00', profit: 0.00 },
+  { time: '01:00', profit: 0.12 },
+  { time: '02:00', profit: 0.25 },
+  { time: '03:00', profit: 0.33 },
+  { time: '04:00', profit: 0.41 },
+];
 
 export default function Dashboard() {
-  const [showUSD, setShowUSD] = useState(false);
+  const telemetry = useTelemetry();
+  const [kpis] = useState(telemetry.kpis as GESState & FullKPIState);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [searchTerm, setSearchTerm] = useState('');
+  const { isConnected } = useSocket();
+
+  const toggleCategory = (catId: string) => {
+    const newExpanded = new Set(expandedCategories);
+    if (newExpanded.has(catId)) {
+      newExpanded.delete(catId);
+    } else {
+      newExpanded.add(catId);
+    }
+    setExpandedCategories(newExpanded);
+  };
+
+  const filteredCategories = THIRTY_SIX_KPIS.filter(cat => 
+    cat.label.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const getStatusColor = (status: string) => {
+    const colors = {
+      good: 'bg-green-500',
+      warn: 'bg-yellow-500',
+      bad: 'bg-red-500'
+    };
+    return colors[status as keyof typeof colors] || 'bg-gray-500';
+  };
 
   return (
-    <div className="space-y-12 p-8 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-4xl font-bold text-white uppercase tracking-wide">
-          Profit Metrics Grid
-        </h1>
-        <button 
-          onClick={() => setShowUSD(!showUSD)} 
-          className="px-6 py-3 bg-gray-800 rounded-xl hover:bg-gray-700 transition-all text-lg font-bold"
-        >
-          {showUSD ? "USD" : "ETH"}
-        </button>
-      </div>
+    <div className="space-y-8 p-6 max-w-7xl mx-auto">
+      {/* GES Header */}
+      <Card>
+        <CardHeader className="text-center pb-2">
+          <CardTitle className="text-5xl font-black text-primary">{kpis.ges.toFixed(1)}%</CardTitle>
+          <p className="text-2xl font-bold text-muted-foreground uppercase tracking-wide">Global Efficiency Score</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Last Update: {kpis.timestamp.toLocaleTimeString()}
+            {isConnected && <span className="ml-2 text-green-500 font-bold">● LIVE</span>}
+          </p>
+        </CardHeader>
+      </Card>
 
-      {/* Profit Grid - 3 col layout no cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-        {/* Profit/Hour */}
-        <div className="bg-gradient-to-b from-emerald-900/50 to-emerald-900/20 border-4 border-emerald-500/40 rounded-3xl p-12 text-center shadow-2xl hover:scale-[1.02] transition-all group">
-          <div className="w-24 h-24 bg-emerald-500/20 rounded-2xl border-4 border-emerald-500/50 mx-auto mb-8 flex items-center justify-center group-hover:rotate-6 transition-transform">
-            <TrendingUp size={48} className="text-emerald-400" />
-          </div>
-          <h2 className="text-3xl font-bold text-white mb-2 uppercase tracking-wide">Profit / Hour</h2>
-          <div className="text-6xl font-black text-emerald-400 mb-4 drop-shadow-2xl">
-            +0.124 ETH
-          </div>
-          <div className="text-xl text-emerald-300">$291 / hr</div>
-        </div>
+      {/* Search */}
+      <Input
+        placeholder="Search 36 KPIs..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="max-w-md h-12"
+      />
 
-        {/* Profit / Trade */}
-        <div className="bg-gradient-to-b from-blue-900/50 to-blue-900/20 border-4 border-blue-500/40 rounded-3xl p-12 text-center shadow-2xl hover:scale-[1.02] transition-all group">
-          <div className="w-24 h-24 bg-blue-500/20 rounded-2xl border-4 border-blue-500/50 mx-auto mb-8 flex items-center justify-center group-hover:rotate-6 transition-transform">
-            <TrendingUp size={48} className="text-blue-400" />
-          </div>
-          <h2 className="text-3xl font-bold text-white mb-2 uppercase tracking-wide">Profit / Trade</h2>
-          <div className="text-6xl font-black text-blue-400 mb-4 drop-shadow-2xl">
-            0.0031 ETH
-          </div>
-          <div className="text-xl text-blue-300">$7.30 avg</div>
-        </div>
+      {/* 36 KPIs Table */}
+      <Card>
+        <CardHeader className="pb-4">
+          <CardTitle className="text-2xl font-bold">36 KPI Telemetry Dashboard</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[350px]">KPI Category</TableHead>
+                <TableHead className="w-[120px]">Score</TableHead>
+                <TableHead className="w-[60px]">#</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Expand</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredCategories.map((cat) => {
+                const catScore = (kpis.categories as any)[cat.id] || 0;
+                const score = catScore * 100;
+                const catStatus = score > 90 ? 'good' : score > 75 ? 'warn' : 'bad';
+                const isExpanded = expandedCategories.has(cat.id);
+                const catKpis = kpis.categories[cat.id] || cat.kpis;
 
-        {/* Total Profit Smart Wallet */}
-        <div className="bg-gradient-to-b from-purple-900/50 to-purple-900/20 border-4 border-purple-500/40 rounded-3xl p-12 text-center shadow-2xl hover:scale-[1.02] transition-all group">
-          <div className="w-24 h-24 bg-purple-500/20 rounded-2xl border-4 border-purple-500/50 mx-auto mb-8 flex items-center justify-center group-hover:rotate-6 transition-transform">
-            <WalletIcon size={48} className="text-purple-400" />
-          </div>
-          <h2 className="text-3xl font-bold text-white mb-2 uppercase tracking-wide">Total Profit Wallet</h2>
-          <div className="text-6xl font-black text-purple-400 mb-4 drop-shadow-2xl">
-            12.45 ETH
-          </div>
-          <div className="text-xl text-purple-300">$29.2k USD</div>
-        </div>
-      </div>
+                return (
+                  <React.Fragment key={cat.id}>
+                    <TableRow className="cursor-pointer hover:bg-accent" onClick={() => toggleCategory(cat.id)}>
+                      <TableCell className="font-semibold flex items-center gap-3">
+                        <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${getStatusColor(catStatus)}">
+                          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        </span>
+                        {cat.label}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={`font-bold px-4 py-2 ${getStatusColor(catStatus)}`}>
+                          {score.toFixed(1)}%
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-mono">{catKpis.length}</TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(catStatus)}>{catStatus.toUpperCase()}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm" className="h-8">
+                          {isExpanded ? 'Collapse' : 'Expand'}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                    {isExpanded && catKpis.map((kpi, idx) => (
+                      <TableRow key={idx} className="bg-muted/50">
+                        <TableCell className="pl-12 font-medium">{kpi.name}</TableCell>
+                        <TableCell className="font-mono">{kpi.value} {kpi.unit}</TableCell>
+                        <TableCell className="font-mono">{kpi.target}</TableCell>
+                        <TableCell className="font-mono text-sm opacity-75">N/A</TableCell>
+                        <TableCell>
+                          <Badge className={getStatusColor(kpi.status)} className="text-xs px-2 py-0.5">{kpi.status.toUpperCase()}</Badge>
+                        </TableCell>
+                        <TableCell />
+                      </TableRow>
+                    ))}
+                  </React.Fragment>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
-      {/* CTA Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-12">
-        <button className="group bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 p-12 rounded-3xl text-2xl font-bold text-white shadow-2xl hover:shadow-emerald-500/25 transition-all">
-          Optimize Now
-        </button>
-        <button className="group bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 p-12 rounded-3xl text-2xl font-bold text-white shadow-2xl hover:shadow-blue-500/25 transition-all">
-          New Scan
-        </button>
-        <button className="group bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 p-12 rounded-3xl text-2xl font-bold text-white shadow-2xl hover:shadow-purple-500/25 transition-all">
-          Withdraw Profits
-        </button>
-      </div>
+      {/* Profit Chart (Retained) */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Profit Trend (24h)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={400}>
+            <LineChart data={profitData}>
+              <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#374151"/>
+              <XAxis dataKey="time" stroke="#9CA3AF" />
+              <YAxis stroke="#9CA3AF" />
+              <Tooltip />
+              <Line type="monotone" dataKey="profit" stroke="#10b981" strokeWidth={3} />
+            </LineChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
     </div>
   );
 }

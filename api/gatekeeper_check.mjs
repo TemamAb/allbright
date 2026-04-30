@@ -1,6 +1,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const workspaceRoot = path.resolve(__dirname, '../../');
 const FILES_TO_CHECK = [
   'api/src/services/bribeEngine.ts',
   'api/src/services/useLiveTelemetry.ts',
@@ -13,9 +19,13 @@ const FILES_TO_CHECK = [
   'api/src/controllers/engine.ts',
 ];
 
+
+
 console.log('🔍 Deployment Gatekeeper: File Integrity Check\n');
-console.log('Workspace:', path.resolve(process.cwd(), '..'));
+console.log('Script dir:', __dirname);
+console.log('Workspace:', workspaceRoot);
 console.log('─'.repeat(60));
+
 
 let passed = 0;
 let failed = 0;

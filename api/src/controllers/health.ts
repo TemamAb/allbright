@@ -90,24 +90,13 @@ router.get("/health", async (_req, res) => {
           throw new Error("DB not initialized");
         },
         {
-          maxAttempts: 5,
-          baseDelay: 1000,
+          maxRetries: 4,
+          initialDelay: 1000,
           maxDelay: 10000,
-          jitter: 0.2,
-          shouldRetry: (err) => {
-            // Retry on connection errors, timeouts, but not on auth/config errors
-            const msg = err instanceof Error ? err.message : String(err);
-            return (
-              msg.includes("ECONNREFUSED") ||
-              msg.includes("ETIMEDOUT") ||
-              msg.includes("ENOTFOUND") ||
-              msg.includes("network") ||
-              msg.includes("timeout")
-            );
-          },
+          factor: 2,
         },
       );
-      dbConnected = result.value;
+      dbConnected = result;
     } catch (err) {
       lastError = err;
     }

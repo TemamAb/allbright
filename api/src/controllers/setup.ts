@@ -50,7 +50,7 @@ router.post('/upload-env', (req: any, res) => {
     }
 
     // Auto-configure system (Render-style)
-    const config = configureFromEnv(validation.parsedVars);
+    const config = configureFromEnv(new Map(Object.entries(validation.parsedVars)));
     
     // Save configured .env and config.json
     const envPath = path.join(process.cwd(), '.env');
