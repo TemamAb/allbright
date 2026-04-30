@@ -66,6 +66,35 @@ export interface SharedEngineState {
   gaslessMode: boolean;
   stateVersion?: number;
   stateChecksum?: string;
+
+  // --- 36-KPI Extended Metrics (added for full reporting) ---
+  avgProfitPerTrade: number;
+  slippageCaptureBps: number;
+  spreadCapturePct: number;
+  riskAdjustedReturn: number;
+  inclusionLatencyMs: number;
+  executionLatencyMs: number;
+  rpcSyncLagMs: number;
+  p99LatencyMs: number;
+  signalThroughputPerSec: number;
+  competitiveCollisionPct: number;
+  revertCostImpactPct: number;
+  mevDeflectionPct: number;
+  pnlVolatilityPct: number;
+  capitalTurnoverPctPerTrade: number;
+  capitalEfficiencyPct: number;
+  liquidityHitRatePct: number;
+  mevCaptureRatePct: number;
+  uptimePct: number;
+  rpcReliabilityPct: number;
+  failedTxRatePct: number;
+  rpcQuotaUsagePct: number;
+  bundlerSaturationPct: number;
+  cycleAccuracyPct: number;
+  riskGateRejectionsCount: number;
+  optDeltaImprovementPct: number;
+  perfGapThroughputPct: number;
+  walletEthBalance: number;
 }
 
 // Configuration validation helper
@@ -174,7 +203,36 @@ totalWeightedScore: 900,
   configChecksum: '',
   configLastValidated: null,
   configDriftDetected: false,
-  configValid: true
+  configValid: true,
+
+  // --- 36-KPI Extended Metrics ---
+  avgProfitPerTrade: 0.045,
+  slippageCaptureBps: 10,
+  spreadCapturePct: 0.28,
+  riskAdjustedReturn: 2.8,
+  inclusionLatencyMs: 55,
+  executionLatencyMs: 75,
+  rpcSyncLagMs: 1.0,
+  p99LatencyMs: 95,
+  signalThroughputPerSec: 1300,
+  competitiveCollisionPct: 0.3,
+  revertCostImpactPct: 0.03,
+  mevDeflectionPct: 0.995,
+  pnlVolatilityPct: 1.2,
+  capitalTurnoverPctPerTrade: 26,
+  capitalEfficiencyPct: 92,
+  liquidityHitRatePct: 98,
+  mevCaptureRatePct: 96,
+  uptimePct: 99.99,
+  rpcReliabilityPct: 99.9,
+  failedTxRatePct: 0.3,
+  rpcQuotaUsagePct: 12,
+  bundlerSaturationPct: 6,
+  cycleAccuracyPct: 99,
+  riskGateRejectionsCount: 0,
+  optDeltaImprovementPct: 28,
+  perfGapThroughputPct: 3,
+  walletEthBalance: 55,
 };
 
 // Initialize configuration checksum

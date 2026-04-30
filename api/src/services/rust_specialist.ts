@@ -42,12 +42,7 @@ export class RustSpecialist implements Specialist {
   }
 
   async status() {
-    const readiness = await import('./gateKeeper').then(m => m.gateKeeper.isDeploymentAuthorized());
-    return {
-      active: true,
-      deploymentReady: readiness.authorized,
-      gateStatus: readiness.status
-    };
+    return { status: 'ready', specialist: this.name };
   }
 
   async checkGateTriggers(kpiData: any): Promise<import('./specialists').GateTriggerResult> {

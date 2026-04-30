@@ -229,89 +229,89 @@ export async function runMasterDeploymentReadinessAnalysis(): Promise<MasterDepl
     .filter(gate => gate.status === 'PENDING_HUMAN_APPROVAL')
     .map(gate => gate.gateId);
 
-  const isFullyReady = deploymentAuth.authorized && baseCheck.ready;
-  const overallStatus: MasterDeploymentReadinessReport['overallStatus'] =
-    isFullyReady
-      ? 'READY_FOR_DEPLOYMENT'
-      : blockedByFailedChecks.length > 0
-        ? 'BLOCKED'
-        : 'PENDING_APPROVALS';
+   const isFullyReady = deploymentAuth.authorized && baseCheck.ready;
+   const overallStatus: MasterDeploymentReadinessReport['overallStatus'] =
+     isFullyReady
+       ? 'READY_FOR_DEPLOYMENT'
+       : blockedByFailedChecks.length > 0
+         ? 'BLOCKED'
+         : 'PENDING_APPROVALS';
 
-  // Format the 36-KPI breakdown from specialist results
-// KPI History for tabular comparison
-  // KPI History for tabular comparison
-  const kpiBreakdownRaw = kpiResults.map(res => ({
-    domain: res.category,
-    score: res.confidence,
-    status: res.confidence >= 0.85 ? 'OPTIMAL' : res.confidence >= 0.7 ? 'DEGRADED' : 'CRITICAL',
-    metrics: res.tunedKpis
-  }));
-  const historyFile = path.join(__dirname, '..', '..', '..', 'api', '.kpi-history.json');
-  let history: Array<{ cycle: number; timestamp: string; kpiBreakdown: typeof kpiBreakdownRaw }> = [];
-  if (fs.existsSync(historyFile)) {
-    try {
-      history = JSON.parse(fs.readFileSync(historyFile, 'utf8'));
-    } catch {
-      history = [];
-    }
+   // 36-KPI breakdown from specialist results
+   const kpiBreakdownRaw: Array<{ domain: string; score: number; status: 'OPTIMAL' | 'DEGRADED' | 'CRITICAL'; metrics: Record<string, any> }> = kpiResults.map(res => ({
+     domain: res.category,
+     score: res.confidence,
+     status: res.confidence >= 0.85 ? 'OPTIMAL' : res.confidence >= 0.7 ? 'DEGRADED' : 'CRITICAL',
+     metrics: res.tunedKpis
+   }));
+   const kpiBreakdown = kpiBreakdownRaw;
+
+   // KPI History persistence (file-based for now)
+   const historyFile = path.join(__dirname, '..', '..', '..', 'api', '.kpi-history.json');
+   let history: Array<{ cycle: number; timestamp: string; kpiBreakdown: typeof kpiBreakdownRaw }> = [];
+   if (fs.existsSync(historyFile)) {
+     try {
+       history = JSON.parse(fs.readFileSync(historyFile, 'utf8'));
+     } catch {
+       history = [];
+     }
+   }
+   const currentCycle = history.length + 1;
+   const currentEntry = { cycle: currentCycle, timestamp: new Date().toISOString(), kpiBreakdown: kpiBreakdownRaw };
+   history.push(currentEntry);
+   fs.writeFileSync(historyFile, JSON.stringify(history, null, 2));
+
+   const recommendations = [
+     ...baseCheck.recommendations,
+     ...blockedByFailedChecks.map(gateId => `Fix automated check failures for ${gateId}`),
+     ...pendingHumanApproval.map(gateId => `Obtain human approval for ${gateId}`),
+   ].filter((value, index, array) => array.indexOf(value) === index);
+
+   if (overallStatus === 'READY_FOR_DEPLOYMENT') {
+     recommendations.push('ACTION REQUIRED: Human operator must "ALLOW" deployment to trigger Git Push.');
+   } else {
+     recommendations.push('ACTION REQUIRED: Deployment "REJECTED" or "BLOCKED". Review critical issues.');
+   }
+
+   const issues = [
+     ...baseCheck.issues,
+     ...blockedByFailedChecks.map(gateId => `${gateId} has failing automated checks`),
+     ...pendingHumanApproval.map(gateId => `${gateId} is waiting for human approval`)
+   ].filter((value, index, array) => array.indexOf(value) === index);
+
+   // Build report object (declare early)
+    const report: MasterDeploymentReadinessReport = {
+      generatedAt: new Date(),
+      overallStatus,
+      deploymentAuthorized: deploymentAuth.authorized,
+      authorizationMode: deploymentAuth.authorizationMode,
+      summary: {
+        totalGates: gateResults.length,
+        autoApproved: passedAutomatically.length,
+        approved: gateResults.filter(gate => gate.approved).length,
+        pendingHumanApproval: pendingHumanApproval.length,
+        failedAutomatedChecks: blockedByFailedChecks.length
+      },
+      gates: gateResults,
+      passedAutomatically,
+      blockedByFailedChecks,
+      pendingHumanApproval,
+      missingApprovals: deploymentAuth.missingApprovals,
+      orchestratorsStatus: baseCheck.orchestratorsStatus,
+      fileVerification: {
+        allFilesPresent: baseCheck.fileVerification?.allFilesPresent ?? false,
+        missingFiles: baseCheck.fileVerification?.missingFiles ?? [],
+        fileErrors: baseCheck.fileVerification?.fileErrors ?? []
+      },
+      coverageByModuleRoot,
+      issues,
+      recommendations,
+      globalEfficiencyScore: sharedEngineState.totalWeightedScore / 100,
+      kpiBreakdown
+    };
+
+    return report;
   }
-  const currentCycle = history.length + 1;
-  const currentEntry = { cycle: currentCycle, timestamp: new Date().toISOString(), kpiBreakdown: kpiBreakdownRaw };
-  history.push(currentEntry);
-  fs.writeFileSync(historyFile, JSON.stringify(history, null, 2));
-  (report as any).kpiHistory = history;
-  (report as any).currentCycle = currentCycle;
-
-  const kpiBreakdown = kpiBreakdownRaw;
-
-  const recommendations = [
-    ...baseCheck.recommendations,
-    ...blockedByFailedChecks.map(gateId => `Fix automated check failures for ${gateId}`),
-    ...pendingHumanApproval.map(gateId => `Obtain human approval for ${gateId}`),
-  ].filter((value, index, array) => array.indexOf(value) === index);
-
-  if (overallStatus === 'READY_FOR_DEPLOYMENT') {
-    recommendations.push('ACTION REQUIRED: Human operator must "ALLOW" deployment to trigger Git Push.');
-  } else {
-    recommendations.push('ACTION REQUIRED: Deployment "REJECTED" or "BLOCKED". Review critical issues.');
-  }
-
-  const issues = [
-    ...baseCheck.issues,
-    ...blockedByFailedChecks.map(gateId => `${gateId} has failing automated checks`),
-    ...pendingHumanApproval.map(gateId => `${gateId} is waiting for human approval`)
-  ].filter((value, index, array) => array.indexOf(value) === index);
-
-  return {
-    generatedAt: new Date(),
-    overallStatus,
-    deploymentAuthorized: deploymentAuth.authorized,
-    authorizationMode: deploymentAuth.authorizationMode,
-    summary: {
-      totalGates: gateResults.length,
-      autoApproved: passedAutomatically.length,
-      approved: gateResults.filter(gate => gate.approved).length,
-      pendingHumanApproval: pendingHumanApproval.length,
-      failedAutomatedChecks: blockedByFailedChecks.length
-    },
-    gates: gateResults,
-    passedAutomatically,
-    blockedByFailedChecks,
-    pendingHumanApproval,
-    missingApprovals: deploymentAuth.missingApprovals,
-    orchestratorsStatus: baseCheck.orchestratorsStatus,
-    fileVerification: {
-      allFilesPresent: baseCheck.fileVerification?.allFilesPresent ?? false,
-      missingFiles: baseCheck.fileVerification?.missingFiles ?? [],
-      fileErrors: baseCheck.fileVerification?.fileErrors ?? []
-    },
-    coverageByModuleRoot,
-    issues,
-    recommendations,
-    globalEfficiencyScore: sharedEngineState.totalWeightedScore / 100, // Scale back to 0-1 range for consistency with threshold
-    kpiBreakdown
-  };
-}
 
 /**
  * Comprehensive deployment readiness check
