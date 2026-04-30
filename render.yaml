@@ -96,8 +96,6 @@ services:
     plan: starter
     branch: main
     rootDir: ui
-    buildCommand: pnpm install && pnpm build
-    runCommand: nginx -g "daemon off;"
     healthCheckPath: /
     healthCheckTimeout: 10
     envVars:

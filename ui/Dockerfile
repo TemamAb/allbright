@@ -1,9 +1,16 @@
-FROM nginx:1.27-alpine
+FROM node:20-alpine
 
-# Copy nginx configuration to templates folder so envsubst can inject $PORT
-COPY nginx.conf /etc/nginx/templates/default.conf.template
+WORKDIR /app
 
-# Copy built static assets (Render will run `pnpm build` before Docker build)
-COPY dist /usr/share/nginx/html
+# Install dependencies
+RUN npm install -g pnpm serve
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install
 
-CMD ["nginx", "-g", "daemon off;"]
+# Copy source code and build
+COPY . .
+# Render injects VITE_API_URL during the build phase
+RUN pnpm build
+
+# Serve the static files on Render's dynamic PORT
+CMD serve -s dist -l tcp://0.0.0.0:$PORT
