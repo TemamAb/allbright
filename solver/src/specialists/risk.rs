@@ -1,9 +1,10 @@
 use std::error::Error;
 use std::sync::Arc;
 use serde_json::json;
+use std::sync::Mutex;
 
 use crate::{
-    SubsystemSpecialist, SpecialistResult, GateTriggerResult, RiskLevel, Mutex,
+    SubsystemSpecialist, SpecialistResult, GateTriggerResult, RiskLevel,
     WatchtowerStats,
 };
 
