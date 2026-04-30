@@ -768,5 +768,335 @@
         }
       }
     ]
+  },
+  {
+    "cycle": 15,
+    "timestamp": "2026-04-30T20:24:40.902Z",
+    "kpiBreakdown": [
+      {
+        "domain": "Profitability",
+        "score": 0.9979757085020243,
+        "status": "OPTIMAL",
+        "metrics": {
+          "nrp_target": 23,
+          "win_rate": 98.4
+        }
+      },
+      {
+        "domain": "Risk",
+        "score": 0.7,
+        "status": "DEGRADED",
+        "metrics": {
+          "risk_index": 0.02,
+          "drawdown": 0
+        }
+      },
+      {
+        "domain": "Performance",
+        "score": 0.5,
+        "status": "CRITICAL",
+        "metrics": {
+          "latency": 9,
+          "throughput": 0
+        }
+      },
+      {
+        "domain": "Efficiency",
+        "status": "CRITICAL"
+      },
+      {
+        "domain": "System Health",
+        "score": 0,
+        "status": "CRITICAL",
+        "metrics": {
+          "uptime": 0,
+          "ipc_connected": false
+        }
+      },
+      {
+        "domain": "Auto-Optimization",
+        "score": 0.85,
+        "status": "OPTIMAL",
+        "metrics": {
+          "current_ges": 850,
+          "anomaly_count": 0
+        }
+      }
+    ]
+  },
+  {
+    "cycle": 16,
+    "timestamp": "2026-04-30T20:27:24.110Z",
+    "kpiBreakdown": [
+      {
+        "domain": "Profitability",
+        "score": 0.9979757085020243,
+        "status": "OPTIMAL",
+        "metrics": {
+          "nrp_target": 23,
+          "win_rate": 98.4
+        }
+      },
+      {
+        "domain": "Risk",
+        "score": 0.7,
+        "status": "DEGRADED",
+        "metrics": {
+          "risk_index": 0.02,
+          "drawdown": 0
+        }
+      },
+      {
+        "domain": "Performance",
+        "score": 0.5,
+        "status": "CRITICAL",
+        "metrics": {
+          "latency": 9,
+          "throughput": 0
+        }
+      },
+      {
+        "domain": "Efficiency",
+        "status": "CRITICAL"
+      },
+      {
+        "domain": "System Health",
+        "score": 0,
+        "status": "CRITICAL",
+        "metrics": {
+          "uptime": 0,
+          "ipc_connected": false
+        }
+      },
+      {
+        "domain": "Auto-Optimization",
+        "score": 0.85,
+        "status": "OPTIMAL",
+        "metrics": {
+          "current_ges": 850,
+          "anomaly_count": 0
+        }
+      }
+    ]
+  },
+  {
+    "cycle": 17,
+    "timestamp": "2026-04-30T20:27:42.228Z",
+    "kpiBreakdown": [
+      {
+        "domain": "Profitability",
+        "score": 0.9979757085020243,
+        "status": "OPTIMAL",
+        "metrics": {
+          "nrp_target": 23,
+          "win_rate": 98.4
+        }
+      },
+      {
+        "domain": "Risk",
+        "score": 0.7,
+        "status": "DEGRADED",
+        "metrics": {
+          "risk_index": 0.02,
+          "drawdown": 0
+        }
+      },
+      {
+        "domain": "Performance",
+        "score": 0.5,
+        "status": "CRITICAL",
+        "metrics": {
+          "latency": 9,
+          "throughput": 0
+        }
+      },
+      {
+        "domain": "Efficiency",
+        "status": "CRITICAL"
+      },
+      {
+        "domain": "System Health",
+        "score": 0,
+        "status": "CRITICAL",
+        "metrics": {
+          "uptime": 0,
+          "ipc_connected": false
+        }
+      },
+      {
+        "domain": "Auto-Optimization",
+        "score": 0.85,
+        "status": "OPTIMAL",
+        "metrics": {
+          "current_ges": 850,
+          "anomaly_count": 0
+        }
+      }
+    ]
+  },
+  {
+    "cycle": 18,
+    "timestamp": "2026-04-30T20:27:58.388Z",
+    "kpiBreakdown": [
+      {
+        "domain": "Profitability",
+        "score": 0.9979757085020243,
+        "status": "OPTIMAL",
+        "metrics": {
+          "nrp_target": 23,
+          "win_rate": 98.4
+        }
+      },
+      {
+        "domain": "Risk",
+        "score": 0.7,
+        "status": "DEGRADED",
+        "metrics": {
+          "risk_index": 0.02,
+          "drawdown": 0
+        }
+      },
+      {
+        "domain": "Performance",
+        "score": 0.5,
+        "status": "CRITICAL",
+        "metrics": {
+          "latency": 9,
+          "throughput": 0
+        }
+      },
+      {
+        "domain": "Efficiency",
+        "status": "CRITICAL"
+      },
+      {
+        "domain": "System Health",
+        "score": 0,
+        "status": "CRITICAL",
+        "metrics": {
+          "uptime": 0,
+          "ipc_connected": false
+        }
+      },
+      {
+        "domain": "Auto-Optimization",
+        "score": 0.85,
+        "status": "OPTIMAL",
+        "metrics": {
+          "current_ges": 850,
+          "anomaly_count": 0
+        }
+      }
+    ]
+  },
+  {
+    "cycle": 19,
+    "timestamp": "2026-04-30T20:28:24.172Z",
+    "kpiBreakdown": [
+      {
+        "domain": "Profitability",
+        "score": 0.9979757085020243,
+        "status": "OPTIMAL",
+        "metrics": {
+          "nrp_target": 23,
+          "win_rate": 98.4
+        }
+      },
+      {
+        "domain": "Risk",
+        "score": 0.7,
+        "status": "DEGRADED",
+        "metrics": {
+          "risk_index": 0.02,
+          "drawdown": 0
+        }
+      },
+      {
+        "domain": "Performance",
+        "score": 0.5,
+        "status": "CRITICAL",
+        "metrics": {
+          "latency": 9,
+          "throughput": 0
+        }
+      },
+      {
+        "domain": "Efficiency",
+        "status": "CRITICAL"
+      },
+      {
+        "domain": "System Health",
+        "score": 0,
+        "status": "CRITICAL",
+        "metrics": {
+          "uptime": 0,
+          "ipc_connected": false
+        }
+      },
+      {
+        "domain": "Auto-Optimization",
+        "score": 0.85,
+        "status": "OPTIMAL",
+        "metrics": {
+          "current_ges": 850,
+          "anomaly_count": 0
+        }
+      }
+    ]
+  },
+  {
+    "cycle": 20,
+    "timestamp": "2026-04-30T20:28:55.845Z",
+    "kpiBreakdown": [
+      {
+        "domain": "Profitability",
+        "score": 0.9979757085020243,
+        "status": "OPTIMAL",
+        "metrics": {
+          "nrp_target": 23,
+          "win_rate": 98.4
+        }
+      },
+      {
+        "domain": "Risk",
+        "score": 0.7,
+        "status": "DEGRADED",
+        "metrics": {
+          "risk_index": 0.02,
+          "drawdown": 0
+        }
+      },
+      {
+        "domain": "Performance",
+        "score": 0.5,
+        "status": "CRITICAL",
+        "metrics": {
+          "latency": 9,
+          "throughput": 0
+        }
+      },
+      {
+        "domain": "Efficiency",
+        "status": "CRITICAL"
+      },
+      {
+        "domain": "System Health",
+        "score": 0,
+        "status": "CRITICAL",
+        "metrics": {
+          "uptime": 0,
+          "ipc_connected": false
+        }
+      },
+      {
+        "domain": "Auto-Optimization",
+        "score": 0.85,
+        "status": "OPTIMAL",
+        "metrics": {
+          "current_ges": 850,
+          "anomaly_count": 0
+        }
+      }
+    ]
   }
 ]
