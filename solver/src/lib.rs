@@ -3,7 +3,6 @@ pub mod specialists;
 
 use serde::{Deserialize, Serialize};
 use std::error::Error;
-use std::sync::Mutex;
 
 /// BSS-36: Centralized GES Weights (Total = 1.0)
 /// Optimized for Elite Grade performance targets.

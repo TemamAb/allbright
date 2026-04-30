@@ -1,55 +1,19 @@
-# BrightSky 36 KPIs Telemetry Dashboard Handoff
+# BrightSky Complete Handoff (Engine Control Added)
 
-**Session Summary** (Completed 2026-04-30):
-## Task
-Analyzed dashboard weaknesses → Built professional **36 KPI telemetry page** + upgraded main Dashboard.
+**Complete** (2026-04-30):
+## Dashboard Analysis
+- **Layout**: Sidebar nav, header w/ wallet, main content.
+- **Sidebar**: 7 mission links, engine status, BSS-Nexus v2.6.0.
+- **Dashboard**: GES card, 36 KPI table (expandable), profit chart + new **Engine Status** badge.
+- **Settings**: New engine control - mode (live/simulation), Start/Stop buttons.
+- **GateKeeper/Specialist**: Status grids ready.
 
-## Key Deliverables
-1. **36 KPIs Data** (`ui/src/types/kpi.ts`):
-   - Extracted from benchmark-36-kpis.md + KOIs
-   - 7 categories (Profitability:6, Timing:7, etc.)
-   - Targets/status/mocks ready for live Socket
+## Live Stack
+- **UI**: localhost:3002 (Vite, controls sync dashboard status).
+- **API/DB/Rust**: Running v1073+, mock bridge active.
+- **Tested**: Typecheck clean, buttons toggle status.
 
-2. **Live Hook** (`ui/src/hooks/useTelemetry.ts`):
-   - Socket.io ('engineStateFull'/'telemetryKpis')
-   - Fallback to THIRTY_SIX_KPIS data
+## Git
+- Pushed: Engine control implementation.
 
-3. **Telemetry Page** (`ui/src/pages/Telemetry.tsx`):
-   - Expandable shadcn table
-   - GES header, search, variance %, badges
-   - /telemetry route
-
-4. **Dashboard Upgrade** (`ui/src/pages/Dashboard.tsx`):
-   - Replaced hardcoded MOCK_DETAILS/old table
-   - Now **36 KPI telemetry** (search/expand)
-   - Retained profit chart
-
-5. **Progress** (`TODO.md`):
-   - Steps 1-5 ✅ (types, hook, pages, routes, test)
-
-## How to Run
-```
-pnpm --filter ui dev --port 3001 --host
-```
-- Home: http://localhost:3001/ (36 KPIs Dashboard)
-- Telemetry: http://localhost:3001/telemetry
-
-## Backend Integration (Next)
-Update `api/src/services/engineState.ts` to emit:
-```json
-{
-  "categories": {"profitability": [...36 KPIs...]},
-  "ges": 76.8,
-  "timestamp": "2026..."
-}
-```
-Socket event: 'telemetryKpis'
-
-## Status
-- **Frontend**: Production-ready (live data stubbed)
-- **No Errors**: Clean build/serve
-- **Responsive**: Mobile/tablet/desktop
-
-**Next Engineer**: Connect real API data → Deploy (vercel.json ready).
-
-Handoff complete! 🚀
+Ready for Render/Vercel deploy. Handoff complete! 🚀

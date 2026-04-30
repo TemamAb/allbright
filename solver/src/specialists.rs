@@ -1,16 +1,17 @@
-//! Minimal specialists module to satisfy lib.rs declaration.
-//! Will be expanded with actual specialist implementations.
-
-/// Placeholder for specialist subsystem.
-pub mod api;
-pub mod kpi;
+pub mod profitability;
 pub mod risk;
 
-/// Empty struct for module presence.
-pub struct Specialists;
+use std::sync::Arc;
+use crate::SubsystemSpecialist;
 
-impl Specialists {
+pub struct SpecialistRegistry {
+    pub specialists: Vec<Arc<dyn SubsystemSpecialist>>,
+}
+
+impl SpecialistRegistry {
     pub fn new() -> Self {
-        Self
+        Self {
+            specialists: Vec::new(),
+        }
     }
 }

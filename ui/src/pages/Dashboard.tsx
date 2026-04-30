@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useSocket } from "../App";
+import { useGetEngineStatus } from "@workspace/api-client-react";
 import { GESState, CATEGORIES, THIRTY_SIX_KPIS, FullKPIState } from "../types/kpi";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useTelemetry } from '../hooks/useTelemetry';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useTelemetry } from '../hooks/useTelemetry';
 
 const profitData = [
   { time: '00:00', profit: 0.00 },
@@ -21,6 +22,7 @@ const profitData = [
 
 export default function Dashboard() {
   const telemetry = useTelemetry();
+  const { data: engineStatus } = useGetEngineStatus();
   const [kpis] = useState(telemetry.kpis as GESState & FullKPIState);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
@@ -49,6 +51,12 @@ export default function Dashboard() {
     return colors[status as keyof typeof colors] || 'bg-gray-500';
   };
 
+  const engineStatusText = engineStatus ? (
+    engineStatus.running ? 
+      `Engine running ${engineStatus.mode?.toLowerCase() === 'live' ? 'live' : 'in simulation'}` :
+      'Engine stopped'
+  ) : 'Loading engine status...';
+
   return (
     <div className="space-y-8 p-6 max-w-7xl mx-auto">
       {/* GES Header */}
@@ -61,6 +69,24 @@ export default function Dashboard() {
             {isConnected && <span className="ml-2 text-green-500 font-bold">● LIVE</span>}
           </p>
         </CardHeader>
+      </Card>
+
+      {/* Engine Status */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Engine Status</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className={`text-xl font-bold p-4 rounded-lg text-center ${
+            engineStatus?.running 
+              ? engineStatus.mode?.toLowerCase() === 'live' 
+                ? 'bg-green-500/10 border-green-500/30 text-green-600' 
+                : 'bg-yellow-500/10 border-yellow-500/30 text-yellow-600' 
+              : 'bg-gray-500/10 border-gray-500/30 text-gray-500'
+          }`}>
+            {engineStatusText}
+          </div>
+        </CardContent>
       </Card>
 
       {/* Search */}
@@ -99,7 +125,7 @@ export default function Dashboard() {
                   <React.Fragment key={cat.id}>
                     <TableRow className="cursor-pointer hover:bg-accent" onClick={() => toggleCategory(cat.id)}>
                       <TableCell className="font-semibold flex items-center gap-3">
-                        <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${getStatusColor(catStatus)}">
+                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${getStatusColor(catStatus)}`}>
                           {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                         </span>
                         {cat.label}
@@ -139,7 +165,7 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      {/* Profit Chart (Retained) */}
+      {/* Profit Chart */}
       <Card>
         <CardHeader>
           <CardTitle>Profit Trend (24h)</CardTitle>
