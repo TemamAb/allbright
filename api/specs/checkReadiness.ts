@@ -1,4 +1,4 @@
-import { runMasterDeploymentReadinessAnalysis } from '../src/services/deploy_gatekeeper';
+import { runMasterDeploymentReadinessAnalysis } from '../src/services/deploy_gatekeeper.js';
 import { sharedEngineState } from '../src/services/engineState';
 import { db, kpiSnapshotsTable } from '@workspace/db';
 import { desc } from 'drizzle-orm';

@@ -35,21 +35,17 @@ services:
         value: "4003"
 
   # BrightSky API Server (Node.js + TypeScript)
-  - type: web
+- type: web
     name: brightsky-api
-    env: docker
+    env: node
     plan: starter
-    branch: main
     rootDir: api
-    buildCommand: pnpm install && pnpm build
-    runCommand: node dist/index.js
+    buildCommand: pnpm install --frozen-lockfile && pnpm build
+    startCommand: node dist/index.js
     healthCheckPath: /api/health
-    healthCheckTimeout: 10
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 3000
       - key: PIMLICO_API_KEY
         sync: false
       - key: WALLET_ADDRESS
@@ -94,17 +90,8 @@ services:
         value: "false"
 
   # BrightSky Dashboard (React/Vite static build)
-  - type: web
+- type: web
     name: brightsky-dashboard
-    env: docker
-    plan: starter
-    branch: main
-    rootDir: ui
-    buildCommand: pnpm install && pnpm build
-    healthCheckPath: /
-    healthCheckTimeout: 10
-    envVars:
-      - key: VITE_API_BASE_URL
-        value: https://brightsky-api.onrender.com
-      - key: NODE_ENV
-        value: production
+    env: static
+    buildCommand: cd ui && pnpm install --frozen-lockfile && pnpm build
+    publishDirectory: ui/dist

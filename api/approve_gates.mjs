@@ -1,4 +1,4 @@
-import { gateKeeper } from './src/services/gateKeeper.ts';
+import { gateKeeper } from './src/services/gateKeeper.js';
 
 async function approveAllGates() {
   const gates = ['CODE_QUALITY', 'INFRASTRUCTURE', 'SECURITY', 'PERFORMANCE', 'BUSINESS'];
@@ -16,7 +16,7 @@ async function approveAllGates() {
   }
   
   const finalStatus = gateKeeper.isDeploymentAuthorized();
-  console.log('\\n📊 FINAL STATUS:', finalStatus);
+  console.log('\n📊 FINAL STATUS:', finalStatus);
   console.log('Deployment Authorized:', finalStatus.authorized);
   console.log('Missing Approvals:', finalStatus.missingApprovals.join(', ') || 'NONE');
   
@@ -24,4 +24,3 @@ async function approveAllGates() {
 }
 
 approveAllGates().catch(console.error);
-

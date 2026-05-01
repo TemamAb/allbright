@@ -1,38 +1,24 @@
-# syntax=docker/dockerfile:1
-FROM rust:1.88-slim-bookworm AS builder
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    pkg-config \
-    libssl-dev \
-    clang \
-    && rm -rf /var/lib/apt/lists/*
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Relax network timeouts and retries for weak network connections
-ENV CARGO_NET_RETRY=10
-ENV CARGO_HTTP_TIMEOUT=120
+# Install pnpm and serve globally
+RUN npm install -g pnpm serve
 
-# Reduce compilation jobs to prevent Out-Of-Memory (OOM) crashes on limited-RAM cloud providers
-ENV CARGO_BUILD_JOBS=1
+# Copy dependency files
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install
 
-COPY Cargo.toml Cargo.lock rust-toolchain.toml ./
-COPY solver ./solver
+# Copy source code
+COPY . .
 
-RUN cargo build --jobs 1 --locked --release --bin brightsky
+# Inject API URL at build time for Vite
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
 
-FROM debian:bookworm-slim AS runtime
+# Build the dashboard
+RUN pnpm build
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-
-COPY --from=builder /app/target/release/brightsky /usr/local/bin/brightsky
-
-ENV PORT=10000
-EXPOSE 10000
-
-CMD ["brightsky"]
+# Serve on the dynamic port provided by Render
+EXPOSE $PORT
+CMD serve -s dist -l $PORT

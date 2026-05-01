@@ -1,3 +1,3 @@
 // Stub for gatekeeper - compilation pass
-pub fn dummy_risk() {}
+pub fn dummy_kpi() {}
 

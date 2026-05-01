@@ -9,44 +9,27 @@ interface Props {
 
 const KPIGrid: React.FC<Props> = ({ kpis }) => {
   return (
-    <div className="bg-grafana-panel border border-grafana-ash rounded-xl p-8 shadow-2xl">
-      <div className="flex justify-between items-center mb-8">
-        <h2 className="text-4xl font-black text-grafana-green drop-shadow-lg">Global Efficiency Score</h2>
-        <div className="bg-grafana-green text-grafana-bg px-8 py-4 rounded-xl text-3xl font-black shadow-grafana-glow">
-          {kpis.ges.toFixed(1)}%
+    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      {/* GES Main Panel */}
+      <div className="bg-grafana-panel border border-grafana-ash rounded-2xl p-8 col-span-full shadow-2xl hover:border-grafana-green/50 transition-all">
+        <div className="flex justify-between items-center mb-8">
+          <h2 className="text-5xl font-black text-grafana-green drop-shadow-2xl glow-green">Global Efficiency Score</h2>
+          <div className="bg-gradient-to-r from-grafana-green to-emerald-500 text-grafana-bg px-12 py-6 rounded-2xl text-5xl font-black shadow-grafana-glow">
+            {kpis.ges.toFixed(1)}%
+          </div>
         </div>
       </div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Category</TableHead>
-            <TableHead>Score</TableHead>
-            <TableHead>Weight</TableHead>
-            <TableHead>Contribution</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {CATEGORIES.map(cat => {
-            const score = kpis.categories[cat.id as keyof CategoryKPIs] * 100;
-            const contrib = score * cat.weight;
-            return (
-              <TableRow key={cat.id}>
-                <TableCell className="font-bold">{cat.label}</TableCell>
-                <TableCell>
-                  <div className={`px-6 py-2 rounded-xl font-black text-lg shadow-grafana-glow ${score > 90 ? 'bg-grafana-green text-grafana-bg' : score > 75 ? 'bg-grafana-yellow text-grafana-bg' : 'bg-grafana-red text-grafana-bg'}`}>
-                    {score.toFixed(1)}%
-                  </div>
-                </TableCell>
-                <TableCell>{(cat.weight * 100).toFixed(0)}%</TableCell>
-                <TableCell>{contrib.toFixed(1)}%</TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </div>
-  );
-};
+      
+      {/* Category Panels */}
+      {CATEGORIES.map(cat => {
+        const score = kpis.categories[cat.id as keyof CategoryKPIs] * 100;
+        const contrib = score * cat.weight;
+        const statusClass = score > 90 ? 'border-grafana-green/50 from-grafana-green/10 to-emerald-400/10' : score > 75 ? 'border-grafana-yellow/50 from-amber-500/10 to-orange-400/10' : 'border-grafana-red/50 from-red-500/10 to-pink-400/10';
+        const textClass = score > 90 ? 'text-grafana-green' : score > 75 ? 'text-grafana-yellow' : 'text-grafana-red';
+        
+        return (
+          <div key={cat.id} className={`bg-grafana-panel border ${statusClass} rounded-2xl p-8 shadow-xl hover:shadow-2xl transition-all group hover:-translate-y-1`}>
+            <div className="flex items-center gap-4 mb-6">
 
 export default KPIGrid;
 

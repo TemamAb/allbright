@@ -1,33 +1,9 @@
-# Exclude heavy/irrelevant dirs from build context
-target/
-.git/
-**/node_modules/
-.pnpm-store/
-.DS_Store
-logs/
-day/
-**/*.log
-
-# Ignore build artifacts and old structure
-artifacts/brightsky/
-artifacts/api-server/
-
-# Keep UI source (needed for dashboard build) but ignore its node_modules
-ui/node_modules/
-ui/.git/
-ui/dist/
-ui/.vite/
-
-# Keep solver source (needed for solver build) but ignore its target
-solver/target/
-solver/.git/
-solver/node_modules/
-
-# Keep API source (explicitly allowed)
-# api/ is included
-
-# Keep lib/ (shared TypeScript libraries)
-# lib/ is included
-
-# Keep scripts/
-# scripts/ is included
+node_modules
+dist
+dist-electron
+.git
+.env
+*.log
+electron-builder.json
+build-desktop.bat
+main.js
