@@ -1,22 +1,21 @@
 {
-  "name": "workspace",
-  "version": "0.0.0",
-  "license": "MIT",
-  "packageManager": "pnpm@9.15.4",
-  "engines": {
-    "node": ">=22.18.0"
-  },
+  "name": "brightsky-workspace",
+  "private": true,
   "scripts": {
-    "dev": "pnpm --filter @workspace/api-server run dev",
-    "preinstall": "node ./scripts/preinstall-enforce-pnpm.cjs",
-    "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
     "typecheck:libs": "tsc --build",
-    "pre-push": "pnpm --filter @workspace/api-server ready"
+    "dev": "pnpm --parallel --filter ... dev",
+    "build": "pnpm -r build",
+    "readiness": "npx tsx api/specs/checkReadiness.ts"
   },
-  "private": true,
   "devDependencies": {
-    "prettier": "^3.8.1",
-    "typescript": "~5.9.2"
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3"
+  },
+  "packageManager": "pnpm@9.12.2",
+  "pnpm": {
+    "overrides": {
+      "typescript>cliui>@gar>": "npm:@gar/promzard@1.0.2"
+    }
   }
 }

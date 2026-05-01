@@ -224,6 +224,18 @@ export class BrightSkyBribeEngine {
       throw new Error('Invalid inputs to bribe ratio calculation');
     }
 
+    // BSS-28 / Task 7.7: Thompson Sampling for Bayesian Optimization
+    // Sample bribe elasticity from the current posterior distribution
+    const params = sharedEngineState.auctionParams;
+    const mu = params.bribeElasticity;
+    const sigma = params.bribeElasticityUncertainty || 0.02;
+    
+    // Box-Muller transform for Gaussian sampling in pure JS
+    const u1 = Math.random();
+    const u2 = Math.random();
+    const z0 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+    const sampledElasticity = Math.max(0.01, mu + z0 * sigma);
+
     // Apply latency penalty to base success probability
     const latencyDecay = Math.max(0, (networkLatencyMs - 20) / 10) * 0.05;
     const adjustedBaseSuccess = Math.max(0, Math.min(1, baseSuccessProb - latencyDecay));
@@ -259,11 +271,10 @@ export class BrightSkyBribeEngine {
       // Calculate inclusion probability based on auction theory
       // P(inclusion) = BASE + ELASTICITY * bribe_ratio * COMPETITIVE_FACTOR
       // Capped at MAX_INCLUSION_PROB
-      const params = sharedEngineState.auctionParams;
       const inclusionProb = Math.min(
         params.maxInclusionProb,
         params.baseInclusionProb + 
-          (params.bribeElasticity * bribeRatio * 100) * // Convert to percentage
+          (sampledElasticity * bribeRatio * 100) * // Use Bayesian sampled elasticity
           params.competitiveFactor *
           adjustedBaseSuccess // Base success affects bribe effectiveness
       );
@@ -305,5 +316,28 @@ export class BrightSkyBribeEngine {
     );
     
     return { optimalBribeRatio: finalBribeRatio, inclusionProbability: finalInclusionProb };
+  }
+
+  /**
+   * Task 7.8: Bayesian update for bribe elasticity based on execution feedback.
+   * This closes the feedback loop between trade outcomes and bidding costs.
+   */
+  static updateBayesianElasticity(bribeRatio: number, success: boolean) {
+    const params = sharedEngineState.auctionParams;
+    const mu = params.bribeElasticity;
+    const sigma = params.bribeElasticityUncertainty || 0.02;
+
+    // Simple Bayesian online update for the mean effectiveness of our bribes
+    // Signal: did the bribe help us win?
+    const learningRate = 0.05;
+    const signal = success ? 1.0 : -0.25; // Success is a clearer signal than failure
+    
+    const delta = learningRate * bribeRatio * signal;
+    params.bribeElasticity = Math.max(0.01, Math.min(0.25, mu + delta));
+    
+    // Bayesian decrease of uncertainty (simulated precision update)
+    params.bribeElasticityUncertainty = Math.max(0.005, sigma * 0.995);
+    
+    console.log(`[BSS-28] Bayesian Elasticity Update: mu=${params.bribeElasticity.toFixed(4)}, sigma=${params.bribeElasticityUncertainty.toFixed(4)}`);
   }
 }

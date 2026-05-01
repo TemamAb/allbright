@@ -51,7 +51,6 @@ export default function Trades() {
               ) : trades.map((trade: any) => (
                 <tr key={trade.id} className="hover:bg-zinc-900/30 transition-colors group">
                   <td className="px-6 py-3 text-xs font-mono text-zinc-400">
-                    {new Date(trade.timestamp).toLocaleTimeString([], { hour12: false })}
                     {trade.timestamp ? format(new Date(trade.timestamp), "HH:mm:ss") : "--:--:--"}
                   </td>
                   <td className="px-6 py-3">

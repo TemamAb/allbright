@@ -7,6 +7,7 @@ import { promisify } from "util";
 import { sharedEngineState } from "./engineState";
 import { gateKeeper } from "./gateKeeper";
 import { comprehensiveDeploymentCheck } from "./deploy_gatekeeper";
+import { BrightSkyBribeEngine } from "./bribeEngine";
 import * as net from "net";
 import * as crypto from "crypto";
 import type { AtomicU64, i64, Mutex, VecDeque } from "../lib/types";
@@ -52,6 +53,11 @@ const BENCHMARK_TARGETS: Record<string, Record<string, number>> = {
   "System Health": {
     uptime: 100.0,
     cycle_accuracy: 99.8
+  },
+  "Bribe-Optimization": {
+    bayesian_sigma: 0.01,
+    market_intensity: 1.0,
+    gas_utilization: 0.8
   }
 };
 
@@ -118,10 +124,31 @@ export interface WatchtowerStats {
 
 export class AlphaCopilot {
   private reinforcement_meta_learner = {
+    episodes_completed: 0,
+    success_ratio_ema: 0.95, // Target win rate baseline
+    profit_momentum: 0,
+    adversarial_intensity: 0,
+    last_update: Date.now(),
     lock: () => Promise.resolve({
-      episodes_completed: 0,
-      observe_trade: () => {},
-    })
+      episodes_completed: this.reinforcement_meta_learner.episodes_completed,
+      observe_trade: (copilot: AlphaCopilot, profit: number, success: boolean, latency: number) => {
+        const meta = this.reinforcement_meta_learner;
+        meta.episodes_completed++;
+        const alpha = 0.1; // Smoothing factor for EMA
+        meta.success_ratio_ema = (meta.success_ratio_ema * (1 - alpha)) + (alpha * (success ? 1 : 0));
+        
+        // Track profit trend (momentum) and detect adversarial latency spikes
+        meta.profit_momentum = (meta.profit_momentum * 0.95) + (profit * 0.05);
+        if (latency > 500) meta.adversarial_intensity++;
+        sharedEngineState.learningEpisodes = meta.episodes_completed;
+        
+        // BSS-28: Bayesian Bribe Tuning Feedback Loop
+        const lastBribeRatio = sharedEngineState.bribeRatioBps / 10000;
+        BrightSkyBribeEngine.updateBayesianElasticity(lastBribeRatio, success);
+        
+        meta.last_update = Date.now();
+      },
+    }),
   };
 
   private kahanSum = new KahanSumImpl();
@@ -234,17 +261,19 @@ export class AlphaCopilot {
        "Performance": 0.15,
        "Efficiency": 0.10,
        "System Health": 0.10,
-       "Auto-Optimization": 0.10
+       "Auto-Optimization": 0.10,
+       "Bribe-Optimization": 0.10
      };
 
-     // Updated to align with the 6 weighted domains of the 36-KPI matrix
+     // Updated to align with the 7 weighted domains of the 36-KPI matrix
      const domains = [
        "Profitability", 
        "Risk", 
        "Performance", 
        "Efficiency", 
        "System Health", 
-       "Auto-Optimization"
+       "Auto-Optimization",
+       "Bribe-Optimization"
      ];
      for (const cat of domains) {
        try {
@@ -259,6 +288,15 @@ export class AlphaCopilot {
        } catch (e: any) {
          results.push({ category: cat, tuned: false, error: e.message });
        }
+     }
+
+     // ELITE ENHANCEMENT: Exponential Criticality Penalty
+     // If any domain is CRITICAL (score < 0.7), apply a global GES multiplier penalty.
+     const criticalDomains = results.filter(r => r.tuned && r.confidence < 0.7).length;
+     if (criticalDomains > 0) {
+       const penalty = Math.pow(0.85, criticalDomains); // 15% reduction per critical domain
+       aggregatedGES *= penalty;
+       logger.warn({ criticalDomains, penalty: (1 - penalty) * 100 }, "[ALPHA-COPILOT] GES penalized due to critical domain failures");
      }
 
      // Update shared state which is monitored by the Deployment Gatekeeper
@@ -290,7 +328,14 @@ export class AlphaCopilot {
        const actual = (tunedKpis as any)[key];
        if (actual !== undefined && typeof actual === 'number') {
         // Higher is better for most, except latency/risk
-        const isInverse = key.includes('latency') || key.includes('risk') || key.includes('drawdown');
+        const isInverse = 
+          key.includes('latency') || 
+          key.includes('risk') || 
+          key.includes('drawdown') || 
+          key.includes('sigma') ||
+          key.includes('intensity') || 
+          key.includes('utilization');
+
         const ratio = isInverse ? (target / actual) : (actual / target);
         scoreAccumulator += Math.min(1.0, Math.max(0, ratio));
         kpiCount++;
@@ -298,6 +343,10 @@ export class AlphaCopilot {
     }
 
     const confidence = kpiCount > 0 ? scoreAccumulator / kpiCount : 0.85; 
+
+    // Sink critical metrics to shared state for GateKeeper visibility
+    if (tunedKpis.market_intensity) sharedEngineState.marketIntensityIndex = tunedKpis.market_intensity;
+    if (tunedKpis.gas_utilization) sharedEngineState.blockUtilizationPct = tunedKpis.gas_utilization;
 
     return {
       specialist: specialist.name,
@@ -317,10 +366,17 @@ export class AlphaCopilot {
   /**
    * BSS-28: Observe outcome of a single trade
    */
-  observeTrade(profitEth: number, success: boolean) {
+  observeTrade(profitEth: number, success: boolean, latencyMs: number = 0) {
     const rl = this.reinforcement_meta_learner.lock();
     rl.then(async (r: any) => {
-      r.observe_trade(this, profitEth, success);
+      r.observe_trade(this, profitEth, success, latencyMs);
+      broadcastCopilotEvent("TRADE_OBSERVED", { 
+        profitEth, 
+        success, 
+        episodes: this.reinforcement_meta_learner.episodes_completed,
+        ema: parseFloat(this.reinforcement_meta_learner.success_ratio_ema.toFixed(4)),
+        momentum: parseFloat(this.reinforcement_meta_learner.profit_momentum.toFixed(6))
+      });
     });
   }
 

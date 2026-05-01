@@ -6,15 +6,12 @@ import { ThemeProvider } from "next-themes";
 import NotFound from "@/components/NotFound";
 import Dashboard from "@/components/Dashboard";
 import StrategiesPage from "@/components/StrategiesPage";
-import Telemetry from "@/components/Telemetry";
 import Stream from "@/components/Stream";
 import Trades from "@/components/Trades";
-import Vault from "@/components/Vault"; // This is the updated Vault logic
 import Copilot from "@/components/Copilot";
-import SetupPage from "@/components/SetupPage";
-import AuditPage from "@/components/AuditPage";
 import Layout from "@/components/Layout";
-import { GateKeeperDashboard } from "@/components/GateKeeperDashboard";
+import Telemetry from "@/components/Telemetry"; // Ensure Telemetry is imported
+import Vault from "@/components/WalletPage"; // Vault is now WalletPage
 import { WalletProvider } from "@/context/WalletContext";
 import { StrategiesProvider } from "@/context/StrategiesContext";
 import { setBaseUrl } from "@/lib/api";
@@ -103,11 +100,11 @@ export default function App() {
           <Route path="/" component={Dashboard} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/strategies" component={StrategiesPage} />
-          <Route path="/stream" component={Stream} />
-          <Route path="/trades" component={Trades} />
-          <Route path="/vault" component={Vault} />
-          <Route path="/copilot" component={Copilot} />
-          <Route path="/telemetry" component={Telemetry} />
+          <Route path="/stream" component={Stream} /> {/* Stream page */}
+          <Route path="/trades" component={Trades} /> {/* Trade History page */}
+          <Route path="/vault" component={Vault} /> {/* Vault page (WalletPage) */}
+          <Route path="/copilot" component={Copilot} /> {/* Alpha-Copilot page */}
+          <Route path="/telemetry" component={Telemetry} /> {/* Telemetry page */}
           <Route component={NotFound} />
         </Switch>
       </Layout>

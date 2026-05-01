@@ -12,7 +12,7 @@ const navItems = [
   { path: "/trades", label: "Trade History", icon: BarChart2 },
   { path: "/vault", label: "Vault", icon: Wallet },
   { path: "/copilot", label: "Alpha-Copilot", icon: Brain },
-];
+]; // Removed Audit Report and Settings
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();

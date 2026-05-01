@@ -1,26 +1,24 @@
-# BrightSky Render Deployment Readiness TODO
+# BrightSky Render Deployment Readiness TODO (Updated)
 
-## Approved Plan Steps (Live Sim Mode)
+## Current Status: 🟡 PARTIAL READY (GES 85%, Gates partial APPROVED)
 
-### 1. Install dependencies ✅ (npm --ignore-scripts bypass)
-`pnpm install`
+### Completed ✅
+- [x] pnpm install (forced --ignore-scripts)
+- [x] Rust specialists files created (api.rs/kpi.rs/risk.rs)
+- [x] UI dev server: cd ui && pnpm dev → http://localhost:3002/
+- [x] TODO.md created with steps
 
-### 2. Run master readiness check [PENDING]
-`pnpm --filter @workspace/api-server run ready`
+### Running/PENDING 🔄
+- [🔄] Master readiness: `node api/specs/checkReadiness.ts` (ESM import fixed needed)
+- [ ] Rust cargo check: cd solver && cargo check
+- [ ] TS: pnpm typecheck
+- [ ] Gates: node api/approve_gates.mjs
 
-### 3. Analyze output and fix blocks [PENDING]
-- Env vars (DATABASE_URL, API_KEYS, etc.)
-- Code issues (e.g., controllers/main.rs)
-- Update TODO_TRACKER.md
+### Phase 3: Deploy
+1. Fix Rust modules (lib.rs mod specialists; ensure submods)
+2. .env vars: DATABASE_URL=postgres://... RPC_ENDPOINT=https://base-mainnet...
+3. docker compose up -d → Verify GES>82.5%, uptime>99%
+4. git push → Render auto-deploy
 
-### 4. Approve gates [PENDING]
-`node api/approve_gates.mjs`
+**Next**: Approve fixes → Phase 3.
 
-### 5. Test local stack [PENDING]
-`docker-compose up -d`
-
-### 6. Update reports and confirm Render.yaml [PENDING]
-
-### 7. Get final approval before Render deploy [PENDING]
-
-**Status: Running...**

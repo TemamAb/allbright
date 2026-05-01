@@ -3399,6 +3399,148 @@
             "skippedScanCycles": 0
           }
         }
+      },
+      {
+        "gateId": "CODE_QUALITY",
+        "gateName": "Code Quality Gate",
+        "status": "PENDING",
+        "approved": false,
+        "requestedBy": "SYSTEM_INTERNAL",
+        "approvedBy": "",
+        "requestedAt": "2026-05-01T12:41:49.680Z",
+        "approvedAt": null,
+        "approvalReason": "",
+        "riskAssessment": "CRITICAL",
+        "automatedChecks": [
+          {
+            "checkId": "compilation",
+            "checkName": "Rust Compilation",
+            "status": "FAIL",
+            "details": "Rust compilation failed: Command failed: cargo check --quiet\nerror[E0432]: unresolved import `brightsky_solver::specialists::risk::RiskSpecialist`\n --> solver\\src\\main.rs:1:97\n  |\n1 | use brightsky_solver::specialists::{SpecialistRegistry, profitability::ProfitabilitySpecialist, risk::RiskSpecialist};\n  |                                                                                                 ^^^^^^^^^^^^^^^^^^^^ no `RiskSpecialist` in `specialists::risk`\n\nwarning: unused import: `SubsystemSpecialist`\n --> solver\\src\\main.rs:3:41\n  |\n3 | use brightsky_solver::{WatchtowerStats, SubsystemSpecialist, GES_WEIGHTS};\n  |                                         ^^^^^^^^^^^^^^^^^^^\n  |\n  = note: `#[warn(unused_imports)]` on by default\n\nFor more information about this error, try `rustc --explain E0432`.\nerror: could not compile `brightsky-solver` (bin \"brightsky\") due to 1 previous error; 1 warning emitted\n",
+            "severity": "CRITICAL"
+          },
+          {
+            "checkId": "typescript",
+            "checkName": "TypeScript Compilation",
+            "status": "FAIL",
+            "details": "TypeScript compilation failed: Command failed: pnpm typecheck\n",
+            "severity": "HIGH"
+          },
+          {
+            "checkId": "file_integrity",
+            "checkName": "Source File Integrity (Rust Included)",
+            "status": "FAIL",
+            "details": "Missing: none. Empty: solver/src/specialists/specialists.rs, ui/src/components/Vault.tsx. Rust solver/src/main.rs: OK",
+            "severity": "CRITICAL"
+          },
+          {
+            "checkId": "linting",
+            "checkName": "Code Linting",
+            "status": "PASS",
+            "details": "Lint script is configured",
+            "severity": "MEDIUM"
+          },
+          {
+            "checkId": "security_audit",
+            "checkName": "Security Audit",
+            "status": "PASS",
+            "details": "Auth middleware and auth-header redaction are both present",
+            "severity": "CRITICAL"
+          },
+          {
+            "checkId": "test_coverage",
+            "checkName": "Test Coverage",
+            "status": "PASS",
+            "details": "Test entry points detected in repository",
+            "severity": "HIGH"
+          }
+        ],
+        "requiresHumanApproval": true,
+        "context": {
+          "source": "master_deployment_readiness_analysis",
+          "gateId": "CODE_QUALITY",
+          "requestedAt": "2026-05-01T12:41:35.620Z",
+          "loadTestPassed": false,
+          "stressTestPassed": false,
+          "engineSnapshot": {
+            "running": true,
+            "avgLatencyMs": 9,
+            "currentDailyProfit": 23,
+            "riskIndex": 0.02,
+            "skippedScanCycles": 0
+          }
+        }
+      },
+      {
+        "gateId": "CODE_QUALITY",
+        "gateName": "Code Quality Gate",
+        "status": "PENDING",
+        "approved": false,
+        "requestedBy": "SYSTEM_INTERNAL",
+        "approvedBy": "",
+        "requestedAt": "2026-05-01T12:47:33.215Z",
+        "approvedAt": null,
+        "approvalReason": "",
+        "riskAssessment": "CRITICAL",
+        "automatedChecks": [
+          {
+            "checkId": "compilation",
+            "checkName": "Rust Compilation",
+            "status": "FAIL",
+            "details": "Rust compilation failed: Command failed: cargo check --quiet\nerror[E0761]: file for module `specialists` found at both \"solver\\src\\specialists.rs\" and \"solver\\src\\specialists\\mod.rs\"\n --> solver\\src\\lib.rs:2:1\n  |\n2 | pub mod specialists;\n  | ^^^^^^^^^^^^^^^^^^^^\n  |\n  = help: delete or rename one of them to remove the ambiguity\n\nFor more information about this error, try `rustc --explain E0761`.\nerror: could not compile `brightsky-solver` (lib) due to 1 previous error\n",
+            "severity": "CRITICAL"
+          },
+          {
+            "checkId": "typescript",
+            "checkName": "TypeScript Compilation",
+            "status": "FAIL",
+            "details": "TypeScript compilation failed: Command failed: pnpm typecheck\n",
+            "severity": "HIGH"
+          },
+          {
+            "checkId": "file_integrity",
+            "checkName": "Source File Integrity (Rust Included)",
+            "status": "FAIL",
+            "details": "Missing: none. Empty: solver/src/specialists.rs, solver/src/specialists/specialists.rs, ui/src/components/Vault.tsx. Rust solver/src/main.rs: OK",
+            "severity": "CRITICAL"
+          },
+          {
+            "checkId": "linting",
+            "checkName": "Code Linting",
+            "status": "PASS",
+            "details": "Lint script is configured",
+            "severity": "MEDIUM"
+          },
+          {
+            "checkId": "security_audit",
+            "checkName": "Security Audit",
+            "status": "PASS",
+            "details": "Auth middleware and auth-header redaction are both present",
+            "severity": "CRITICAL"
+          },
+          {
+            "checkId": "test_coverage",
+            "checkName": "Test Coverage",
+            "status": "PASS",
+            "details": "Test entry points detected in repository",
+            "severity": "HIGH"
+          }
+        ],
+        "requiresHumanApproval": true,
+        "context": {
+          "source": "master_deployment_readiness_analysis",
+          "gateId": "CODE_QUALITY",
+          "requestedAt": "2026-05-01T12:47:21.845Z",
+          "loadTestPassed": false,
+          "stressTestPassed": false,
+          "engineSnapshot": {
+            "running": true,
+            "avgLatencyMs": 9,
+            "currentDailyProfit": 23,
+            "riskIndex": 0.02,
+            "skippedScanCycles": 0
+          }
+        }
       }
     ],
     "INFRASTRUCTURE": [
@@ -6464,6 +6606,134 @@
             "skippedScanCycles": 0
           }
         }
+      },
+      {
+        "gateId": "INFRASTRUCTURE",
+        "gateName": "Infrastructure Readiness Gate",
+        "status": "PENDING",
+        "approved": false,
+        "requestedBy": "SYSTEM_INTERNAL",
+        "approvedBy": "",
+        "requestedAt": "2026-05-01T12:41:36.325Z",
+        "approvedAt": null,
+        "approvalReason": "",
+        "riskAssessment": "CRITICAL",
+        "automatedChecks": [
+          {
+            "checkId": "environment_config",
+            "checkName": "Environment Configuration",
+            "status": "FAIL",
+            "details": "Missing: RPC_ENDPOINT, PIMLICO_API_KEY",
+            "severity": "CRITICAL"
+          },
+          {
+            "checkId": "database_connectivity",
+            "checkName": "Database Connectivity",
+            "status": "FAIL",
+            "details": "Cannot connect to database at localhost:5432",
+            "severity": "CRITICAL"
+          },
+          {
+            "checkId": "networking",
+            "checkName": "Network Configuration",
+            "status": "PASS",
+            "details": "RPC endpoint reachable: https://base-rpc.publicnode.com",
+            "severity": "HIGH"
+          },
+          {
+            "checkId": "resource_limits",
+            "checkName": "Resource Limits",
+            "status": "PASS",
+            "details": "No obvious resource backpressure from scanner state",
+            "severity": "MEDIUM"
+          },
+          {
+            "checkId": "backup_systems",
+            "checkName": "Backup Systems",
+            "status": "WARN",
+            "details": "Backup configuration not explicitly declared via BACKUP_CONFIGURED=true",
+            "severity": "HIGH"
+          }
+        ],
+        "requiresHumanApproval": true,
+        "context": {
+          "source": "master_deployment_readiness_analysis",
+          "gateId": "INFRASTRUCTURE",
+          "requestedAt": "2026-05-01T12:41:35.700Z",
+          "loadTestPassed": false,
+          "stressTestPassed": false,
+          "engineSnapshot": {
+            "running": true,
+            "avgLatencyMs": 9,
+            "currentDailyProfit": 23,
+            "riskIndex": 0.02,
+            "skippedScanCycles": 0
+          }
+        }
+      },
+      {
+        "gateId": "INFRASTRUCTURE",
+        "gateName": "Infrastructure Readiness Gate",
+        "status": "PENDING",
+        "approved": false,
+        "requestedBy": "SYSTEM_INTERNAL",
+        "approvedBy": "",
+        "requestedAt": "2026-05-01T12:47:22.397Z",
+        "approvedAt": null,
+        "approvalReason": "",
+        "riskAssessment": "CRITICAL",
+        "automatedChecks": [
+          {
+            "checkId": "environment_config",
+            "checkName": "Environment Configuration",
+            "status": "FAIL",
+            "details": "Missing: RPC_ENDPOINT, PIMLICO_API_KEY",
+            "severity": "CRITICAL"
+          },
+          {
+            "checkId": "database_connectivity",
+            "checkName": "Database Connectivity",
+            "status": "FAIL",
+            "details": "Cannot connect to database at localhost:5432",
+            "severity": "CRITICAL"
+          },
+          {
+            "checkId": "networking",
+            "checkName": "Network Configuration",
+            "status": "PASS",
+            "details": "RPC endpoint reachable: https://base-rpc.publicnode.com",
+            "severity": "HIGH"
+          },
+          {
+            "checkId": "resource_limits",
+            "checkName": "Resource Limits",
+            "status": "PASS",
+            "details": "No obvious resource backpressure from scanner state",
+            "severity": "MEDIUM"
+          },
+          {
+            "checkId": "backup_systems",
+            "checkName": "Backup Systems",
+            "status": "WARN",
+            "details": "Backup configuration not explicitly declared via BACKUP_CONFIGURED=true",
+            "severity": "HIGH"
+          }
+        ],
+        "requiresHumanApproval": true,
+        "context": {
+          "source": "master_deployment_readiness_analysis",
+          "gateId": "INFRASTRUCTURE",
+          "requestedAt": "2026-05-01T12:47:21.903Z",
+          "loadTestPassed": false,
+          "stressTestPassed": false,
+          "engineSnapshot": {
+            "running": true,
+            "avgLatencyMs": 9,
+            "currentDailyProfit": 23,
+            "riskIndex": 0.02,
+            "skippedScanCycles": 0
+          }
+        }
       }
     ],
     "SECURITY": [
@@ -9519,6 +9789,134 @@
           "source": "master_deployment_readiness_analysis",
           "gateId": "SECURITY",
           "requestedAt": "2026-04-30T22:45:38.208Z",
+          "loadTestPassed": false,
+          "stressTestPassed": false,
+          "engineSnapshot": {
+            "running": true,
+            "avgLatencyMs": 9,
+            "currentDailyProfit": 23,
+            "riskIndex": 0.02,
+            "skippedScanCycles": 0
+          }
+        }
+      },
+      {
+        "gateId": "SECURITY",
+        "gateName": "Security Approval Gate",
+        "status": "PENDING",
+        "approved": false,
+        "requestedBy": "SYSTEM_INTERNAL",
+        "approvedBy": "",
+        "requestedAt": "2026-05-01T12:41:35.705Z",
+        "approvedAt": null,
+        "approvalReason": "",
+        "riskAssessment": "CRITICAL",
+        "automatedChecks": [
+          {
+            "checkId": "authentication",
+            "checkName": "Authentication Systems",
+            "status": "FAIL",
+            "details": "API authentication not configured",
+            "severity": "CRITICAL"
+          },
+          {
+            "checkId": "authorization",
+            "checkName": "Authorization Controls",
+            "status": "PASS",
+            "details": "Authenticated middleware is applied to API routes",
+            "severity": "CRITICAL"
+          },
+          {
+            "checkId": "encryption",
+            "checkName": "Data Encryption",
+            "status": "WARN",
+            "details": "RPC endpoint does not appear to use secure transport",
+            "severity": "HIGH"
+          },
+          {
+            "checkId": "audit_logging",
+            "checkName": "Audit Logging",
+            "status": "PASS",
+            "details": "Sensitive authorization headers are redacted in logs",
+            "severity": "HIGH"
+          },
+          {
+            "checkId": "vulnerability_scan",
+            "checkName": "Vulnerability Scanning",
+            "status": "FAIL",
+            "details": "Dependency lockfile missing; reproducible security scan is not possible",
+            "severity": "CRITICAL"
+          }
+        ],
+        "requiresHumanApproval": true,
+        "context": {
+          "source": "master_deployment_readiness_analysis",
+          "gateId": "SECURITY",
+          "requestedAt": "2026-05-01T12:41:35.701Z",
+          "loadTestPassed": false,
+          "stressTestPassed": false,
+          "engineSnapshot": {
+            "running": true,
+            "avgLatencyMs": 9,
+            "currentDailyProfit": 23,
+            "riskIndex": 0.02,
+            "skippedScanCycles": 0
+          }
+        }
+      },
+      {
+        "gateId": "SECURITY",
+        "gateName": "Security Approval Gate",
+        "status": "PENDING",
+        "approved": false,
+        "requestedBy": "SYSTEM_INTERNAL",
+        "approvedBy": "",
+        "requestedAt": "2026-05-01T12:47:21.908Z",
+        "approvedAt": null,
+        "approvalReason": "",
+        "riskAssessment": "CRITICAL",
+        "automatedChecks": [
+          {
+            "checkId": "authentication",
+            "checkName": "Authentication Systems",
+            "status": "FAIL",
+            "details": "API authentication not configured",
+            "severity": "CRITICAL"
+          },
+          {
+            "checkId": "authorization",
+            "checkName": "Authorization Controls",
+            "status": "PASS",
+            "details": "Authenticated middleware is applied to API routes",
+            "severity": "CRITICAL"
+          },
+          {
+            "checkId": "encryption",
+            "checkName": "Data Encryption",
+            "status": "WARN",
+            "details": "RPC endpoint does not appear to use secure transport",
+            "severity": "HIGH"
+          },
+          {
+            "checkId": "audit_logging",
+            "checkName": "Audit Logging",
+            "status": "PASS",
+            "details": "Sensitive authorization headers are redacted in logs",
+            "severity": "HIGH"
+          },
+          {
+            "checkId": "vulnerability_scan",
+            "checkName": "Vulnerability Scanning",
+            "status": "FAIL",
+            "details": "Dependency lockfile missing; reproducible security scan is not possible",
+            "severity": "CRITICAL"
+          }
+        ],
+        "requiresHumanApproval": true,
+        "context": {
+          "source": "master_deployment_readiness_analysis",
+          "gateId": "SECURITY",
+          "requestedAt": "2026-05-01T12:47:21.904Z",
           "loadTestPassed": false,
           "stressTestPassed": false,
           "engineSnapshot": {
@@ -12868,6 +13266,148 @@
             "skippedScanCycles": 0
           }
         }
+      },
+      {
+        "gateId": "PERFORMANCE",
+        "gateName": "Performance Benchmark Gate",
+        "status": "PENDING",
+        "approved": false,
+        "requestedBy": "SYSTEM_INTERNAL",
+        "approvedBy": "",
+        "requestedAt": "2026-05-01T12:41:35.733Z",
+        "approvedAt": null,
+        "approvalReason": "",
+        "riskAssessment": "CRITICAL",
+        "automatedChecks": [
+          {
+            "checkId": "kpi_validation",
+            "checkName": "KPI Target Validation",
+            "status": "PASS",
+            "details": "Current profit: 23 bps, Target: 15 bps",
+            "severity": "HIGH"
+          },
+          {
+            "checkId": "global_efficiency_score",
+            "checkName": "Global Efficiency Score (GES)",
+            "status": "FAIL",
+            "details": "Current GES: 55.00%, Required: 82.50%",
+            "severity": "CRITICAL"
+          },
+          {
+            "checkId": "benchmark_tests",
+            "checkName": "Performance Benchmarks",
+            "status": "PASS",
+            "details": "Current latency: 9ms, Target: 50ms",
+            "severity": "HIGH"
+          },
+          {
+            "checkId": "scalability_test",
+            "checkName": "Scalability Testing",
+            "status": "WARN",
+            "details": "Scalability concerns: throughput 0 msg/s ",
+            "severity": "MEDIUM"
+          },
+          {
+            "checkId": "load_testing",
+            "checkName": "Load Testing",
+            "status": "WARN",
+            "details": "No explicit load test — ensure throughput >800 msg/s, latency <100ms",
+            "severity": "HIGH"
+          },
+          {
+            "checkId": "stress_testing",
+            "checkName": "Stress Testing",
+            "status": "WARN",
+            "details": "Circuit breaker triggered or success rate degraded",
+            "severity": "MEDIUM"
+          }
+        ],
+        "requiresHumanApproval": true,
+        "context": {
+          "source": "master_deployment_readiness_analysis",
+          "gateId": "PERFORMANCE",
+          "requestedAt": "2026-05-01T12:41:35.701Z",
+          "loadTestPassed": false,
+          "stressTestPassed": false,
+          "engineSnapshot": {
+            "running": true,
+            "avgLatencyMs": 9,
+            "currentDailyProfit": 23,
+            "riskIndex": 0.02,
+            "skippedScanCycles": 0
+          }
+        }
+      },
+      {
+        "gateId": "PERFORMANCE",
+        "gateName": "Performance Benchmark Gate",
+        "status": "PENDING",
+        "approved": false,
+        "requestedBy": "SYSTEM_INTERNAL",
+        "approvedBy": "",
+        "requestedAt": "2026-05-01T12:47:21.933Z",
+        "approvedAt": null,
+        "approvalReason": "",
+        "riskAssessment": "CRITICAL",
+        "automatedChecks": [
+          {
+            "checkId": "kpi_validation",
+            "checkName": "KPI Target Validation",
+            "status": "PASS",
+            "details": "Current profit: 23 bps, Target: 15 bps",
+            "severity": "HIGH"
+          },
+          {
+            "checkId": "global_efficiency_score",
+            "checkName": "Global Efficiency Score (GES)",
+            "status": "FAIL",
+            "details": "Current GES: 55.00%, Required: 82.50%",
+            "severity": "CRITICAL"
+          },
+          {
+            "checkId": "benchmark_tests",
+            "checkName": "Performance Benchmarks",
+            "status": "PASS",
+            "details": "Current latency: 9ms, Target: 50ms",
+            "severity": "HIGH"
+          },
+          {
+            "checkId": "scalability_test",
+            "checkName": "Scalability Testing",
+            "status": "WARN",
+            "details": "Scalability concerns: throughput 0 msg/s ",
+            "severity": "MEDIUM"
+          },
+          {
+            "checkId": "load_testing",
+            "checkName": "Load Testing",
+            "status": "WARN",
+            "details": "No explicit load test — ensure throughput >800 msg/s, latency <100ms",
+            "severity": "HIGH"
+          },
+          {
+            "checkId": "stress_testing",
+            "checkName": "Stress Testing",
+            "status": "WARN",
+            "details": "Circuit breaker triggered or success rate degraded",
+            "severity": "MEDIUM"
+          }
+        ],
+        "requiresHumanApproval": true,
+        "context": {
+          "source": "master_deployment_readiness_analysis",
+          "gateId": "PERFORMANCE",
+          "requestedAt": "2026-05-01T12:47:21.905Z",
+          "loadTestPassed": false,
+          "stressTestPassed": false,
+          "engineSnapshot": {
+            "running": true,
+            "avgLatencyMs": 9,
+            "currentDailyProfit": 23,
+            "riskIndex": 0.02,
+            "skippedScanCycles": 0
+          }
+        }
       }
     ],
     "BUSINESS": [
@@ -15923,6 +16463,134 @@
           "source": "master_deployment_readiness_analysis",
           "gateId": "BUSINESS",
           "requestedAt": "2026-04-30T22:45:38.208Z",
+          "loadTestPassed": false,
+          "stressTestPassed": false,
+          "engineSnapshot": {
+            "running": true,
+            "avgLatencyMs": 9,
+            "currentDailyProfit": 23,
+            "riskIndex": 0.02,
+            "skippedScanCycles": 0
+          }
+        }
+      },
+      {
+        "gateId": "BUSINESS",
+        "gateName": "Business Approval Gate",
+        "status": "PENDING",
+        "approved": false,
+        "requestedBy": "SYSTEM_INTERNAL",
+        "approvedBy": "",
+        "requestedAt": "2026-05-01T12:41:35.718Z",
+        "approvedAt": null,
+        "approvalReason": "",
+        "riskAssessment": "MEDIUM",
+        "automatedChecks": [
+          {
+            "checkId": "roi_validation",
+            "checkName": "ROI Validation",
+            "status": "PASS",
+            "details": "Profit: 23, Drawdown: 0",
+            "severity": "HIGH"
+          },
+          {
+            "checkId": "risk_assessment",
+            "checkName": "Risk Assessment",
+            "status": "PASS",
+            "details": "Current risk index: 0.02",
+            "severity": "CRITICAL"
+          },
+          {
+            "checkId": "compliance_review",
+            "checkName": "Compliance Review",
+            "status": "WARN",
+            "details": "Compliance approval not declared via COMPLIANCE_APPROVED=true",
+            "severity": "CRITICAL"
+          },
+          {
+            "checkId": "stakeholder_approval",
+            "checkName": "Stakeholder Approval",
+            "status": "WARN",
+            "details": "Stakeholder approval not declared via STAKEHOLDER_APPROVED=true",
+            "severity": "CRITICAL"
+          },
+          {
+            "checkId": "go_live_decision",
+            "checkName": "Go-Live Decision",
+            "status": "WARN",
+            "details": "Go-live approval not declared via GO_LIVE_APPROVED=true",
+            "severity": "CRITICAL"
+          }
+        ],
+        "requiresHumanApproval": true,
+        "context": {
+          "source": "master_deployment_readiness_analysis",
+          "gateId": "BUSINESS",
+          "requestedAt": "2026-05-01T12:41:35.701Z",
+          "loadTestPassed": false,
+          "stressTestPassed": false,
+          "engineSnapshot": {
+            "running": true,
+            "avgLatencyMs": 9,
+            "currentDailyProfit": 23,
+            "riskIndex": 0.02,
+            "skippedScanCycles": 0
+          }
+        }
+      },
+      {
+        "gateId": "BUSINESS",
+        "gateName": "Business Approval Gate",
+        "status": "PENDING",
+        "approved": false,
+        "requestedBy": "SYSTEM_INTERNAL",
+        "approvedBy": "",
+        "requestedAt": "2026-05-01T12:47:21.918Z",
+        "approvedAt": null,
+        "approvalReason": "",
+        "riskAssessment": "MEDIUM",
+        "automatedChecks": [
+          {
+            "checkId": "roi_validation",
+            "checkName": "ROI Validation",
+            "status": "PASS",
+            "details": "Profit: 23, Drawdown: 0",
+            "severity": "HIGH"
+          },
+          {
+            "checkId": "risk_assessment",
+            "checkName": "Risk Assessment",
+            "status": "PASS",
+            "details": "Current risk index: 0.02",
+            "severity": "CRITICAL"
+          },
+          {
+            "checkId": "compliance_review",
+            "checkName": "Compliance Review",
+            "status": "WARN",
+            "details": "Compliance approval not declared via COMPLIANCE_APPROVED=true",
+            "severity": "CRITICAL"
+          },
+          {
+            "checkId": "stakeholder_approval",
+            "checkName": "Stakeholder Approval",
+            "status": "WARN",
+            "details": "Stakeholder approval not declared via STAKEHOLDER_APPROVED=true",
+            "severity": "CRITICAL"
+          },
+          {
+            "checkId": "go_live_decision",
+            "checkName": "Go-Live Decision",
+            "status": "WARN",
+            "details": "Go-live approval not declared via GO_LIVE_APPROVED=true",
+            "severity": "CRITICAL"
+          }
+        ],
+        "requiresHumanApproval": true,
+        "context": {
+          "source": "master_deployment_readiness_analysis",
+          "gateId": "BUSINESS",
+          "requestedAt": "2026-05-01T12:47:21.905Z",
           "loadTestPassed": false,
           "stressTestPassed": false,
           "engineSnapshot": {

@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import { useTelemetry } from "@/hooks/useTelemetry";
-import { THIRTY_SIX_KPIS } from "@/constants/kpi";
-import type { KPI } from "@/types/kpi";
-import { ChevronDown, ChevronUp, Zap, TrendingUp, Shield, Cpu, Activity } from "lucide-react";
+import { TrendingUp, Shield } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
 
 export default function Dashboard() {
@@ -17,8 +15,8 @@ export default function Dashboard() {
           <h2 className="text-3xl font-black uppercase tracking-tighter text-white">Global Efficiency</h2>
           <p className="text-[10px] text-zinc-500 font-bold mt-1 uppercase tracking-[0.3em]">Last Heartbeat: {new Date().toLocaleTimeString()}</p>
         </div>
-        <div className="text-7xl font-black text-emerald-500 tabular-nums tracking-tighter">
-          {(kpis.ges || 85.4).toFixed(1)}%
+        <div className="text-7xl font-black text-emerald-500 tabular-nums tracking-tighter"> {/* Placeholder for real GES */}
+          {(kpis.ges || 0).toFixed(1)}%
         </div>
       </div>
 
@@ -65,39 +63,6 @@ export default function Dashboard() {
             <div className="text-3xl font-black text-white">Nominal</div>
             <div className="text-[10px] text-zinc-600 mt-2 font-bold uppercase">BSS-31 Guard Armed</div>
           </div>
-        </div>
-      </div>
-
-      {/* 36 KPI Table View */}
-      <div className="bg-black border border-zinc-800 rounded-xl overflow-hidden shadow-2xl">
-        <div className="px-6 py-4 border-b border-zinc-800 bg-[#1a1c20]/50">
-          <h2 className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em]">Operational Telemetry (36-KPI)</h2>
-        </div>
-        <div className="p-0 overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead className="bg-[#000000]">
-              <tr className="text-[10px] text-zinc-500 uppercase tracking-widest border-b border-zinc-800">
-                <th className="px-6 py-4 font-medium">Metric Category</th>
-                <th className="px-6 py-4 font-medium text-center">Observed</th>
-                <th className="px-6 py-4 font-medium text-center">Status</th>
-                <th className="px-6 py-4 font-medium text-right">Trend</th>
-              </tr>
-            </thead>
-            <tbody>
-              {THIRTY_SIX_KPIS.slice(0, 8).map((cat) => (
-                <tr key={cat.id} className="border-b border-zinc-900/50 hover:bg-zinc-900/30 transition-colors">
-                  <td className="px-6 py-4 text-xs font-bold text-zinc-200">{cat.label}</td>
-                  <td className="px-6 py-4 text-center font-mono text-xs text-cyan-400">92.4%</td>
-                  <td className="px-6 py-4 text-center">
-                    <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 text-[9px] font-black uppercase">Nominal</span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <ChevronUp size={12} className="inline text-emerald-500" />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </div>
     </div>

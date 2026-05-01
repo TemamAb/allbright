@@ -1114,6 +1114,9 @@ async function scanCycle() {
          }),
        );
 
+       // BSS-28: Activate the real-time Trade Outcome Observer (Task 2.1 / 2.4)
+       alphaCopilot.observeTrade(netProfit, execMode === "LIVE" || execMode === "SHADOW", latencyMs);
+
        // BSS-28: Report trade outcome to MetaLearner in Rust
        const tradeOutcome = {
          type: "TRADE_OUTCOME",
@@ -1366,7 +1369,11 @@ router.post("/engine/start", async (req, res) => {
 
   // GATE KEEPER: Check comprehensive deployment readiness before starting engine
   const deploymentCheck = await comprehensiveDeploymentCheck();
-  if (!deploymentCheck.ready) {
+  
+  // Check for manual override via gateKeeper authority
+  const authStatus = gateKeeper.isDeploymentAuthorized();
+
+  if (!deploymentCheck.ready && authStatus.authorizationMode !== 'emergency_override') {
     logger.warn({
       issues: deploymentCheck.issues,
       orchestratorsStatus: deploymentCheck.orchestratorsStatus

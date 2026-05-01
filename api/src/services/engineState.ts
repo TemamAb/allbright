@@ -43,6 +43,7 @@ export interface SharedEngineState {
   nextOptimizationCycle: number | null;
   totalWeightedScore: number;
   scannerActive: boolean;
+  learningEpisodes: number;
   auctionParams: any;
   liveCapable: boolean;
   ipcConnected: boolean;
@@ -95,6 +96,10 @@ export interface SharedEngineState {
   optDeltaImprovementPct: number;
   perfGapThroughputPct: number;
   walletEthBalance: number;
+  
+  // Market Intelligence Fields
+  marketIntensityIndex: number;
+  blockUtilizationPct: number;
 }
 
 // Configuration validation helper
@@ -173,6 +178,7 @@ winRate: 0.984,
     bribeElasticity: 0.05,
     competitiveFactor: 1.0,
     maxInclusionProb: 0.95,
+    bribeElasticityUncertainty: 0.02,
   },
   subsystemKpis: [],
   bottleneckReport: null,
@@ -180,6 +186,7 @@ winRate: 0.984,
   bribeRatioBps: 500,
   nextOptimizationCycle: null,
 totalWeightedScore: 850,
+  learningEpisodes: 0,
   scannerActive: false,
   pimlicoApiKey: process.env.PIMLICO_API_KEY || null,
   rpcEndpoint: process.env.RPC_ENDPOINT || null,
@@ -204,7 +211,15 @@ avgLatencyMs: 9,
   configLastValidated: null,
   configDriftDetected: false,
   configValid: true,
-
+  
+  // Elite Benchmarks (BSS-43 Targets)
+  domainScoreProfit: 850, // Minimum for Elite
+  domainScoreRisk: 900,
+  domainScorePerf: 825,
+  domainScoreEff: 880,
+  domainScoreHealth: 920,
+  domainScoreAutoOpt: 800,
+  
   // --- 36-KPI Extended Metrics ---
   avgProfitPerTrade: 0.045,
   slippageCaptureBps: 10,
@@ -233,6 +248,8 @@ avgLatencyMs: 9,
   optDeltaImprovementPct: 28,
   perfGapThroughputPct: 3,
   walletEthBalance: 55,
+  marketIntensityIndex: 1.0,
+  blockUtilizationPct: 0.8,
 };
 
 // Initialize configuration checksum

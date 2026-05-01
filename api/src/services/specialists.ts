@@ -1,4 +1,5 @@
 import { sharedEngineState } from './engineState';
+import { MempoolIntelligenceService } from './mempoolIntelligence';
 
 export interface Specialist {
   name: string;
@@ -72,6 +73,26 @@ export const specialists: Specialist[] = [
     }),
     status: async () => ({ status: 'ready', specialist: 'AutoOptimizationSpecialist' })
   },
+  {
+    name: 'BribeOptimizationSpecialist',
+    category: 'Bribe-Optimization',
+    tuneKpis: async () => {
+      const sigma = sharedEngineState.auctionParams?.bribeElasticityUncertainty || 0.02;
+      const mempool = await MempoolIntelligenceService.analyzeMempoolState();
+      
+      return {
+        tuned: true,
+        bayesian_sigma: sigma,
+        exploration_active: sigma > 0.03,
+        market_intensity: mempool.bribeCompetitionIndex,
+        market_condition: mempool.marketCondition,
+        recommended_min_bribe: mempool.recommendedMinBribe,
+        gas_utilization: mempool.blockUtilization,
+        auctionParams: sharedEngineState.auctionParams
+      };
+    },
+    status: async () => ({ status: 'ready', specialist: 'BribeOptimizationSpecialist' })
+  },
 ];
 
 export const kpiToSpecialistMapping = {
@@ -80,6 +101,7 @@ export const kpiToSpecialistMapping = {
   risk: 'Risk',
   uptime: 'System Health',
   optimization: 'Auto-Optimization',
+  bribe_sigma: 'Bribe-Optimization',
 };
 
 export const specialistByCategory = {
@@ -88,4 +110,5 @@ export const specialistByCategory = {
   RustCompile: { name: 'RustSpecialist' },
   'System Health': { name: 'SystemHealthSpecialist' },
   'Auto-Optimization': { name: 'AutoOptimizationSpecialist' },
+  'Bribe-Optimization': { name: 'BribeOptimizationSpecialist' },
 };
