@@ -1,13 +1,18 @@
 FROM node:20-alpine
 
+# Install build essentials for native modules
+RUN apk add --no-cache python3 make g++
+
 WORKDIR /app
 
-# Install pnpm and serve globally
+# Install pnpm globally
 RUN npm install -g pnpm serve
 
-# Copy dependency files
+# Copy only dependency files first to leverage Docker cache
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install
+
+# Clean install ignoring scripts
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # Copy source code
 COPY . .
