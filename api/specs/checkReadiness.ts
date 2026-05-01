@@ -1,10 +1,8 @@
 import { runMasterDeploymentReadinessAnalysis } from '../src/services/deploy_gatekeeper.js';
-import { sharedEngineState } from '../src/services/engineState';
+import { sharedEngineState } from '../src/services/engineState.js';
 import { db, kpiSnapshotsTable } from '@workspace/db';
 import { desc } from 'drizzle-orm';
 import { execSync } from 'node:child_process';
-import * as readline from 'node:readline/promises';
-import { stdin as input, stdout as output } from 'node:process';
 
 const colors = {
   reset: '\x1b[0m',
@@ -124,7 +122,6 @@ function statusColor(status: string): string {
 }
 
 async function checkReadiness() {
-  const isHook = process.argv.includes('--hook');
   console.log(`${colors.bold}${colors.cyan}=== BrightSky Master Deployment Readiness Analysis ===${colors.reset}\n`);
 
   try {
@@ -310,23 +307,6 @@ async function checkReadiness() {
     }
 
     // Exit handling
-    if (!isHook && report.overallStatus === 'READY_FOR_DEPLOYMENT') {
-      const rl = readline.createInterface({ input, output });
-      const answer = await rl.question(`${colors.bold}${colors.yellow}ALLOW to push? (yes/no): ${colors.reset}`);
-      if (answer.trim().toLowerCase() === 'allowing') {
-        try {
-          console.log(`${colors.cyan}Triggering Git Push...${colors.reset}`);
-          execSync('git push --no-verify', { stdio: 'inherit' });
-          console.log(`${colors.green}✔ Push successful${colors.reset}`);
-        } catch (e: any) {
-          console.error(`${colors.red}✖ Git push failed: ${e.message}${colors.reset}`);
-          rl.close();
-          process.exit(1);
-        }
-      }
-      rl.close();
-    }
-
     if (report.overallStatus !== 'READY_FOR_DEPLOYMENT') process.exit(1);
     process.exit(0);
 

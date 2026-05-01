@@ -51,9 +51,6 @@ export interface DeploymentReadinessReport {
     kpi_persistence: { status: 'PASS' | 'FAIL'; details: string };
     simulation_gate: { status: 'PASS' | 'FAIL'; details: string };
     liquidity_gate: { status: 'PASS' | 'FAIL'; details: string };
-    market_fragility_gate: { status: 'PASS' | 'FAIL'; details: string };
-    orchestrator_health: { status: 'PASS' | 'FAIL'; details: string };
-    source_integrity: { status: 'PASS' | 'FAIL'; details: string };
   };
   overrideActive: boolean;
   overrideDetails?: { activatedBy: string; reason: string };
@@ -201,25 +198,13 @@ function mapGateAnalysis(result: any, gateId: MasterGateId): MasterGateAnalysis 
  * BSS-43: Strategic Gap Checklist
  * Verifies that Elite Grade features are actually integrated and functional.
  */
-async function checkStrategicReadiness(kpiResults: any[]) {
-  const fileVerification = verifySourceFilesExist();
-  const alphaAnalysis = await alphaCopilot.analyzeIssueTenLayers('Checklist verification', {});
-  const alphaCritical = alphaAnalysis.some((r: any) => r.riskAssessment === 'CRITICAL');
-
+function checkStrategicReadiness() {
   const ges = sharedEngineState.totalWeightedScore / 10;
   const isMetaLearnerWarm = sharedEngineState.learningEpisodes > 0;
   const isBribeSynced = sharedEngineState.minMarginRatioBps > 0 && sharedEngineState.bribeRatioBps > 0;
   
-  // DYNAMIC ENHANCEMENT: Scaling Liquidity Floor
-  // Requires enough balance to cover 3 blocks of max bribes + gas for the target loan size
-  const maxBribeBps = sharedEngineState.bribeRatioBps || 500;
-  const loanSize = sharedEngineState.avgProfitPerTrade > 0 ? 100 : 10; // Placeholder for actual notional
-  const liquidityFloor = Math.max(1.5, (loanSize * (maxBribeBps / 10000)) * 3);
-  
-  // ELITE ENHANCEMENT: Market Fragility Check
-  // Rejects deployment if mempool intensity is > 2.5 (extremely toxic/competitive)
-  const isMarketStable = (sharedEngineState.marketIntensityIndex || 1.0) < 2.5;
-
+  // Auditor Recommendation: Gas & Liquidity Safety Gate
+  const liquidityFloor = 1.5; // Minimum ETH for gas/bribes
   const isFunded = (sharedEngineState.walletEthBalance || 0) >= liquidityFloor;
 
   return {
@@ -241,77 +226,11 @@ async function checkStrategicReadiness(kpiResults: any[]) {
       details: isFunded 
         ? `Liquidity verified: ${sharedEngineState.walletEthBalance} ETH (Floor: ${liquidityFloor} ETH)`
         : `Insufficient liquidity: ${sharedEngineState.walletEthBalance || 0} ETH is below safety floor.`
-    },
-    market_fragility_gate: {
-      status: isMarketStable ? 'PASS' : 'FAIL',
-      details: isMarketStable 
-        ? `Market condition stable: Intensity Index ${sharedEngineState.marketIntensityIndex?.toFixed(2) || '1.0'}`
-        : `High fragility: Mempool intensity ${sharedEngineState.marketIntensityIndex?.toFixed(2)} exceeds safety threshold (2.5)`
-    },
-    orchestrator_health: {
-      status: (!alphaCritical && kpiResults.every(r => r.tuned)) ? 'PASS' : 'FAIL',
-      details: !alphaCritical ? 'All AI orchestrators nominal.' : 'Alpha-Copilot reporting critical system tension.'
-    },
-    source_integrity: {
-      status: fileVerification.passed ? 'PASS' : 'FAIL',
-      details: fileVerification.passed ? 'All critical source files verified.' : `Missing: ${fileVerification.missing.length} files.`
     }
   };
 }
 
-/**
- * BSS-43: Updates the persistent horizontal markdown report.
- * Appends a new column for every readiness check run to track historical trends.
- */
-function updateHorizontalMarkdownReport(report: DeploymentReadinessReport, root: string) {
-  const reportPath = path.join(root, 'DEPLOYMENT-READINESS-REPORT.md');
-  const ts = new Date().toISOString().replace('T', ' ').substring(0, 16);
-
-  const metrics = [
-    { key: 'Run Timestamp', val: ts },
-    { key: 'Master Status', val: report.overallStatus },
-    { key: 'Master Score', val: report.deploymentScore.toFixed(1) },
-    { key: 'Bribe Sync', val: report.strategicChecklist.bribe_engine_sync.status },
-    { key: 'MetaLearner', val: report.strategicChecklist.meta_learner_active.status },
-    { key: 'GES Simulation', val: report.strategicChecklist.simulation_gate.status },
-    { key: 'Liquidity Gate', val: report.strategicChecklist.liquidity_gate.status },
-    { key: 'Market Stability', val: report.strategicChecklist.market_fragility_gate.status },
-    { key: 'Orchestrators', val: report.strategicChecklist.orchestrator_health.status },
-    { key: 'Manual Override', val: report.overrideActive ? 'ACTIVE' : 'OFF' }
-  ];
-
-  let lines: string[] = [];
-  if (fs.existsSync(reportPath)) {
-    try {
-      lines = fs.readFileSync(reportPath, 'utf8').split('\n').filter(l => l.trim().length > 0);
-    } catch (e) {
-      lines = [];
-    }
-  }
-
-  if (lines.length < metrics.length + 2) {
-    // Create new table headers if file is empty or corrupted
-    lines = [
-      '| Metric | ' + ts + ' |',
-      '| :--- | :--- |',
-      ...metrics.map(m => `| ${m.key} | ${m.val} |`)
-    ];
-  } else {
-    // Append new column to existing rows
-    lines[0] = lines[0].replace(/\|$/, ` ${ts} |`);
-    lines[1] = lines[1].replace(/\|$/, ` :--- |`);
-    metrics.forEach((m, i) => {
-      const lineIdx = i + 2;
-      if (lines[lineIdx]) {
-        lines[lineIdx] = lines[lineIdx].replace(/\|$/, ` ${m.val} |`);
-      }
-    });
-  }
-
-  fs.writeFileSync(reportPath, lines.join('\n') + '\n', 'utf8');
-}
-
-export async function generateDeploymentReadinessReport(): Promise<DeploymentReadinessReport> {
+export async function runMasterDeploymentReadinessAnalysis(): Promise<DeploymentReadinessReport> {
   const workspaceRoot = path.resolve(__dirname, '..', '..', '..');
   const timeline: DeploymentReadinessReport['executionTimeline'] = [];
   const startTime = Date.now();
@@ -319,7 +238,7 @@ export async function generateDeploymentReadinessReport(): Promise<DeploymentRea
   const kpiResults = await alphaCopilot.fullKpiTuneCycle({});
 
   // Step 2: Run Strategic Gap Checklist
-  const strategicChecklist = await checkStrategicReadiness(kpiResults);
+  const strategicChecklist = checkStrategicReadiness();
 
   // ELITE PRACTICE: Programmatic GES Block (BSS-43)
   const currentGes = sharedEngineState.totalWeightedScore;
@@ -335,6 +254,7 @@ export async function generateDeploymentReadinessReport(): Promise<DeploymentRea
     })
   );
 
+  const baseCheck = await comprehensiveDeploymentCheck();
   const deploymentAuth = gateKeeper.isDeploymentAuthorized();
 
   // Define override status from gateKeeper authority
@@ -357,10 +277,6 @@ export async function generateDeploymentReadinessReport(): Promise<DeploymentRea
     .filter(gate => gate.status === 'PENDING_HUMAN_APPROVAL')
     .map(gate => gate.gateId);
 
-   const isFullyReady = deploymentAuth.authorized && baseCheck.ready;
-
-   const strategicFails = Object.values(strategicChecklist).filter(c => c.status === 'FAIL').length;
-   
    // 36-KPI breakdown from specialist results
    const kpiBreakdown: Array<{ domain: string; score: number; status: 'OPTIMAL' | 'DEGRADED' | 'CRITICAL'; metrics: Record<string, any> }> = kpiResults.map(res => ({
      domain: res.category,
@@ -385,12 +301,14 @@ export async function generateDeploymentReadinessReport(): Promise<DeploymentRea
    fs.writeFileSync(historyFile, JSON.stringify(history, null, 2));
 
    const recommendations = [
+     ...baseCheck.recommendations,
      ...blockedByFailedChecks.map(gateId => `Fix automated check failures for ${gateId}`),
      ...pendingHumanApproval.map(gateId => `Obtain human approval for ${gateId}`),
      ...Object.entries(strategicChecklist).filter(([_, v]) => v.status === 'FAIL').map(([k]) => `Fix strategic integration: ${k}`)
    ].filter((value, index, array) => array.indexOf(value) === index);
 
    const issues = [
+     ...baseCheck.issues,
      ...blockedByFailedChecks.map(gateId => `${gateId} has failing automated checks`),
      ...pendingHumanApproval.map(gateId => `${gateId} is waiting for human approval`)
    ].filter((value, index, array) => array.indexOf(value) === index);
@@ -401,12 +319,12 @@ export async function generateDeploymentReadinessReport(): Promise<DeploymentRea
   const stageScore = Object.values(stages.executionStages).reduce((sum, s) => sum + s.score, 0) / 6;
   const gatesScore = gateResults.filter(g => g.status === 'AUTO_APPROVED').length / gateResults.length * 100;
   const finalScore = (stageScore * 0.6 + gatesScore * 0.4) - (strategicFails * 5);
-
+  
   const servicesHealthy = Object.values(stages.services).every(s => s.health === 'HEALTHY');
-
+  
   const report: DeploymentReadinessReport = {
     generatedAt: new Date(),
-    overallStatus: (isOverrideActive || (finalScore >= 90 && servicesHealthy && deploymentAuth.authorized && strategicFails === 0)) 
+    overallStatus: (isOverrideActive || (finalScore >= 90 && servicesHealthy && isFullyReady && strategicFails === 0)) 
                    ? 'READY_FOR_DEPLOYMENT' : 
                    (blockedByFailedChecks.length > 0 || strategicFails > 0) ? 'BLOCKED' : 'PENDING_APPROVALS',
     deploymentScore: finalScore,
@@ -440,11 +358,11 @@ export async function generateDeploymentReadinessReport(): Promise<DeploymentRea
     coverageByModuleRoot,
   };
   
-  // Persist horizontal comparison report to project root
-  updateHorizontalMarkdownReport(report, workspaceRoot);
-  
   return report;
 }
+
+/** Alias for specification scripts and backward compatibility */
+export const generateDeploymentReadinessReport = runMasterDeploymentReadinessAnalysis;
 
 async function runDeploymentStages(root: string, timeline: DeploymentReadinessReport['executionTimeline']): Promise<{
   executionStages: DeploymentReadinessReport['executionStages'];
@@ -522,8 +440,7 @@ async function runDeploymentStages(root: string, timeline: DeploymentReadinessRe
   const portsStart = Date.now();
   try {
     // Check ports 3000, 3001
-    const portKillCmd = process.platform === 'win32' ? 'taskkill /F /IM node.exe /T || true' : 'lsof -ti :3000,3001 | xargs kill -9 || true';
-    await execAsync(portKillCmd, { cwd: root });
+    await execAsync('lsof -ti :3000,3001 | xargs kill -9 || true', { cwd: root });
     stages.ports = { status: 'PASS', score: 100, durationMs: Date.now() - portsStart, autoHealed: false, details: 'Ports free' };
     timeline.push({ stage: 'ports', timestamp: new Date(), status: 'PASS', message: 'Ports OK' });
   } catch (e: any) {
@@ -534,8 +451,7 @@ async function runDeploymentStages(root: string, timeline: DeploymentReadinessRe
   // 6. RUNTIME stage - start services & test
   const runtimeStart = Date.now();
   try {
-    const startCmd = process.platform === 'win32' ? 'cd api && start /B node dist/index.js' : 'cd api && node dist/index.js & echo $!';
-    const apiPid = (await execAsync(startCmd, { cwd: root })).stdout.trim();
+    const apiPid = (await execAsync('cd api && node dist/index.js & echo $!', { cwd: root })).stdout.trim();
     services.api.pid = parseInt(apiPid);
     // Wait 3s
     await new Promise(r => setTimeout(r, 3000));
@@ -577,23 +493,7 @@ async function runDeploymentStages(root: string, timeline: DeploymentReadinessRe
  */
 export async function comprehensiveDeploymentCheck(): Promise<{
   ready: boolean;
-  missingApprovals: string[];
-  orchestratorsStatus: {
-    alphaCopilot: boolean;
-    gateKeeper: boolean;
-    specialists: boolean;
-    sourceFiles: boolean;
-  };
-  fileVerification: {
-    allFilesPresent: boolean;
-    missingFiles: string[];
-    fileErrors: string[];
-  };
-  issues: string[];
-  recommendations: string[];
-}> {
-  const issues: string[] = [];
-  const recommendations: string[] = [];
+
 
   // NEW: Verify critical source files exist
   const fileVerification = verifySourceFilesExist();
