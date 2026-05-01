@@ -143,7 +143,7 @@ async function checkReadiness() {
       }
     }
 
-    const report = await runMasterDeploymentReadinessAnalysis();
+    const report = await runMasterDeploymentReadinessAnalysis(true); // Skip runtime in hooks
 
     const overallStatusColor =
       report.overallStatus === 'READY_FOR_DEPLOYMENT' ? colors.green :
