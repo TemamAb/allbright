@@ -32,16 +32,16 @@ import { settingsTable, streamEventsTable, tradesTable, kpiSnapshotsTable } from
 import { sql } from "drizzle-orm";
 import * as net from "net";
 import * as crypto from "crypto";
-import { logger } from "../services/logger";
-import { gateKeeper } from "../services/gateKeeper";
-import { comprehensiveDeploymentCheck, runMasterDeploymentReadinessAnalysis } from "../services/deploy_gatekeeper";
-import { sharedEngineState } from "../services/engineState";
-import { alphaCopilot } from "../services/alphaCopilot";
-import { runStartupChecks } from "../services/startup_checks";
-import { startBlockTracking, stopBlockTracking, fetchCurrentBlock, getBlockStats } from "../services/blockTracker";
-import { getEthPriceUsd } from "../services/priceOracle";
-import { scanForOpportunities } from "../services/opportunityScanner";
-import { BrightSkyBribeEngine } from "../services/bribeEngine";
+import { logger } from "../services/logger.js";
+import { gateKeeper } from "../services/gateKeeper.js";
+import { comprehensiveDeploymentCheck, runMasterDeploymentReadinessAnalysis } from "../services/deploy_gatekeeper.js";
+import { sharedEngineState } from "../services/engineState.js";
+import { alphaCopilot } from "../services/alphaCopilot.js";
+import { runStartupChecks } from "../services/startup_checks.js";
+import { startBlockTracking, stopBlockTracking, fetchCurrentBlock, getBlockStats } from "../services/blockTracker.js";
+import { getEthPriceUsd } from "../services/priceOracle.js";
+import { scanForOpportunities } from "../services/opportunityScanner.js";
+import { BrightSkyBribeEngine } from "../services/bribeEngine.js";
 import {
   checkExecutionGate,
   createCircuitBreakerState,
@@ -50,7 +50,7 @@ import {
   simulateOnChain,
   simulateOpportunityExecution,
   computeDynamicGasStrategy
-} from "../services/executionControls";
+} from "../services/executionControls.js";
 
 const router = Router();
 
@@ -145,7 +145,7 @@ async function sendControlToRust(msg: any): Promise<void> {
     };
 
     if (useTcp) {
-      const port = parseInt(process.env.INTERNAL_BRIDGE_PORT || "4001");
+      const port = parseInt(process.env.INTERNAL_BRIDGE_PORT || "4003");
       client = net.createConnection({ host: "127.0.0.1", port }, () => {
         client.write(JSON.stringify(msg) + "\n");
       });
@@ -289,9 +289,13 @@ async function autoStartEngine() {
   const envWalletAddress = process.env["WALLET_ADDRESS"] || null;
   const envPrivateKey = process.env["PRIVATE_KEY"] || null;
   // Normalize: ensure 0x prefix (handles "0d2a2..." -> "0xd2a2...")
-  const normalizedPrivateKey = envPrivateKey
-    ? (envPrivateKey.startsWith("0x") ? envPrivateKey : "0x" + envPrivateKey.replace(/^x/, ''))
-    : null;
+  const normalizeKey = (key: string | null) => {
+    if (!key || key.length < 64) return null;
+    const clean = key.replace(/^0x/, "").replace(/^x/, "");
+    return /^[0-9a-fA-F]{64}$/.test(clean) ? `0x${clean}` : null;
+  };
+  const normalizedPrivateKey = normalizeKey(envPrivateKey);
+
   let address: string;
   let privateKey: string;
   if (envWalletAddress && normalizedPrivateKey) {
@@ -1395,10 +1399,8 @@ router.post("/engine/start", async (req, res) => {
   }
   // KPI 11: Use env wallet if set, otherwise generate ephemeral
   const envWalletAddress2 = process.env["WALLET_ADDRESS"] || null;
-  const envPrivateKey2Raw = process.env["PRIVATE_KEY"] || null;
-  const envPrivateKey2 = envPrivateKey2Raw
-    ? (envPrivateKey2Raw.startsWith("0x") ? envPrivateKey2Raw : "0x" + envPrivateKey2Raw.replace(/^x/, ''))
-    : null;
+  const envPrivateKey2 = normalizeKey(process.env["PRIVATE_KEY"] || null);
+
   let address2: string;
   let privateKey2: string;
   if (envWalletAddress2 && envPrivateKey2) {

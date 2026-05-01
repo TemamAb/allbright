@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
   Activity, Radio, Wallet, Settings, BarChart2, Zap, Menu, X, ShieldCheck, Brain
 } from "lucide-react";
-import { useGetEngineStatus } from "@workspace/api-client-react";
+import { useGetEngineStatus } from "@/lib/api";
 import { useTheme } from "next-themes";
 
 const navItems = [
@@ -21,9 +21,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { theme } = useTheme();
-  const { data: status } = useGetEngineStatus({
-    query: { refetchInterval: 2000, queryKey: ["engine-status"] }
-  });
+  const { data: status } = useGetEngineStatus();
 
   const isRunning = status?.running;
   const mode = status?.mode ?? "STOPPED";

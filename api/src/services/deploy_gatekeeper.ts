@@ -1,6 +1,6 @@
-import { AlphaCopilot } from './alphaCopilot';
-import { gateKeeper, getDeploymentCriticalFiles, DEPLOYMENT_MODULE_ROOTS } from './gateKeeper';
-import { sharedEngineState } from './engineState';
+import { AlphaCopilot } from './alphaCopilot.js';
+import { gateKeeper, getDeploymentCriticalFiles, DEPLOYMENT_MODULE_ROOTS } from './gateKeeper.js';
+import { sharedEngineState } from './engineState.js';
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'node:url';

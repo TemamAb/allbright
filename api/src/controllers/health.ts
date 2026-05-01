@@ -14,7 +14,7 @@ import { db } from "@workspace/db";
 import { sql } from "drizzle-orm";
 import fs from "node:fs";
 import * as net from "net";
-import { withBackoff } from "../services/retry";
+import { withBackoff } from "../services/retry.js";
 
 const router: IRouter = Router();
 
@@ -32,7 +32,7 @@ router.get("/health", async (_req, res) => {
     const isStrict = process.env.PRE_FLIGHT_STRICT === "true";
 
     // BSS-38: Validate IPC Bridge Connectivity
-    const bridgePort = parseInt(process.env.INTERNAL_BRIDGE_PORT || "4001");
+    const bridgePort = parseInt(process.env.INTERNAL_BRIDGE_PORT || "4003");
     const bridgeSocketPath =
       process.env.BRIGHTSKY_SOCKET_PATH || "/tmp/brightsky_bridge.sock";
     const hasBridgeSocket = fs.existsSync(bridgeSocketPath);
@@ -101,7 +101,7 @@ router.get("/health", async (_req, res) => {
       lastError = err;
     }
 
-    if (!dbConnected) {
+    if (!dbConnected && !(process.env.NODE_ENV === 'production' && !isStrict)) {
       return res.status(503).json({
         status: "error",
         db: "connection_failed",

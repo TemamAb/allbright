@@ -23,7 +23,7 @@ const profitData = [
 export default function Dashboard() {
   const telemetry = useTelemetry();
   const { data: engineStatus } = useGetEngineStatus();
-  const [kpis] = useState(telemetry.kpis as GESState & FullKPIState);
+  const kpis = telemetry.kpis as GESState & FullKPIState;
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const { isConnected } = useSocket();
@@ -179,4 +179,3 @@ export default function Dashboard() {
     </div>
   );
 }
-

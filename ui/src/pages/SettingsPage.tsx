@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useGetEngineStatus } from "@workspace/api-client-react";
@@ -7,7 +7,11 @@ import { Play, Square, Zap, Activity } from "lucide-react";
 export default function SettingsPage() {
   const [mode, setMode] = useState<"live" | "simulation">("simulation");
   const [isRunning, setIsRunning] = useState(false);
-useGetEngineStatus({ query: { refetchInterval: 2000, queryKey: ["engineStatus"] } });
+  const { data: status } = useGetEngineStatus({ query: { refetchInterval: 2000, queryKey: ["engineStatus"] } });
+
+  useEffect(() => {
+    if (status) setIsRunning(status.running);
+  }, [status]);
 
   const handleStart = async () => {
     const response = await fetch('/api/engine/start', {
@@ -86,4 +90,3 @@ useGetEngineStatus({ query: { refetchInterval: 2000, queryKey: ["engineStatus"] 
     </div>
   );
 }
-

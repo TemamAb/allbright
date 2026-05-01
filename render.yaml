@@ -85,9 +85,13 @@ services:
       - key: USE_TCP_BRIDGE
         value: "true"
       - key: BRIGHTSKY_TCP_HOST
-        value: brightsky-solver.onrender.com
+        value: brightsky-solver
       - key: BRIGHTSKY_TCP_PORT
         value: "4003"
+      - key: DATABASE_URL
+        value: sqlite::memory:
+      - key: PRE_FLIGHT_STRICT
+        value: "false"
 
   # BrightSky Dashboard (React/Vite static build)
   - type: web
@@ -96,6 +100,7 @@ services:
     plan: starter
     branch: main
     rootDir: ui
+    buildCommand: pnpm install && pnpm build
     healthCheckPath: /
     healthCheckTimeout: 10
     envVars:

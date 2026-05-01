@@ -9,15 +9,17 @@ import StrategiesPage from "@/pages/StrategiesPage";
 import WalletPage from "@/pages/WalletPage";
 import SettingsPage from "@/pages/SettingsPage";
 import Telemetry from "@/pages/Telemetry";
-import Stream from "@/pages/Stream.tsx";
-import Trades from "@/pages/Trades.tsx";
+import Stream from "@/pages/Stream";
+import Trades from "@/pages/Trades";
 import Vault from "@/pages/Vault";
 import Copilot from "@/pages/Copilot";
+import SetupPage from "@/pages/SetupPage";
+import AuditPage from "@/pages/AuditPage";
 import Layout from "@/components/Layout";
 import { GateKeeperDashboard } from "@/components/GateKeeperDashboard";
 import { WalletProvider } from "@/context/WalletContext";
 import { StrategiesProvider } from "@/context/StrategiesContext";
-import { setBaseUrl } from "@workspace/api-client-react";
+import { setBaseUrl } from "@/lib/api";
 import { useEffect, useState, createContext, useContext, ReactNode } from "react";
 import { io, Socket } from "socket.io-client";
 
@@ -30,13 +32,7 @@ const queryClient = new QueryClient({
   },
 });
 
-// Configure API base URL from environment
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
-
-if (API_BASE_URL) {
-  setBaseUrl(API_BASE_URL);
-  console.log("[App] API Base URL configured:", API_BASE_URL);
-}
+// API base handled by env/lib/api.ts
 
 // Socket Context for High-Speed Telemetry
 interface SocketContextType {
@@ -56,6 +52,7 @@ function SocketProvider({ children }: { children: ReactNode }) {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
     if (!API_BASE_URL) {
       console.warn("[Socket] No API_BASE_URL configured, skipping socket connection");
       return;
@@ -105,24 +102,24 @@ export default function App() {
     <AppProviders>
       <Layout>
         <Switch>
-
-<Route path="/" component={Dashboard} />
-           <Route path="/dashboard" component={Dashboard} />
-           <Route path="/strategies" component={StrategiesPage} />
-           <Route path="/stream" component={Stream} />
-           <Route path="/trades" component={Trades} />
-            <Route path="/vault" component={Vault} />
-
-            <Route path="/gates" component={GateKeeperDashboard} />
-
-            <Route path="/wallet" component={WalletPage} />
-            <Route path="/settings" component={SettingsPage} />
-            <Route path="/copilot" component={Copilot} />
-            <Route path="/telemetry" component={Telemetry} />
-            <Route component={NotFound} />
- </Switch>
+          <Route path="/" component={Dashboard} />
+          <Route path="/dashboard" component={Dashboard} />
+          <Route path="/strategies" component={StrategiesPage} />
+          <Route path="/setup" component={SetupPage} />
+          <Route path="/audit" component={AuditPage} />
+          <Route path="/stream" component={Stream} />
+          <Route path="/trades" component={Trades} />
+          <Route path="/vault" component={Vault} />
+          <Route path="/gates" component={GateKeeperDashboard} />
+          <Route path="/wallet" component={WalletPage} />
+          <Route path="/settings" component={SettingsPage} />
+          <Route path="/copilot" component={Copilot} />
+          <Route path="/telemetry" component={Telemetry} />
+          <Route component={NotFound} />
+        </Switch>
       </Layout>
       <Toaster position="bottom-right" richColors />
     </AppProviders>
   );
 }
+
