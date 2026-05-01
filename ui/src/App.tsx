@@ -3,18 +3,16 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "next-themes";
 
-import NotFound from "@/pages/not-found";
-import Dashboard from "@/pages/Dashboard";
-import StrategiesPage from "@/pages/StrategiesPage";
-import WalletPage from "@/pages/WalletPage";
-import SettingsPage from "@/pages/SettingsPage";
-import Telemetry from "@/pages/Telemetry";
-import Stream from "@/pages/Stream";
-import Trades from "@/pages/Trades";
-import Vault from "@/pages/Vault";
-import Copilot from "@/pages/Copilot";
-import SetupPage from "@/pages/SetupPage";
-import AuditPage from "@/pages/AuditPage";
+import NotFound from "@/components/NotFound";
+import Dashboard from "@/components/Dashboard";
+import StrategiesPage from "@/components/StrategiesPage";
+import Telemetry from "@/components/Telemetry";
+import Stream from "@/components/Stream";
+import Trades from "@/components/Trades";
+import Vault from "@/components/Vault"; // This is the updated Vault logic
+import Copilot from "@/components/Copilot";
+import SetupPage from "@/components/SetupPage";
+import AuditPage from "@/components/AuditPage";
 import Layout from "@/components/Layout";
 import { GateKeeperDashboard } from "@/components/GateKeeperDashboard";
 import { WalletProvider } from "@/context/WalletContext";
@@ -105,14 +103,9 @@ export default function App() {
           <Route path="/" component={Dashboard} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/strategies" component={StrategiesPage} />
-          <Route path="/setup" component={SetupPage} />
-          <Route path="/audit" component={AuditPage} />
           <Route path="/stream" component={Stream} />
           <Route path="/trades" component={Trades} />
           <Route path="/vault" component={Vault} />
-          <Route path="/gates" component={GateKeeperDashboard} />
-          <Route path="/wallet" component={WalletPage} />
-          <Route path="/settings" component={SettingsPage} />
           <Route path="/copilot" component={Copilot} />
           <Route path="/telemetry" component={Telemetry} />
           <Route component={NotFound} />
@@ -122,4 +115,3 @@ export default function App() {
     </AppProviders>
   );
 }
-

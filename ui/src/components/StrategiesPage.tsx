@@ -61,17 +61,6 @@ const STRATEGIES = [
       { label: 'Success', value: '99.2%' },
     ],
   },
-  {
-    id: 'bss-35' as const,
-    title: 'Gasless Manager',
-    icon: <WalletIcon size={20} />,
-    description: 'ERC-4337 UserOperations via Pimlico Paymaster. Enables execution without native ETH for gas. Auto-sponsors transactions, deducts costs from profit share.',
-    metrics: [
-      { label: 'Standard', value: 'ERC-4337' },
-      { label: 'Paymaster', value: 'Pimlico' },
-      { label: 'Gas覆盖', value: '100%' },
-    ],
-  },
 ];
 
 export default function StrategiesPage() {

@@ -8,13 +8,10 @@ import { useTheme } from "next-themes";
 
 const navItems = [
   { path: "/", label: "Telemetry", icon: Activity },
-  { path: "/setup", label: "Setup Wizard", icon: Zap },
   { path: "/stream", label: "Stream", icon: Radio },
   { path: "/trades", label: "Trade History", icon: BarChart2 },
   { path: "/vault", label: "Vault", icon: Wallet },
   { path: "/copilot", label: "Alpha-Copilot", icon: Brain },
-  { path: "/audit", label: "Audit Report", icon: ShieldCheck },
-  { path: "/settings", label: "Settings", icon: Settings },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -28,14 +25,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const isShadowMode = mode === "SHADOW";
 
   return (
-    <div className="min-h-screen flex font-mono selection:bg-grafana-green/20 relative overflow-hidden bg-grafana-bg text-grafana-text">
+    <div className="min-h-screen flex font-mono selection:bg-cyan-500/20 relative overflow-hidden bg-[#1a1c20] text-zinc-300">
       {/* Pure Grafana Dark Shell */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-64 flex flex-col bg-grafana-panel backdrop-blur-xl border-r border-grafana-ash
+        fixed inset-y-0 left-0 z-50 w-64 flex flex-col bg-[#111217] border-r border-zinc-800/50
         transition-transform duration-300 ease-in-out shadow-2xl shadow-black/50
         ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
         lg:translate-x-0 lg:static lg:inset-auto
-        hover:border-grafana-ash-light
+        hover:border-zinc-700/50
       `}>
         <div className="flex items-center gap-3 px-6 py-6 border-b border-zinc-800/50 relative">
           <div className={`w-8 h-8 rounded bg-gradient-to-br flex items-center justify-center ${
@@ -126,18 +123,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Bar */}
-        <header className="h-16 flex items-center gap-3 px-8 border-b border-grafana-ash backdrop-blur-xl sticky top-0 z-40 bg-grafana-card/95 shadow-grafana-glow">
+        <header className="h-16 flex items-center gap-3 px-8 border-b border-zinc-800/50 sticky top-0 z-40 bg-[#1a1c20]/95">
           <div className="flex flex-col">
-            <span className="text-[10px] text-grafana-text-dim uppercase tracking-widest font-bold">Bridge Status</span>
-            <span className="text-xs text-grafana-text-dim">NEXUS IPC • PORT 4001</span>
+            <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Bridge Status</span>
+            <span className="text-xs text-zinc-400">NEXUS IPC • PORT 4001</span>
           </div>
           <div className="flex-1" />
           <div className="flex items-center gap-4">
-            <div className="px-3 py-1.5 rounded bg-grafana-ash border border-grafana-ash-light flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-grafana-green" />
-              <span className="text-[10px] font-bold text-grafana-text tracking-tight">0x742d...f44e</span>
+            <div className="px-3 py-1.5 rounded bg-[#111217] border border-zinc-800 flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-cyan-500" />
+              <span className="text-[10px] font-bold text-zinc-300 tracking-tight">0x742d...f44e</span>
             </div>
-            <button className="px-4 py-1.5 rounded-xl bg-grafana-green/90 hover:bg-grafana-green text-grafana-bg text-[10px] font-black transition-all shadow-grafana-glow hover:shadow-grafana-glow/50">
+            <button className="px-4 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-black text-[10px] font-black transition-all shadow-lg">
               ENGINE ACTIVE
             </button>
           </div>
@@ -151,4 +148,3 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
-

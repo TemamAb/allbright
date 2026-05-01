@@ -34,9 +34,43 @@ router.post("/command", async (req, res) => {
       const result = await alphaCopilot.fullKpiTuneCycle({});
       report = `Full KPI tune cycle complete. Results:\\n${JSON.stringify(result, null, 2)}`;
       broadcastCopilotEvent('success', { message: 'KPI Tune Cycle Complete', result });
+    } else if (command.toLowerCase().includes('audit') || command.toLowerCase().includes('readiness')) {
+      const auditResult = await alphaCopilot.checkDeploymentReadiness();
+      report = `System Audit complete. Result: ${JSON.stringify(auditResult)}`;
+      broadcastCopilotEvent('audit-complete', auditResult);
     } else if (command.toLowerCase().includes('dispatch') || command.toLowerCase().includes('debug')) {
       const dispatchResult = await alphaCopilot.handleRouteDispatch({ target: 'bss_16', intent: 'Audit', payload: command });
       report = `Debug order dispatched. Result: ${JSON.stringify(dispatchResult)}`;
+    } else if (command.toLowerCase().includes('start engine')) {
+      // Direct command to start engine
+      const result = await fetch(`http://localhost:${process.env.PORT || 3000}/api/engine/start`, { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'LIVE' })
+      });
+      const data = await result.json();
+      report = `Engine Activation Order: ${data.success ? 'EXECUTED' : 'FAILED - ' + data.error}`;
+      broadcastCopilotEvent('engine-update', data);
+    } else if (command.toLowerCase().includes('stop engine')) {
+      const result = await fetch(`http://localhost:${process.env.PORT || 3000}/api/engine/stop`, { method: 'POST' });
+      const data = await result.json();
+      report = `Engine Deactivation Order: ${data.success ? 'EXECUTED' : 'FAILED'}`;
+      broadcastCopilotEvent('engine-update', data);
+    } else if (command.toLowerCase().includes('mode')) {
+      const targetMode = command.toLowerCase().includes('live') ? 'LIVE' : 'SHADOW';
+      const result = await fetch(`http://localhost:${process.env.PORT || 3000}/api/engine/start`, { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: targetMode })
+      });
+      const data = await result.json();
+      report = `Engine Mode Shifted to ${targetMode}: ${data.success ? 'SUCCESS' : 'FAILED'}`;
+      broadcastCopilotEvent('engine-update', data);
+    } else if (command.toLowerCase().startsWith('set ai model')) {
+      const model = command.toLowerCase().replace('set ai model', '').trim();
+      const success = alphaCopilot.switchModel(model);
+      report = success ? `AI Intelligence successfully switched to ${model.toUpperCase()}.` : `Provider ${model} is unavailable. Verify API keys in .env.`;
+      broadcastCopilotEvent('model-update', { model, success });
     } else {
       report = await alphaCopilot.askLLM(command);
     }
@@ -66,6 +100,7 @@ router.get("/status", async (req, res) => {
     res.json({
       success: true,
       status: "online",
+      availableModels: alphaCopilot.getAvailableModels(),
       report,
     });
   } catch (err) {
