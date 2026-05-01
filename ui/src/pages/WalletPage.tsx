@@ -1,12 +1,12 @@
-import { useState, useWallets } from 'react';
-import { Wallet, ArrowLeftRight, Switch as SwitchIcon } from 'lucide-react';
+import { useState } from 'react';
+import { Wallet, ArrowLeftRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { useWalletBalance } from '@/lib/api';
+import { useWallets, useWalletBalance } from '@/lib/api';
 
 export default function WalletPage() {
   const { wallets, addWallet, updateWallet, deleteWallet, totalBalance } = useWallets();
@@ -118,4 +118,3 @@ export default function WalletPage() {
     </div>
   );
 }
-

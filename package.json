@@ -12,12 +12,10 @@
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
     "typecheck:libs": "tsc --build",
-    "pre-push": "pnpm --filter @workspace/api-server ready",
-    "prepare": "husky"
+    "pre-push": "pnpm --filter @workspace/api-server ready"
   },
   "private": true,
   "devDependencies": {
-    "husky": "^9.1.7",
     "prettier": "^3.8.1",
     "typescript": "~5.9.2"
   }
