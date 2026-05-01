@@ -319,14 +319,19 @@ export async function runMasterDeploymentReadinessAnalysis(): Promise<Deployment
   const stageScore = Object.values(stages.executionStages).reduce((sum, s) => sum + s.score, 0) / 6;
   const gatesScore = gateResults.filter(g => g.status === 'AUTO_APPROVED').length / gateResults.length * 100;
   const finalScore = (stageScore * 0.6 + gatesScore * 0.4) - (strategicFails * 5);
-  
+
+  // BSS-43: Unified Readiness Logic
+  const isFullyReady = deploymentAuth.authorized && strategicFails === 0 && finalScore >= 90;
+  const overallStatus: DeploymentReadinessReport['overallStatus'] = 
+    isOverrideActive ? 'READY_FOR_DEPLOYMENT' : 
+    isFullyReady ? 'READY_FOR_DEPLOYMENT' : 
+    (blockedByFailedChecks.length > 0 || strategicFails > 0) ? 'BLOCKED' : 'PENDING_APPROVALS';
+
   const servicesHealthy = Object.values(stages.services).every(s => s.health === 'HEALTHY');
   
   const report: DeploymentReadinessReport = {
     generatedAt: new Date(),
-    overallStatus: (isOverrideActive || (finalScore >= 90 && servicesHealthy && isFullyReady && strategicFails === 0)) 
-                   ? 'READY_FOR_DEPLOYMENT' : 
-                   (blockedByFailedChecks.length > 0 || strategicFails > 0) ? 'BLOCKED' : 'PENDING_APPROVALS',
+    overallStatus,
     deploymentScore: finalScore,
     overrideActive: isOverrideActive,
     overrideDetails: isOverrideActive ? { 
@@ -440,7 +445,8 @@ async function runDeploymentStages(root: string, timeline: DeploymentReadinessRe
   const portsStart = Date.now();
   try {
     // Check ports 3000, 3001
-    await execAsync('lsof -ti :3000,3001 | xargs kill -9 || true', { cwd: root });
+    const portKillCmd = process.platform === 'win32' ? 'taskkill /F /IM node.exe /T || true' : 'lsof -ti :3000,3001 | xargs kill -9 || true';
+    await execAsync(portKillCmd, { cwd: root });
     stages.ports = { status: 'PASS', score: 100, durationMs: Date.now() - portsStart, autoHealed: false, details: 'Ports free' };
     timeline.push({ stage: 'ports', timestamp: new Date(), status: 'PASS', message: 'Ports OK' });
   } catch (e: any) {
@@ -451,7 +457,8 @@ async function runDeploymentStages(root: string, timeline: DeploymentReadinessRe
   // 6. RUNTIME stage - start services & test
   const runtimeStart = Date.now();
   try {
-    const apiPid = (await execAsync('cd api && node dist/index.js & echo $!', { cwd: root })).stdout.trim();
+    const startCmd = process.platform === 'win32' ? 'cd api && start /B node dist/index.js' : 'cd api && node dist/index.js & echo $!';
+    const apiPid = (await execAsync(startCmd, { cwd: root })).stdout.trim();
     services.api.pid = parseInt(apiPid);
     // Wait 3s
     await new Promise(r => setTimeout(r, 3000));
@@ -493,7 +500,23 @@ async function runDeploymentStages(root: string, timeline: DeploymentReadinessRe
  */
 export async function comprehensiveDeploymentCheck(): Promise<{
   ready: boolean;
-
+  missingApprovals: string[];
+  orchestratorsStatus: {
+    alphaCopilot: boolean;
+    gateKeeper: boolean;
+    specialists: boolean;
+    sourceFiles: boolean;
+  };
+  fileVerification: {
+    allFilesPresent: boolean;
+    missingFiles: string[];
+    fileErrors: string[];
+  };
+  issues: string[];
+  recommendations: string[];
+}> {
+  const issues: string[] = [];
+  const recommendations: string[] = [];
 
   // NEW: Verify critical source files exist
   const fileVerification = verifySourceFilesExist();
