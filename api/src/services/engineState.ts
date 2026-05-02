@@ -6,6 +6,38 @@
 
 import { createHash } from 'node:crypto';
 
+export interface ClientProfile {
+  name: string;
+  email: string;
+  tel: string;
+  country: string;
+  launchedAt: Date;
+}
+
+export interface DeploymentRecord {
+  id: number;
+  commitHash: string;
+  commitMessage: string;
+  cloudProvider: string;
+  timestamp: Date;
+  smartAccount: string;
+  contractAddress: string;
+  isActive: boolean;
+  triggeredBy: 'USER' | 'ALPHA_COPILOT';
+}
+
+export interface WalletAccount {
+  id: string;
+  address: string;
+  encryptedPrivateKey: string | 'EXTERNAL_SIGNER';
+  chainId: number;
+  balanceEth: number;
+  isActive: boolean;
+  isValidated: boolean;
+  source: 'WALLET_CONNECT' | 'ONBOARDING' | 'EPHEMERAL';
+  lastSeen: Date;
+}
+
 export interface SharedEngineState {
   running: boolean;
   mode: string;
@@ -56,6 +88,7 @@ export interface SharedEngineState {
   domainScorePerf: number;
   domainScoreEff: number;
   domainScoreHealth: number;
+  domainScoreAutoOpt: number;
   domainScoreDashboard: number;
   lastBackbonePrice: number | null;
   winRate: number;
@@ -98,8 +131,50 @@ export interface SharedEngineState {
   walletEthBalance: number;
   
   // Market Intelligence Fields
+  wallets: WalletAccount[]; // Multi-account support
+  autoWithdrawEnabled: boolean;
+  withdrawalHistory: any[];
+  deploymentHistory: DeploymentRecord[]; // BSS-56 Deployment Registry
+
   marketIntensityIndex: number;
   blockUtilizationPct: number;
+
+  // BSS-56: Elite Grade Competitive Threshold
+  targetGes: number; // Static deployment bar (e.g., 825 = 82.5%)
+
+  // BSS-56: Market-Driven Benchmarking (Apex Leader)
+  marketPulse: {
+    leaderNrp: number;
+    leaderWinRate: number;
+    leaderLatencyP99: number;
+    leaderGasEfficiency: number;
+    leaderRiskIndex: number;
+    leaderUptime: number;
+    leaderOptDelta: number;
+    discoveryLastUpdated: Date;
+    latestAlphaReasoning: string; // Audit Fix: XAI Reasoning Trace
+  };
+  // Commercial Branding
+  appName: string;
+  logoUrl: string | null;
+  ghostMode: boolean; // BSS-WhiteLabel: Total identity masking
+  
+  currentUserRole: 'USER' | 'ADMIN'; // Commercialization: Role-based access
+
+  intelligenceSource: 'BRIGHTSKY_BOOTSTRAP' | 'USER_PRIVATE'; // Cognitive transition
+
+  clientProfile: ClientProfile | null;
+  integrityThreshold: number; // Percentage threshold for pulsing red alert
+
+  // Desktop App State
+  onboardingComplete: boolean;
+  cloudDeploymentId: string | null;
+  lastCloudSync: Date | null;
+
+  // BSS-56: Configuration Hardening
+  goldStandardConfig: Record<string, string> | null;
+  isConfigurationHardened: boolean;
+  lastHardeningAudit: Date | null;
 }
 
 // Configuration validation helper
@@ -211,6 +286,25 @@ avgLatencyMs: 9,
   configLastValidated: null,
   configDriftDetected: false,
   configValid: true,
+  wallets: [],
+  autoWithdrawEnabled: false,
+  withdrawalHistory: [],
+  deploymentHistory: [],
+  appName: 'BrightSky', // Standard default branding
+  logoUrl: null,
+  ghostMode: false,
+  intelligenceSource: 'BRIGHTSKY_BOOTSTRAP',
+  clientProfile: null,
+  integrityThreshold: 70, // Default 70% of benchmark
+  currentUserRole: 'USER', // Default to User for commercial safety
+
+  onboardingComplete: false,
+  cloudDeploymentId: null,
+  lastCloudSync: null,
+
+  goldStandardConfig: null,
+  isConfigurationHardened: false,
+  lastHardeningAudit: null,
   
   // Elite Benchmarks (BSS-43 Targets)
   domainScoreProfit: 850, // Minimum for Elite
@@ -219,6 +313,7 @@ avgLatencyMs: 9,
   domainScoreEff: 880,
   domainScoreHealth: 920,
   domainScoreAutoOpt: 800,
+  targetGes: 825, // Elite Grade Deployment Floor (82.5%)
   
   // --- 36-KPI Extended Metrics ---
   avgProfitPerTrade: 0.045,

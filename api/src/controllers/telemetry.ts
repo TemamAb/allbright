@@ -135,6 +135,8 @@ router.get("/telemetry", async (req, res) => {
     intelligence: {
       tuning: BrightSkyBribeEngine.getTuning(),
       learningDelta: 0.02,
+      competitiveOverlapPct: sharedEngineState.competitiveCollisionPct, // Audit Fix: Competitor Analysis
+      alphaReasoning: sharedEngineState.marketPulse.latestAlphaReasoning, // Audit Fix: XAI Reasoning Trace
       performanceGaps: (sharedEngineState.subsystemKpis || []).map(
         (kpi: any) => {
           // Dynamic fetch from Rust backbone: No more hardcoded targets.

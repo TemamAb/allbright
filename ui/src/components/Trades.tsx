@@ -22,12 +22,10 @@ export default function Trades() {
         <div className="flex gap-4">
           <div className="text-right">
             <div className="text-[10px] text-zinc-500 font-bold uppercase">Success Rate</div>
-            <div className="text-lg font-black text-emerald-500 tabular-nums">{(summary?.successRate || 0).toFixed(1)}%</div>
-          </div>
+            <div className="text-lg font-black text-emerald-500 
           <div className="text-right">
             <div className="text-[10px] text-zinc-500 font-bold uppercase">Avg Latency</div>
-            <div className="text-lg font-black text-white tabular-nums">{(summary?.avgProfitPerTrade || 0).toFixed(1)}ms</div>
-          </div>
+            <div className="text-lg font-black text-white font-mono tabular-nums">{(su
         </div>
       </div>
 

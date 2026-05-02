@@ -37,6 +37,20 @@ export class BrightSkyBribeEngine {
   }
 
   /**
+   * BSS-28: Bayesian Bribe Tuning Feedback Loop
+   * Dynamically adjusts bribe elasticity based on trade outcomes.
+   */
+  static updateBayesianElasticity(lastBribeRatio: number, success: boolean) {
+    const alpha = 0.05; // Learning rate
+    if (success) {
+      this.AUCTION_PARAMS.BRIBE_ELASTICITY *= (1 + alpha); // Reinforce successful bidding
+    } else {
+      this.AUCTION_PARAMS.BRIBE_ELASTICITY *= (1 - alpha); // Penalize ineffective bidding
+    }
+    console.log(`[BAYESIAN_TUNE] New Bribe Elasticity: ${this.AUCTION_PARAMS.BRIBE_ELASTICITY.toFixed(4)}`);
+  }
+
+  /**
    * Update auction parameters based on market conditions
    * This would be called by BSS-20 (Feedback Engine) or Alpha-Copilot
    */

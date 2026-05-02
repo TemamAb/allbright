@@ -7,20 +7,29 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { settingsTable } from "@workspace/db";
 import { getEthPriceUsd } from "../services/priceOracle";
-import { sharedEngineState } from "../services/engineState";
+import { sharedEngineState, WalletAccount } from "../services/engineState";
+import { logger } from "../services/logger";
 
 const router = Router();
 
-async function fetchEthBalance(address: string): Promise<number> {
+async function fetchEthBalance(address: string, chainId: number = 1): Promise<number> {
   if (!address) return 0;
+  
+  // Multi-chain RPC Mapping for Balance Detection
+  const rpcMap: Record<number, string> = {
+    1: "https://cloudflare-eth.com",
+    8453: "https://mainnet.base.org",
+    42161: "https://arb1.arbitrum.io/rpc",
+    137: "https://polygon-rpc.com"
+  };
+  
+  const rpc = rpcMap[chainId] || rpcMap[1];
+
   try {
-    const res = await fetch("https://cloudflare-eth.com", {
+    const res = await fetch(rpc, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        jsonrpc: "2.0", id: 1, method: "eth_getBalance",
-        params: [address, "latest"]
-      }),
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_getBalance", params: [address, "latest"] }),
       signal: AbortSignal.timeout(4000),
     });
     if (res.ok) {
@@ -36,34 +45,82 @@ async function fetchEthBalance(address: string): Promise<number> {
 }
 
 router.get("/wallet", async (req, res) => {
-  const rows = await db.select().from(settingsTable).limit(1);
-  const settings = rows[0];
+  try {
+    const ethPrice = await getEthPriceUsd();
+    
+    // Refresh balances for all synchronized wallets
+    for (const w of sharedEngineState.wallets) {
+      w.balanceEth = await fetchEthBalance(w.address, w.chainId);
+    }
 
-  const address = sharedEngineState.walletAddress;
-  const ethPrice = await getEthPriceUsd();
+    res.json({
+      wallets: sharedEngineState.wallets,
+      activeAddress: sharedEngineState.walletAddress,
+      ethPriceUsd: ethPrice,
+      autoWithdraw: sharedEngineState.autoWithdrawEnabled,
+      history: sharedEngineState.withdrawalHistory,
+      liveCapable: sharedEngineState.liveCapable,
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
-  // Fetch real balance if we have a real address and engine is running
-  const balanceEth = address && sharedEngineState.running
-    ? await fetchEthBalance(address)
-    : 0;
+/**
+ * BSS-52: Wallet Synchronization & Auto-Population
+ * Called when a user selects an account via WalletConnect/MetaMask
+ */
+router.post("/wallet/sync", async (req, res) => {
+  const { address, chainId, source, encryptedPrivateKey } = req.body;
 
-  const balanceUsd = balanceEth * ethPrice;
-
-  res.json({
+  const newAccount: WalletAccount = {
+    id: `acc_${Date.now()}`,
     address,
-    balanceEth,
-    balanceUsd,
-    ethPriceUsd: ethPrice,
-    sweepMode: settings?.sweepMode ?? "AUTO_SWEEP",
-    pimlicoApiKey: settings?.pimlicoApiKeyMasked ? "pm-****" + settings.pimlicoApiKeyMasked : null,
-    rpcEndpoint: settings?.rpcEndpointMasked ? "https://****" + settings.rpcEndpointMasked : null,
-    gaslessEnabled: true,
-    liveCapable: sharedEngineState.liveCapable,
-    // Honest disclosure
-    note: sharedEngineState.liveCapable
-      ? "Live execution enabled via Pimlico."
-      : "Wallet is ephemeral (session-only). Add Pimlico API key + private RPC in Settings to enable real gasless execution.",
-  });
+    chainId: chainId || 1,
+    encryptedPrivateKey: encryptedPrivateKey || 'EXTERNAL_SIGNER',
+    balanceEth: await fetchEthBalance(address, chainId),
+    isActive: sharedEngineState.wallets.length === 0, // Auto-activate if first wallet
+    isValidated: true,
+    source: source || 'WALLET_CONNECT',
+    lastSeen: new Date()
+  };
+
+  sharedEngineState.wallets.push(newAccount);
+  if (newAccount.isActive) sharedEngineState.walletAddress = address;
+
+  logger.info({ address, source }, "[WALLET] Account synchronized and auto-populated");
+  res.json({ success: true, wallet: newAccount });
+});
+
+/**
+ * BSS-52: Activate/Deactivate Wallet
+ */
+router.post("/wallet/activate", async (req, res) => {
+  const { walletId, active } = req.body;
+  const wallet = sharedEngineState.wallets.find(w => w.id === walletId);
+
+  if (!wallet) return res.status(404).json({ error: "Wallet not found" });
+
+  if (active) {
+    // Deactivate others
+    sharedEngineState.wallets.forEach(w => w.isActive = false);
+    wallet.isActive = true;
+    sharedEngineState.walletAddress = wallet.address;
+    logger.info({ address: wallet.address }, "[WALLET] Active execution account switched");
+  } else {
+    wallet.isActive = false;
+  }
+
+  res.json({ success: true, activeAddress: sharedEngineState.walletAddress });
+});
+
+/**
+ * BSS-52: Update auto-withdrawal configuration
+ */
+router.post("/wallet/withdraw/config", async (req, res) => {
+  const { enabled } = req.body;
+  sharedEngineState.autoWithdrawEnabled = enabled;
+  res.json({ success: true, autoWithdraw: enabled });
 });
 
 router.put("/wallet/config", async (req, res) => {

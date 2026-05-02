@@ -5,8 +5,8 @@ RUN apk add --no-cache python3 make g++
 
 WORKDIR /app
 
-# Install pnpm globally
-RUN npm install -g pnpm serve
+# Install pnpm globally (matching package.json: pnpm@9.12.2)
+RUN npm install -g pnpm@9.12.2 serve
 
 # Copy only dependency files first to leverage Docker cache
 COPY package.json pnpm-lock.yaml ./

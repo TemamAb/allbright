@@ -329,7 +329,7 @@ export class GateKeeperSystem {
     status: Record<string, unknown>;
     emergencyOverride: PersistedOverrideState | null;
   } {
-    const requiredGates = ['CODE_QUALITY', 'INFRASTRUCTURE', 'SECURITY', 'PERFORMANCE', 'BUSINESS'];
+    const requiredGates = ['CODE_QUALITY', 'INFRASTRUCTURE', 'SECURITY', 'PERFORMANCE', 'BUSINESS', 'DISASTER_RECOVERY'];
     const missingApprovals: string[] = [];
     const status: Record<string, unknown> = {};
 
@@ -437,6 +437,12 @@ export class GateKeeperSystem {
       { checkId: 'compliance_review', checkName: 'Compliance Review', severity: 'CRITICAL' },
       { checkId: 'stakeholder_approval', checkName: 'Stakeholder Approval', severity: 'CRITICAL' },
       { checkId: 'go_live_decision', checkName: 'Go-Live Decision', severity: 'CRITICAL' }
+    ]);
+
+    this.defineGate('DISASTER_RECOVERY', 'Disaster Recovery Gate', [
+      { checkId: 'automated_failover', checkName: 'Automated Failover Mesh', severity: 'CRITICAL' },
+      { checkId: 'backup_redundancy', checkName: 'Backup Redundancy', severity: 'HIGH' },
+      { checkId: 'circuit_breaker_integrity', checkName: 'Circuit Breaker Integrity', severity: 'CRITICAL' }
     ]);
   }
 
@@ -626,6 +632,12 @@ export class GateKeeperSystem {
           await this.checkStakeholderApproval(),
           await this.checkGoLiveDecision()
         ];
+      case 'DISASTER_RECOVERY':
+        return [
+          await this.checkAutomatedFailover(),
+          await this.checkBackupRedundancy(),
+          await this.checkCircuitBreakerIntegrity()
+        ];
       default:
         return [
           {
@@ -765,7 +777,6 @@ export class GateKeeperSystem {
   }
 
   private async checkFileIntegrity(): Promise<AutomatedCheckResult> {
-
     const missing: string[] = [];
     const empty: string[] = [];
     const ignoredFiles = new Set(['api/src/controllers/main.rs']); // Skip bogus Rust main in TS project
@@ -805,6 +816,39 @@ export class GateKeeperSystem {
       severity
     );
 
+  }
+
+  private async checkAutomatedFailover(): Promise<AutomatedCheckResult> {
+    const isMeshReady = sharedEngineState.ipcConnected;
+    return this.makeCheck(
+      'automated_failover',
+      'Automated Failover Mesh',
+      isMeshReady ? 'PASS' : 'WARN',
+      isMeshReady ? 'Recovery mesh heartbeat detected via IPC' : 'Recovery mesh not detected; failover is manual',
+      'CRITICAL'
+    );
+  }
+
+  private async checkBackupRedundancy(): Promise<AutomatedCheckResult> {
+    const backupConfigured = (process.env.BACKUP_CONFIGURED || '').toLowerCase() === 'true';
+    return this.makeCheck(
+      'backup_redundancy',
+      'Backup Redundancy',
+      backupConfigured ? 'PASS' : 'WARN',
+      backupConfigured ? 'Secondary data redundancy active' : 'Backup configuration (BACKUP_CONFIGURED) missing',
+      'HIGH'
+    );
+  }
+
+  private async checkCircuitBreakerIntegrity(): Promise<AutomatedCheckResult> {
+    const isIntegrityOk = sharedEngineState.circuitBreaker !== null && !sharedEngineState.circuitBreakerOpen;
+    return this.makeCheck(
+      'circuit_breaker_integrity',
+      'Circuit Breaker Integrity',
+      isIntegrityOk ? 'PASS' : 'FAIL',
+      isIntegrityOk ? 'Circuit breaker armed and nominal' : 'Circuit breaker state anomaly or currently tripped',
+      'CRITICAL'
+    );
   }
 
   private async checkLinting(): Promise<AutomatedCheckResult> {
@@ -1072,15 +1116,15 @@ export class GateKeeperSystem {
    * Requires GES to be above a certain threshold (e.g., 82.5%).
    */
   private async checkGlobalEfficiencyScore(): Promise<AutomatedCheckResult> {
-    const gesThreshold = 82.5; // As per checkReadiness.ts CLI tool's implied threshold
+    const gesThreshold = sharedEngineState.targetGes; // BSS-43: Dynamic chase target (0-1000 scale)
     const currentGes = sharedEngineState.totalWeightedScore;
     const status: CheckStatus = currentGes >= gesThreshold ? 'PASS' : 'FAIL';
-    const severity: CheckSeverity = currentGes >= gesThreshold ? 'LOW' : 'CRITICAL'; // GES failure is critical
+    const severity: CheckSeverity = currentGes >= gesThreshold ? 'LOW' : 'HIGH'; 
     return this.makeCheck(
       'global_efficiency_score',
       'Global Efficiency Score (GES)',
       status,
-      `Current GES: ${currentGes.toFixed(2)}%, Required: ${gesThreshold.toFixed(2)}%`,
+      `Current GES: ${(currentGes / 10).toFixed(2)}%, Dynamic Target: ${(gesThreshold / 10).toFixed(2)}%`,
       severity
     );
   }

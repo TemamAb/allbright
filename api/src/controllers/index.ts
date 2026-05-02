@@ -29,7 +29,7 @@ router.use(engineRouter);
 router.use(tradesRouter);
 router.use(walletRouter);
 router.use(telemetryRouter);
-router.use(settingsRouter);
+router.use("/settings", settingsRouter);
 router.use("/autodetect", autodetectRouter);
 router.use("/auto-optimizer", autoOptimizerRouter);
 router.use("/copilot", copilotRouter);

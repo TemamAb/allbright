@@ -9,6 +9,7 @@ import StrategiesPage from "@/components/StrategiesPage";
 import Stream from "@/components/Stream";
 import Trades from "@/components/Trades";
 import Copilot from "@/components/Copilot";
+import SetupWizard from "@/components/SetupWizard";
 import Layout from "@/components/Layout";
 import Telemetry from "@/components/Telemetry"; // Ensure Telemetry is imported
 import Vault from "@/components/WalletPage"; // Vault is now WalletPage
@@ -49,7 +50,7 @@ function SocketProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
     if (!API_BASE_URL) {
-      console.warn("[Socket] No API_BASE_URL configured, skipping socket connection");
+      console.error("[BrightSky] VITE_API_BASE_URL is missing. UI will be restricted to offline mode.");
       return;
     }
 
@@ -59,6 +60,10 @@ function SocketProvider({ children }: { children: ReactNode }) {
     });
 
     s.on("connect", () => setIsConnected(true));
+    s.on("connect_error", (err) => {
+      console.error("[Socket] Connection failed:", err.message);
+      setIsConnected(false);
+    });
     s.on("disconnect", () => setIsConnected(false));
 
     setSocket(s);
@@ -99,6 +104,7 @@ export default function App() {
         <Switch>
           <Route path="/" component={Dashboard} />
           <Route path="/dashboard" component={Dashboard} />
+          <Route path="/setup" component={SetupWizard} />
           <Route path="/strategies" component={StrategiesPage} />
           <Route path="/stream" component={Stream} /> {/* Stream page */}
           <Route path="/trades" component={Trades} /> {/* Trade History page */}

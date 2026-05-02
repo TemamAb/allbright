@@ -15,7 +15,7 @@ export default function Dashboard() {
           <h2 className="text-3xl font-black uppercase tracking-tighter text-white">Global Efficiency</h2>
           <p className="text-[10px] text-zinc-500 font-bold mt-1 uppercase tracking-[0.3em]">Last Heartbeat: {new Date().toLocaleTimeString()}</p>
         </div>
-        <div className="text-7xl font-black text-emerald-500 tabular-nums tracking-tighter"> {/* Placeholder for real GES */}
+        <div className="text-7xl font-black text-emerald-500 font-mono tabular-nums tracking-tighter"> {/* Placeholder for real GES */}
           {(kpis.ges || 0).toFixed(1)}%
         </div>
       </div>
@@ -52,7 +52,7 @@ export default function Dashboard() {
               <TrendingUp size={16} className="text-cyan-500" />
               <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">24H Net Yield</span>
             </div>
-            <div className="text-3xl font-black text-white">$1,247.82</div>
+            <div className="text-3xl font-black text-white font-mono tabular-nums">$1,247.82</div>
             <div className="text-[10px] text-emerald-500 mt-2 font-bold">+12.4% vs Baseline</div>
           </div>
           <div className="bg-black border border-zinc-800 rounded-xl p-6 hover:border-cyan-500/50 transition-colors">

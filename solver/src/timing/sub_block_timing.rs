@@ -20,5 +20,18 @@ impl SubBlockTiming {
         self.latencies.insert(slot, latency_ms);
         self.avg_subblock_time = self.latencies.values().sum::<f64>() / self.latencies.len() as f64;
     }
-}
 
+    /// BSS-13: Predicts if a bribe increase is necessary based on competitive pressure
+    pub fn estimate_bribe_multiplier(&self, current_slot: u64) -> f64 {
+        let last_latency = self.latencies.get(&current_slot).unwrap_or(&self.avg_subblock_time);
+        
+        // If latency > 65ms (Target P0), increase bribe aggressively to jump the builder queue
+        if *last_latency > 65.0 {
+            1.25 // 25% Bribe boost
+        } else if *last_latency > 45.0 {
+            1.10 // 10% Bribe boost
+        } else {
+            1.00 // Nominal
+        }
+    }
+}

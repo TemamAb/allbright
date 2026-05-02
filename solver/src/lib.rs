@@ -1,12 +1,20 @@
 pub mod benchmarks;
 pub mod specialists;
+pub mod timing;
+pub mod rpc;
 
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 
 /// BSS-36: Centralized GES Weights (Total = 1.0)
 /// Optimized for Elite Grade performance targets.
-pub const GES_WEIGHTS: [f64; 6] = [0.30, 0.20, 0.20, 0.10, 0.10, 0.10];
+/// [Profit, Risk, Performance, Efficiency, Health, Auto-Opt]
+pub const GES_WEIGHTS: [f64; 6] = [
+    0.25, // Profitability (High alpha)
+    0.20, // Risk Management
+    0.15, // Execution Performance
+    0.10, 0.10, 0.20 // Efficiency, Health, Auto-Optimization
+];
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq)]
 pub enum RiskLevel {
@@ -61,10 +69,15 @@ pub trait SubsystemSpecialist: Send + Sync {
 pub struct WatchtowerStats {
     pub current_nrp_eth_per_day: f64,
     pub min_profit_bps: u64,
+    pub min_margin_ratio_bps: u64,
     pub current_competitive_collision_rate: f64,
     pub current_daily_drawdown_eth: f64,
     pub avg_latency_ms: f64,
     pub success_rate: f64,
+    pub bribe_ratio_bps: u64,
+    pub rpc_inclusion_latency_ms: f64,
+    pub active_rpc_count: u32,
+    pub msg_throughput_count: u64,
 }
 
 impl WatchtowerStats {

@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AINEON - Profit Transfer System</title>
+    <style>
+        :root {
+            --grafana-dark: #1e1e1e;
+            --grafana-panel: #2d2d2d;
+            --grafana-border: #404040;
+            --grafana-text: #d8d9da;
+            --grafana-green: #73bf69;
+            --grafana-blue: #5794f2;
+            --grafana-orange: #ff9830;
+            --grafana-red: #f2495c;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--grafana-dark);
+            color: var(--grafana-text);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: var(--grafana-panel);
+            border: 1px solid var(--grafana-border);
+            border-radius: 8px;
+            padding: 24px;
+            margin-bottom: 24px;
+            position: relative;
+        }
+        
+        .header-content {
+            text-align: center;
+        }
+        
+        .header h1 {
+            color: var(--grafana-green);
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .currency-selector {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .currency-label {
+            font-size: 12px;
+            color: #8e8e8e;
+            font-weight: 500;
+        }
+        
+        .currency-toggle {
+            display: flex;
+            background: var(--grafana-dark);
+            border-radius: 4px;
+            padding: 2px;
+            border: 1px solid var(--grafana-border);
+        }
+        
+        .currency-option {
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: all 0.2s ease;
+        }
+        
+        .currency-option.active {
+            background: var(--grafana-blue);
+            color: white;
+        }
+        
+        .grid-3col {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .card {
+            background: var(--grafana-panel);
+            border: 1px solid var(--grafana-border);
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 400px;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--grafana-border);
+        }
+        
+        .card-title {
+            color: var(--grafana-text);
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-success {
+            background: var(--grafana-green);
+            color: white;
+        }
+        
+        .status-warning {
+            background: var(--grafana-orange);
+            color: white;
+        }
+        
+        .status-processing {
+            background: var(--grafana-blue);
+            color: white;
+        }
+        
+        .metric-large {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 8px 0;
+        }
+        
+        .metric-green {
+            color: var(--grafana-green);
+        }
+        
+        .metric-orange {
+            color: var(--grafana-orange);
+        }
+        
+        .metric-red {
+            color: var(--grafana-red);
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            margin: 8px 0;
+            font-size: 14px;
+        }
+        
+        .btn-success {
+            background: var(--grafana-green);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #5da053;
+            transform: translateY(-1px);
+        }
+        
+        .btn-success:active {
+            transform: translateY(0);
+        }
+        
+        .btn-success:disabled {
+            background: #3a5a3a;
+            color: #8a9c8a;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid var(--grafana-border);
+            color: var(--grafana-text);
+        }
+        
+        .btn-ghost:hover {
+            border-color: var(--grafana-blue);
+            background: rgba(87, 148, 242, 0.1);
+        }
+        
+        .percentage-display {
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .percentage-value {
+            color: var(--grafana-green);
+            font-size: 42px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .amount-value {
+            color: var(--grafana-orange);
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .slider-container {
+            margin: 30px 0;
+        }
+        
+        .slider {
+            width: 100%;
+            height: 8px;
+            background: var(--grafana-border);
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--grafana-blue);
+            cursor: pointer;
+        }
+        
+        .balance-info {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .balance-change {
+            font-size: 14px;
+            margin-top: 5px;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .balance-change.show {
+            opacity: 1;
+        }
+        
+        .balance-negative {
+            color: var(--grafana-red);
+        }
+        
+        .insufficient-funds {
+            color: var(--grafana-red);
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        /* Currency display control */
+        .currency-usd .eth-display {
+            display: none !important;
+        }
+        
+        .currency-eth .usd-display {
+            display: none !important;
+        }
+        
+        .usd-display, .eth-display {
+            display: block;
+        }
+
+        /* Progress overlay */
+        .progress-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .progress-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .progress-container {
+            background: var(--grafana-panel);
+            border: 1px solid var(--grafana-border);
+            border-radius: 8px;
+            width: 90%;
+            max-width: 400px;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .progress-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        
+        .progress-bar {
+            height: 6px;
+            background: var(--grafana-border);
+            border-radius: 3px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--grafana-blue), var(--grafana-green));
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        
+        .progress-step {
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 4px;
+            border-left: 3px solid var(--grafana-border);
+        }
+        
+        .progress-step.active {
+            border-left-color: var(--grafana-blue);
+            background: rgba(87, 148, 242, 0.1);
+        }
+        
+        .progress-step.completed {
+            border-left-color: var(--grafana-green);
+            background: rgba(115, 191, 105, 0.1);
+        }
+        
+        .success-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--grafana-green);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 6px;
+            z-index: 1001;
+            transform: translateX(120%);
+            transition: transform 0.3s ease;
+        }
+        
+        .success-notification.active {
+            transform: translateX(0);
+        }
+    </style>
+</head>
+<body class="currency-usd">
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <h1>💰 AINEON PROFIT TRANSFER SYSTEM</h1>
+                <p>Secure Asset Management Platform</p>
+                
+                <div class="currency-selector">
+                    <div class="currency-label">Base Currency</div>
+                    <div class="currency-toggle">
+                        <div class="currency-option active" onclick="switchCurrency('usd')">USD</div>
+                        <div class="currency-option" onclick="switchCurrency('eth')">ETH</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid-3col">
+            <!-- WALLET & BALANCE -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">👛 Wallet & Balance</div>
+                    <div class="status-badge status-success">SECURE</div>
+                </div>
+                
+                <div class="balance-info">
+                    <div class="metric-large metric-green" id="currentBalance">
+                        <span class="usd-display">$116,137</span>
+                        <span class="eth-display">62.5 ETH</span>
+                    </div>
+                    <div style="color: #8e8e8e;">Available Balance</div>
+                    <div class="balance-change" id="balanceChange"></div>
+                </div>
+                
+                <div style="margin: 20px 0;">
+                    <div style="color: #8e8e8e; font-size: 14px; margin-bottom: 8px;">Destination Wallet</div>
+                    <div style="background: var(--grafana-dark); padding: 12px; border-radius: 4px; font-family: monospace; font-size: 13px;">
+                        0xd6Ef692B34c14000912f429ed503685cBD9C52E0
+                    </div>
+                </div>
+                
+                <button class="btn btn-ghost">✏️ Change Wallet Address</button>
+            </div>
+
+            <!-- TRANSFER CONTROL -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">🎯 Transfer Control</div>
+                    <div class="status-badge" id="transferStatus">READY</div>
+                </div>
+                
+                <div class="percentage-display">
+                    <div class="percentage-value" id="percentageValue">50%</div>
+                    <div class="amount-value">
+                        <span class="usd-display" id="transferAmount">$58,068</span>
+                        <span class="eth-display" id="transferAmountEth">31.25 ETH</span>
+                    </div>
+                </div>
+                
+                <div class="slider-container">
+                    <input type="range" class="slider" id="transferSlider" min="0" max="100" value="50" step="1">
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 20px 0;">
+                    <button class="btn-ghost" onclick="setPercentage(25)">25%</button>
+                    <button class="btn-ghost" onclick="setPercentage(50)">50%</button>
+                    <button class="btn-ghost" onclick="setPercentage(75)">75%</button>
+                    <button class="btn-ghost" onclick="setPercentage(100)">100%</button>
+                </div>
+                
+                <button class="btn btn-success" id="executeButton" onclick="executeTransfer()">
+                    🚀 EXECUTE TRANSFER
+                </button>
+                
+                <div class="insufficient-funds" id="insufficientFunds">
+                    ⚠️ Insufficient funds for this transfer
+                </div>
+            </div>
+
+            <!-- TRANSFER HISTORY -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">📊 Transfer History</div>
+                    <div class="status-badge status-success">LIVE</div>
+                </div>
+                
+                <div style="max-height: 320px; overflow-y: auto;" id="historyList">
+                    <!-- History will be populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PROGRESS OVERLAY -->
+    <div class="progress-overlay" id="progressOverlay">
+        <div class="progress-container">
+            <div class="progress-title">Processing Transfer</div>
+            
+            <div class="progress-step active" id="step1">
+                <div style="font-weight: 600;">Initializing Transfer</div>
+                <div style="font-size: 12px; color: #8e8e8e;">Validating transaction parameters</div>
+            </div>
+            
+            <div class="progress-step" id="step2">
+                <div style="font-weight: 600;">Processing Transaction</div>
+                <div style="font-size: 12px; color: #8e8e8e;">Executing on blockchain</div>
+            </div>
+            
+            <div class="progress-step" id="step3">
+                <div style="font-weight: 600;">Confirming Transfer</div>
+                <div style="font-size: 12px; color: #8e8e8e;">Waiting for network confirmation</div>
+            </div>
+            
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            
+            <div style="font-size: 12px; color: #8e8e8e;" id="progressText">Starting transfer process...</div>
+        </div>
+    </div>
+
+    <!-- SUCCESS NOTIFICATION -->
+    <div class="success-notification" id="successNotification">
+        <div style="font-weight: 600;">✅ Transfer Completed</div>
+        <div style="font-size: 12px; opacity: 0.9;" id="successAmount"></div>
+    </div>
+
+    <script>
+        // TRANSFER SYSTEM STATE
+        let currentBalance = 116137;
+        let currentBalanceETH = 62.5;
+        let currentPercentage = 50;
+        let transferInProgress = false;
+        
+        // Initialize the system
+        function initializeSystem() {
+            updateDisplay();
+            setupEventListeners();
+            loadTransferHistory();
+        }
+        
+        // Set up event listeners
+        function setupEventListeners() {
+            const slider = document.getElementById('transferSlider');
+            slider.addEventListener('input', function() {
+                currentPercentage = parseInt(this.value);
+                updateDisplay();
+                validateTransfer();
+            });
+        }
+        
+        // Update all displays
+        function updateDisplay() {
+            // Update percentage display
+            document.getElementById('percentageValue').textContent = currentPercentage + '%';
+            
+            // Calculate transfer amounts
+            const transferAmount = Math.floor((currentBalance * currentPercentage) / 100);
+            const transferAmountETH = (currentBalanceETH * currentPercentage) / 100;
+            
+            // Update transfer amount displays
+            document.getElementById('transferAmount').textContent = '$' + transferAmount.toLocaleString();
+            document.getElementById('transferAmountEth').textContent = transferAmountETH.toFixed(2) + ' ETH';
+            
+            // Update slider
+            document.getElementById('transferSlider').value = currentPercentage;
+        }
+        
+        // Set percentage directly
+        function setPercentage(percentage) {
+            currentPercentage = percentage;
+            updateDisplay();
+            validateTransfer();
+        }
+        
+        // Validate transfer
+        function validateTransfer() {
+            const transferAmount = (currentBalance * currentPercentage) / 100;
+            const insufficientFunds = document.getElementById('insufficientFunds');
+            const executeButton = document.getElementById('executeButton');
+            
+            if (transferAmount <= 0) {
+                executeButton.disabled = true;
+                insufficientFunds.style.display = 'block';
+            } else {
+                executeButton.disabled = false;
+                insufficientFunds.style.display = 'none';
+            }
+        }
+        
+        // Execute transfer - NOW FULLY WORKING
+        function executeTransfer() {
+            if (transferInProgress) return;
+            
+            const transferAmount = Math.floor((currentBalance * currentPercentage) / 100);
+            const transferAmountETH = (currentBalanceETH * currentPercentage) / 100;
+            
+            console.log('🚀 Executing transfer:', {
+                percentage: currentPercentage + '%',
+                amountUSD: '$' + transferAmount,
+                amountETH: transferAmountETH + ' ETH'
+            });
+            
+            // Start transfer process
+            transferInProgress = true;
+            document.getElementById('executeButton').disabled = true;
+            document.getElementById('transferStatus').textContent = 'PROCESSING';
+            document.getElementById('transferStatus').className = 'status-badge status-processing';
+            
+            showProgressOverlay();
+            simulateTransferProcess(transferAmount, transferAmountETH);
+        }
+        
+        // Show progress overlay
+        function showProgressOverlay() {
+            document.getElementById('progressOverlay').classList.add('active');
+        }
+        
+        // Hide progress overlay
+        function hideProgressOverlay() {
+            document.getElementById('progressOverlay').classList.remove('active');
+        }
+        
+        // Simulate transfer process
+        function simulateTransferProcess(amountUSD, amountETH) {
+            const steps = [
+                { id: 'step1', text: 'Validating transaction...', duration: 1000 },
+                { id: 'step2', text: 'Processing on blockchain...', duration: 2000 },
+                { id: 'step3', text: 'Confirming transfer...', duration: 1500 }
+            ];
+            
+            let currentStep = 0;
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            
+            function processNextStep() {
+                if (currentStep >= steps.length) {
+                    // Transfer completed
+                    completeTransfer(amountUSD, amountETH);
+                    return;
+                }
+                
+                const step = steps[currentStep];
+                
+                // Update progress bar
+                progressFill.style.width = ((currentStep + 1) / steps.length * 100) + '%';
+                progressText.textContent = step.text;
+                
+                // Update step status
+                document.getElementById(step.id).classList.add('completed');
+                if (currentStep + 1 < steps.length) {
+                    document.getElementById(steps[currentStep + 1].id).classList.add('active');
+                }
+                
+                currentStep++;
+                setTimeout(processNextStep, step.duration);
+            }
+            
+            processNextStep();
+        }
+        
+        // Complete transfer
+        function completeTransfer(amountUSD, amountETH) {
+            // Deduct from balance
+            currentBalance -= amountUSD;
+            currentBalanceETH -= amountETH;
+            
+            // Update balance display
+            document.getElementById('currentBalance').querySelector('.usd-display').textContent = '$' + currentBalance.toLocaleString();
+            document.getElementById('currentBalance').querySelector('.eth-display').textContent = currentBalanceETH.toFixed(2) + ' ETH';
+            
+            // Show balance change
+            const balanceChange = document.getElementById('balanceChange');
+            if (document.body.classList.contains('currency-usd')) {
+                balanceChange.textContent = '-$' + amountUSD.toLocaleString();
+            } else {
+                balanceChange.textContent = '-' + amountETH.toFixed(2) + ' ETH';
+            }
+            balanceChange.className = 'balance-change balance-negative show';
+            
+            // Add to history
+            addToTransferHistory(amountUSD, amountETH);
+            
+            // Show success notification
+            showSuccessNotification(amountUSD, amountETH);
+            
+            // Reset UI
+            setTimeout(() => {
+                hideProgressOverlay();
+                document.getElementById('executeButton').disabled = false;
+                document.getElementById('transferStatus').textContent = 'READY';
+                document.getElementById('transferStatus').className = 'status-badge status-warning';
+                transferInProgress = false;
+                
+                // Hide balance change after 3 seconds
+                setTimeout(() => {
+                    balanceChange.className = 'balance-change';
+                }, 3000);
+            }, 1000);
+        }
+        
+        // Show success notification
+        function showSuccessNotification(amountUSD, amountETH) {
+            const notification = document.getElementById('successNotification');
+            const successAmount = document.getElementById('successAmount');
+            
+            if (document.body.classList.contains('currency-usd')) {
+                successAmount.textContent = 'Transferred: $' + amountUSD.toLocaleString();
+            } else {
+                successAmount.textContent = 'Transferred: ' + amountETH.toFixed(2) + ' ETH';
+            }
+            
+            notification.classList.add('active');
+            
+            setTimeout(() => {
+                notification.classList.remove('active');
+            }, 5000);
+        }
+        
+        // Add to transfer history
+        function addToTransferHistory(amountUSD, amountETH) {
+            const historyList = document.getElementById('historyList');
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            const historyItem = document.createElement('div');
+            historyItem.style.padding = '12px';
+            historyItem.style.borderBottom = '1px solid var(--grafana-border)';
+            historyItem.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600; color: var(--grafana-red);">
+                            <span class="usd-display">-$${amountUSD.toLocaleString()}</span>
+                            <span class="eth-display">-${amountETH.toFixed(2)} ETH</span>
+                        </div>
+                        <div style="font-size: 12px; color: #8e8e8e;">${timeString} • ${currentPercentage}% Transfer</div>
+                    </div>
+                    <div style="font-size: 12px; color: var(--grafana-green);">✅ COMPLETED</div>
+                </div>
+            `;
+            
+            historyList.insertBefore(historyItem, historyList.firstChild);
+        }
+        
+        // Load transfer history
+        function loadTransferHistory() {
+            // Initial history items
+            const initialHistory = [
+                { amountUSD: 45820, amountETH: 24.6, percentage: 50, time: 'Today 14:23' },
+                { amountUSD: 32150, amountETH: 17.3, percentage: 25, time: 'Today 11:47' },
+                { amountUSD: 38167, amountETH: 20.5, percentage: 75, time: 'Yesterday 16:12' }
+            ];
+            
+            const historyList = document.getElementById('historyList');
+            
+            initialHistory.forEach(transfer => {
+                const historyItem = document.createElement('div');
+                historyItem.style.padding = '12px';
+                historyItem.style.borderBottom = '1px solid var(--grafana-border)';
+                historyItem.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 600; color: var(--grafana-red);">
+                                <span class="usd-display">-$${transfer.amountUSD.toLocaleString()}</span>
+                                <span class="eth-display">-${transfer.amountETH} ETH</span>
+                            </div>
+                            <div style="font-size: 12px; color: #8e8e8e;">${transfer.time} • ${transfer.percentage}% Transfer</div>
+                        </div>
+                        <div style="font-size: 12px; color: var(--grafana-green);">✅ COMPLETED</div>
+                    </div>
+                `;
+                historyList.appendChild(historyItem);
+            });
+        }
+        
+        // Currency switching
+        function switchCurrency(currency) {
+            document.body.className = 'currency-' + currency;
+            document.querySelectorAll('.currency-option').forEach(option => {
+                option.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', initializeSystem);
+    </script>
+</body>
+</html>

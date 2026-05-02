@@ -34,7 +34,7 @@ import * as net from "net";
 import * as crypto from "crypto";
 import { logger } from "../services/logger.js";
 import { gateKeeper } from "../services/gateKeeper.js";
-import { comprehensiveDeploymentCheck, runMasterDeploymentReadinessAnalysis } from "../services/deploy_gatekeeper.js";
+import { getDeploymentReadinessSummary, generateDeploymentReadinessReport } from "../services/deploy_gatekeeper.js";
 import { sharedEngineState } from "../services/engineState.js";
 import { alphaCopilot } from "../services/alphaCopilot.js";
 import { runStartupChecks } from "../services/startup_checks.js";
@@ -51,6 +51,8 @@ import {
   simulateOpportunityExecution,
   computeDynamicGasStrategy
 } from "../services/executionControls.js";
+import { cloudOrchestrator } from "../services/cloudOrchestrator.js";
+import { onboardingService } from "../services/onboardingService.js";
 
 const router = Router();
 
@@ -276,6 +278,18 @@ async function autoStartEngine() {
     logger.warn({ error: e }, "Startup checks failed to run");
   }
 
+  // BSS-52: Prioritize Desktop Persisted Config
+  const persisted = await onboardingService.loadPersistedConfig();
+  if (persisted) {
+    logger.info('[ENGINE] Bootstrapping from persisted desktop configuration');
+    process.env.RPC_ENDPOINT = persisted.rpcEndpoint;
+    process.env.PIMLICO_API_KEY = persisted.pimlicoKey;
+    process.env.PRIVATE_KEY = persisted.privateKey;
+    
+    engineState.onboardingComplete = true;
+    sharedEngineState.onboardingComplete = true;
+  }
+
   if (engineState.running) {
     logger.info("Engine already running - auto-start skipped");
     return;
@@ -284,6 +298,20 @@ async function autoStartEngine() {
   const caps = await detectLiveCapability();
   const mode = caps.liveCapable ? "LIVE" : "SHADOW";
   logger.info(`Auto-starting BrightSky Engine in ${mode} mode for dashboard`);
+
+  // Verify System Integrity against Over-Engineering
+  const integrityCheck = await alphaCopilot.evaluateEngineeringIntegrity({
+    featureName: "Core-Engine-V2",
+    expectedProfitBps: 15,
+    latencyPenaltyMs: 0.5,
+    linesOfCode: 1200,
+    riskSurfaceIncrease: "LOW"
+  });
+
+  if (!integrityCheck.approved) {
+    logger.error({ reason: integrityCheck.reason }, "ENGINE START BLOCKED: Over-engineering detected in current build.");
+    process.exit(1); 
+  }
 
   // KPI 11: Use env wallet if set, otherwise generate ephemeral
   const envWalletAddress = process.env["WALLET_ADDRESS"] || null;
@@ -1298,8 +1326,8 @@ router.post("/gates/emergency-override", async (req, res) => {
   }
 });
 
-async function handleMasterReadinessAnalysis(res: any) {
-  const readinessReport = await runMasterDeploymentReadinessAnalysis();
+async function handleDRRGeneration(res: any) {
+  const readinessReport = await generateDeploymentReadinessReport();
 
   res.json({
     success: true,
@@ -1309,7 +1337,7 @@ async function handleMasterReadinessAnalysis(res: any) {
 
 router.get("/deployment/readiness", async (_req, res) => {
   try {
-    await handleMasterReadinessAnalysis(res);
+    await handleDRRGeneration(res);
   } catch (error: any) {
     logger.error('[ENGINE] Deployment readiness check failed', error);
     res.status(500).json({ success: false, error: error.message });
@@ -1318,7 +1346,7 @@ router.get("/deployment/readiness", async (_req, res) => {
 
 router.post("/deployment/readiness/run", async (_req, res) => {
   try {
-    await handleMasterReadinessAnalysis(res);
+    await handleDRRGeneration(res);
   } catch (error: any) {
     logger.error('[ENGINE] Master deployment readiness run failed', error);
     res.status(500).json({ success: false, error: error.message });
@@ -1330,11 +1358,16 @@ router.get("/engine/status", async (_req, res) => {
     ? Math.floor((Date.now() - engineState.startedAt.getTime()) / 1000)
     : 0;
 
+  // Calculate total balance across all wallets for the header metric
+  const totalWalletBalance = sharedEngineState.wallets
+    .reduce((sum, w) => sum + (w.balanceEth || 0), 0);
+
   res.json({
     running: engineState.running,
     mode: engineState.mode,
     uptime,
     walletAddress: engineState.walletAddress,
+    totalWalletBalance, // Metric for the right side of the heading
     gaslessMode: engineState.gaslessMode,
     pimlicoEnabled: engineState.pimlicoEnabled,
     scannerActive: engineState.scannerActive,
@@ -1343,6 +1376,7 @@ router.get("/engine/status", async (_req, res) => {
     opportunitiesExecuted: engineState.opportunitiesExecuted,
     chainId: engineState.chainId,
     ipcConnected: sharedEngineState.ipcConnected,
+    onboardingComplete: sharedEngineState.onboardingComplete,
     shadowModeActive: sharedEngineState.shadowModeActive,
     flashloanContractAddress: sharedEngineState.flashloanContractAddress,
     scanInFlight: engineState.scanInFlight,
@@ -1354,6 +1388,19 @@ router.get("/engine/status", async (_req, res) => {
     consecutiveFailures: engineState.circuitBreaker.consecutiveFailures,
     circuitBreakerUntil: engineState.circuitBreaker.blockedUntil,
     lastFailureReason: engineState.circuitBreaker.lastFailureReason,
+    appName: sharedEngineState.appName,
+    logoUrl: sharedEngineState.logoUrl,
+    intelligenceSource: sharedEngineState.intelligenceSource,
+    clientProfile: sharedEngineState.clientProfile,
+    integrityThreshold: sharedEngineState.integrityThreshold,
+    domainScores: {
+      profit: sharedEngineState.domainScoreProfit,
+      risk: sharedEngineState.domainScoreRisk,
+      perf: sharedEngineState.domainScorePerf,
+      eff: sharedEngineState.domainScoreEff,
+      health: sharedEngineState.domainScoreHealth,
+      autoOpt: sharedEngineState.domainScoreAutoOpt,
+    }
   });
 });
 
@@ -1368,7 +1415,7 @@ router.post("/engine/start", async (req, res) => {
   }
 
   // GATE KEEPER: Check comprehensive deployment readiness before starting engine
-  const deploymentCheck = await comprehensiveDeploymentCheck();
+  const deploymentCheck = await getDeploymentReadinessSummary();
   
   // Check for manual override via gateKeeper authority
   const authStatus = gateKeeper.isDeploymentAuthorized();
@@ -1554,5 +1601,66 @@ async function stopEngineInternal(): Promise<boolean> {
 
   return true;
 }
+
+/**
+ * BSS-52: Electron IPC Listener
+ * Listens for configuration updates from the Desktop shell.
+ */
+if (process.send) {
+  process.on('message', async (msg: any) => {
+    if (msg.type === 'RELOAD_CONFIG') {
+      logger.info('[ENGINE] Received configuration reload from Desktop shell');
+      try {
+        await onboardingService.completeOnboarding(msg.payload);
+        
+        // Update live engine state
+        engineState.rpcEndpoint = msg.payload.rpcEndpoint;
+        engineState.pimlicoApiKey = msg.payload.pimlicoKey;
+        
+        // Recommendation 1: Decrypt hardware-encrypted key for memory-only engine use
+        engineState.walletPrivateKey = await onboardingService.decryptWithHardwareBridge(msg.payload.privateKey);
+        
+        engineState.onboardingComplete = true;
+        
+        sharedEngineState.onboardingComplete = true;
+        sharedEngineState.rpcEndpoint = msg.payload.rpcEndpoint;
+        
+        broadcastCopilotEvent('onboarding-success', { message: 'Configuration synced and encrypted' });
+      } catch (err: any) {
+        logger.error({ err }, '[ENGINE] Failed to apply onboarding config');
+      }
+    }
+  });
+}
+
+/**
+ * Phase 4: Cloud Deployment Trigger
+ * Accessible only if the local gatekeeper has authorized the state.
+ */
+router.get("/deployment/cloud/providers", async (req, res) => {
+  try {
+    const providers = await cloudOrchestrator.getSupportedClouds();
+    res.json({
+      success: true,
+      providers
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.post("/deployment/cloud/sync", async (req, res) => {
+  try {
+    const { provider } = req.body;
+    const result = await cloudOrchestrator.deployCurrentStack(provider);
+
+    res.json({
+      success: true,
+      ...result
+    });
+  } catch (error: any) {
+    res.status(403).json({ success: false, error: error.message });
+  }
+});
 
 export default router;

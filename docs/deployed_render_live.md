@@ -93,7 +93,7 @@ All internal deployment blockers have been resolved. The system is operational f
    - **Logs:** Look for:
      - `[BSS-38] PRE-FLIGHT INTEGRITY CHECK` ✅
      - `[BSS-39] Rust Code Compiles Successfully` ✅
-     - `[BSS-26] Nexus Orchestrator ACTIVE` ✅
+     - `[BSS-26] BrightSky Orchestrator ACTIVE` ✅
      - Health endpoint `GET /api/health` ✅
      - Engine mode transition to `LIVE` ✅
    - **Dashboard:** Access the UI (via Render URL) to verify opportunity scanning and profit metrics.

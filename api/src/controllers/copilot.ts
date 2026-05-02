@@ -26,14 +26,15 @@ router.post("/command", async (req, res) => {
   try {
     const { command } = req.body;
 
-    broadcastCopilotEvent('command-received', `Human Commander: ${command}`);
+    broadcastCopilotEvent('user-message', { content: command, role: 'user' });
     
     // Parse command for specialist orchestration
     let report = '';
     if (command.toLowerCase().includes('tune') || command.toLowerCase().includes('kpi')) {
+      broadcastCopilotEvent('ai-status', 'Analyzing KPI Drift...');
       const result = await alphaCopilot.fullKpiTuneCycle({});
       report = `Full KPI tune cycle complete. Results:\\n${JSON.stringify(result, null, 2)}`;
-      broadcastCopilotEvent('success', { message: 'KPI Tune Cycle Complete', result });
+      broadcastCopilotEvent('ai-message', { content: report, role: 'assistant', meta: result });
     } else if (command.toLowerCase().includes('audit') || command.toLowerCase().includes('readiness')) {
       const auditResult = await alphaCopilot.checkDeploymentReadiness();
       report = `System Audit complete. Result: ${JSON.stringify(auditResult)}`;
@@ -85,6 +86,35 @@ router.post("/command", async (req, res) => {
   } catch (err) {
     broadcastCopilotEvent('error', { message: 'Command execution failed', error: String(err) });
     console.error("Alpha-Copilot command error:", err);
+    res.status(500).json({ success: false, error: String(err) });
+  }
+});
+
+/**
+ * POST /api/copilot/articulate
+ * BSS-28: Refines user prompts before execution to help less skilled operators.
+ */
+router.post("/articulate", async (req, res) => {
+  try {
+    const { command } = req.body;
+    // Broadcast raw intent to UI for context
+    broadcastCopilotEvent('user-message', { content: command, role: 'user' });
+    const articulated = await alphaCopilot.articulateCommand(command);
+    res.json({ success: true, articulated });
+  } catch (err) {
+    res.status(500).json({ success: false, error: String(err) });
+  }
+});
+
+/**
+ * POST /api/copilot/save-model
+ * BSS-28: Manually triggers persistence of the MetaLearner state.
+ */
+router.post("/save-model", async (req, res) => {
+  try {
+    await alphaCopilot.save_model();
+    res.json({ success: true, message: "MetaLearner state persisted to database." });
+  } catch (err) {
     res.status(500).json({ success: false, error: String(err) });
   }
 });

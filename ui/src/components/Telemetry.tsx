@@ -101,7 +101,7 @@ const Telemetry: React.FC = () => {
       <div className="bg-[#1a1a1c] border border-zinc-800 rounded-xl p-6 flex flex-col md:flex-row items-center justify-between shadow-2xl shrink-0">
         <div>
           <h1 className="text-2xl font-black uppercase tracking-widest text-slate-100">Global Efficiency Score</h1>
-          <p className="text-xs text-zinc-500 font-mono mt-1">Last Update: {kpis.timestamp?.toLocaleString() || 'N/A'}</p>
+          <p className="text-xs text-zinc-500 font-mono tabular-nums mt-1">Last Update: {kpis.timestamp?.toLocaleString() || 'N/A'}</p>
         </div>
         <div className="flex items-center gap-4 mt-4 md:mt-0">
           <div className={`px-3 py-1 rounded border text-xs font-bold font-mono tracking-widest uppercase ${isLive ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-zinc-800 border-zinc-700 text-zinc-500'}`}>
@@ -149,8 +149,8 @@ const Telemetry: React.FC = () => {
             <thead className="sticky top-0 bg-black z-10">
               <tr className="border-b border-zinc-800 text-zinc-500">
                 <th className="px-4 py-3 text-[10px] uppercase tracking-widest font-medium w-[250px]">Category / KPI</th>
-                <th className="px-4 py-3 text-[10px] uppercase tracking-widest font-medium">Observed</th>
-                <th className="px-4 py-3 text-[10px] uppercase tracking-widest font-medium">Target</th>
+                <th className="px-4 py-3 text-[10px] uppercase tracking-widest font-medium font-mono">Observed</th>
+                <th className="px-4 py-3 text-[10px] uppercase tracking-widest font-medium font-mono">Target</th>
                 <th className="px-4 py-3 text-[10px] uppercase tracking-widest font-medium text-center">Count</th>
                 <th className="px-4 py-3 text-[10px] uppercase tracking-widest font-medium">Status</th>
                 <th className="px-4 py-3 text-[10px] uppercase tracking-widest font-medium text-right">Action</th>
@@ -210,7 +210,7 @@ const Telemetry: React.FC = () => {
                         <td className="px-4 py-2 text-xs font-mono text-zinc-300 tabular-nums">
                           {typeof liveKpiData.designTarget === 'number' ? liveKpiData.designTarget.toFixed(2) : liveKpiData.designTarget} <span className="text-zinc-600">{liveKpiData.unit}</span>
                         </td>
-                        <td className="px-4 py-2 text-xs font-mono text-zinc-500">
+                        <td className="px-4 py-2 text-xs font-mono tabular-nums text-zinc-500">
                           1 {/* Individual KPI */}
                         </td>
                         <td className="px-4 py-2 text-xs font-mono">
@@ -219,7 +219,7 @@ const Telemetry: React.FC = () => {
                           </span>
                         </td>
                         <td className="px-4 py-2 text-right">
-                          <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded ${varianceColor}`}>
+                          <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded font-mono tabular-nums ${varianceColor}`}>
                             {variance}
                           </span>
                         </td>

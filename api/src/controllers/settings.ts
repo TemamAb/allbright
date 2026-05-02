@@ -1,21 +1,52 @@
-/**
- * Settings Hub — Environment Orchestration & Redeploy Logic.
- */
-
 import { Router } from "express";
+import { logger } from "../services/logger";
 import { db } from "@workspace/db";
 import { settingsTable } from "@workspace/db";
 import { alphaCopilot } from "../services/alphaCopilot";
-import { join } from "path";
-import { eq } from "drizzle-orm";
+import { sharedEngineState } from "../services/engineState";
+import { sql } from "drizzle-orm";
+import jwt from "jsonwebtoken";
+import * as fs from "node:fs";
+import * as path from "node:path";
 
 const router = Router();
 
 /**
- * GET /settings — Returns the full Environment Data (Masked)
- * Merges Cloud Environment with Local manual overrides.
+ * Middleware: checkAdmin
+ * Hardened: Verifies JWT session token and extracts role.
  */
-router.get("/settings", async (req, res) => {
+const checkAdmin = (req: any, res: any, next: any) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ success: false, error: "UNAUTHORIZED", message: "Session token required." });
+  }
+
+  const token = authHeader.split(' ')[1];
+  try {
+    const decoded: any = jwt.verify(token, process.env.JWT_SECRET || 'brightsky-elite-secret');
+    
+    if (decoded.role !== 'ADMIN') {
+      logger.warn({ user: decoded.email }, "[AUTH] Forbidden administrative action attempt");
+      return res.status(403).json({ success: false, error: "FORBIDDEN", message: "Admin privileges required." });
+    }
+
+    req.user = decoded; // Attach user context to request
+    next();
+  } catch (err) {
+    logger.error("[AUTH] Invalid or expired session token");
+    return res.status(403).json({ 
+      success: false, 
+      error: "INVALID_SESSION", 
+      message: "Your session has expired. Please log in again." 
+    });
+  }
+};
+
+/**
+ * GET /api/settings/
+ * BSS-56: Retrieves masked environment variables and the deployment registry.
+ */
+router.get("/", async (req, res) => {
   const envData = Object.entries(process.env).map(([key, value]) => ({
     key,
     value:
@@ -23,98 +54,94 @@ router.get("/settings", async (req, res) => {
         ? `****${value?.slice(-4)}`
         : value,
   }));
-  res.json({ success: true, env: envData });
+
+  res.json({ 
+    success: true, 
+    env: envData,
+    deploymentRegistry: sharedEngineState.deploymentHistory,
+    ghostMode: sharedEngineState.ghostMode,
+    clientProfile: sharedEngineState.clientProfile,
+    integrityThreshold: sharedEngineState.integrityThreshold
+  });
 });
 
 /**
- * PUT /settings — Accepts either:
- * 1. { env: Array<{key:string,value:string}> } for environment variables (legacy)
- * 2. { data: { flashLoanSizeEth, minMarginPct, maxBribePct, maxSlippagePct, simulationMode, targetProtocols, openaiApiKey, pimlicoApiKey } } for UI settings
+ * POST /api/settings/redeploy
+ * BSS-52: Triggers a system reboot via Alpha-Copilot Mission Command.
  */
-router.put("/settings", async (req, res) => {
-  const { env, data } = req.body;
-
+router.post("/redeploy", checkAdmin, async (req, res) => {
   try {
-    // Handle new UI shape: direct settings object
-    if (data && typeof data === "object") {
-      const { openaiApiKey, pimlicoApiKey, ...tradingSettings } = data;
+    // Command directed at the Rust backbone for a clean performance optimization restart
+    const command = "pkill -f rust-backbone || true && /app/bin/rust-backbone";
+    const result = await alphaCopilot.executeMissionCommand(command);
 
-      // Build update object for trading settings table
-      const updates: Record<string, unknown> = {};
-      for (const [key, value] of Object.entries(tradingSettings)) {
-        if (value !== undefined && value !== null) {
-          updates[key] = value;
-        }
-      }
-
-      if (Object.keys(updates).length > 0) {
-        const rows = await db.select().from(settingsTable).limit(1);
-        if (rows.length === 0) {
-          await db.insert(settingsTable).values(updates);
-        } else {
-          await db.update(settingsTable).set(updates);
-        }
-      }
-
-      // Also update sensitive env vars if provided
-      if (openaiApiKey) process.env.OPENAI_API_KEY = openaiApiKey;
-      if (pimlicoApiKey) process.env.PIMLICO_API_KEY = pimlicoApiKey;
-
-      return res.json({
-        success: true,
-        message: "Trading settings updated successfully.",
+    if (!result.executed) {
+      return res.status(403).json({ 
+        success: false, 
+        error: result.error, 
+        message: result.message 
       });
     }
 
-    // Legacy path: environment variable updates
-    if (env && Array.isArray(env)) {
-      for (const { key, value } of env) {
-        if (key && value) {
-          process.env[key] = value;
-          await db
-            .insert(settingsTable)
-            .values({ key, value, updatedAt: new Date() })
-            .onConflictDoUpdate({
-              target: (settingsTable as any).key,
-              set: { value, updatedAt: new Date() },
-            });
-        }
-      }
-      res.json({
-        success: true,
-        message: "Environment updated. Ready for redeploy.",
-      });
-      return;
-    }
+    // BSS-56: Register the manual/AI upgrade in the history ledger
+    sharedEngineState.deploymentHistory.unshift({
+      id: sharedEngineState.deploymentHistory.length + 1,
+      commitHash: 'UPGRADE',
+      commitMessage: 'Alpha-Copilot: Performance Optimization Redeploy',
+      cloudProvider: 'RENDER',
+      timestamp: new Date(),
+      smartAccount: sharedEngineState.walletAddress || '0x...',
+      contractAddress: sharedEngineState.flashloanContractAddress || '0x...',
+      isActive: true,
+      triggeredBy: sharedEngineState.currentUserRole === 'ADMIN' ? 'USER' : 'ALPHA_COPILOT'
+    });
 
-    res
-      .status(400)
-      .json({
-        success: false,
-        error:
-          "Invalid request body. Expected { data: {...} } or { env: [...] }",
-      });
+    logger.info("[SETTINGS] System reboot sequence initiated via command gateway");
+    res.json({
+      success: true,
+      message: "Redeploy command dispatched to backbone.",
+    });
   } catch (err) {
     res.status(500).json({ success: false, error: String(err) });
   }
 });
 
 /**
- * POST /settings/redeploy — System Reboot Trigger
- * Invokes the Alpha-Copilot's terminal access to restart the worker and re-detect env.
+ * PUT /api/settings/
+ * BSS-WhiteLabel: Updates system operational state (Ghost Mode, Integrity Thresholds).
  */
-router.post("/settings/redeploy", async (req, res) => {
-  try {
-    // Trigger terminal command for a clean reboot of the backbone
-    // Optimized for Docker: Use the compiled binary in /app/bin/
-    const command = "pkill -f rust-backbone || true && /app/bin/rust-backbone";
-    const result = await alphaCopilot.executeMissionCommand(command);
+router.put("/", checkAdmin, async (req, res) => {
+  const { env, data } = req.body;
+  
+  if (data) {
+    if (data.ghostMode !== undefined) sharedEngineState.ghostMode = data.ghostMode;
+    if (data.integrityThreshold !== undefined) sharedEngineState.integrityThreshold = data.integrityThreshold;
+    logger.info({ data }, "[SETTINGS] System state updated");
+  }
 
-    res.json({
-      success: true,
-      message: "Redeploy command dispatched to backbone.",
-      output: result,
-    });
+  if (env && Array.isArray(env)) {
+    for (const item of env) {
+      process.env[item.key] = item.value;
+    }
+    logger.info("[SETTINGS] Environment variables updated for current session");
+  }
+
+  res.json({ success: true });
+});
+
+/**
+ * GET /api/settings/audit/export
+ * BSS-52: Generates and streams the signed PDF Audit Report.
+ */
+router.get("/audit/export", async (req, res) => {
+  try {
+    const pdfBuffer = await alphaCopilot.generateAuditPDFBuffer();
+    const appName = sharedEngineState.appName || (sharedEngineState.ghostMode ? 'Elite Protocol' : 'BrightSky');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=${appName.replace(/\s/g, '_')}_Audit_${timestamp}.pdf`);
+    res.send(pdfBuffer);
   } catch (err) {
     res.status(500).json({ success: false, error: String(err) });
   }
