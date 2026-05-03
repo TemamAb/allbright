@@ -1,20 +1,18 @@
 FROM node:20-alpine
 
-# Install build essentials for native modules
-RUN apk add --no-cache python3 make g++ curl
+# Install build essentials for native modules and pnpm
+RUN apk add --no-cache python3 make g++ curl bash
 
 WORKDIR /app
 
-# Enable corepack and use specific pnpm version
-RUN corepack enable && corepack prepare pnpm@9.12.2 --activate
+# Install pnpm globally
+RUN npm install -g pnpm@9.12.2
 
-# Copy only dependency files first to leverage Docker cache
+# Copy dependency files first to leverage Docker cache
 COPY package.json pnpm-lock.yaml ./
 
-# Run install without frozen lockfile first to ensure compatibility
-# Then run with frozen lockfile to lock versions
-RUN pnpm install --no-frozen-lockfile
-RUN pnpm install --frozen-lockfile
+# Run install - prioritize frozen lockfile, fall back to full install if needed
+RUN pnpm install --frozen-lockfile || pnpm install
 
 # Copy source code
 COPY . .
