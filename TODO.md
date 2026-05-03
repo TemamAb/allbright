@@ -33,9 +33,9 @@ Replace scattered readiness checks with **SINGLE** `generateDeploymentReadinessR
    - overallStatus correct
    - No more scattered logic
 
-### 6. [ ] Commit (if gh CLI ready)
+### 6. [✅] Commit
    ```
-   git checkout -b blackboxai/deployment-readiness-unified
+   git checkout -b deployment-readiness-unified
    git add .
 ### 7. [ ] Phase 1.2: RPC Orchestration Integration
    - Create `solver/src/rpc/rpc_orchestrator.rs`
@@ -56,8 +56,8 @@ Replace scattered readiness checks with **SINGLE** `generateDeploymentReadinessR
 
 ### 11. [ ] Fix Deployment Crash (Render/pnpm)
    - [x] Update `Dockerfile` to use `pnpm@9.12.1`.
-   - [ ] Regenerate `pnpm-lock.yaml` locally.
-   - [ ] Push to `blackboxai/deployment-readiness-unified`.
+   - [x] Regenerate `pnpm-lock.yaml` locally.
+   - [ ] Push to `deployment-readiness-unified`.
 
 **Status Update: Core Blockers Cleared. Both API and UI builds now succeed.**
 
