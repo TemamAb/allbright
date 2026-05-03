@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import {
-  Activity, Radio, Wallet, Settings, BarChart2, Zap, Menu, X, ShieldCheck, Brain, Globe, ChevronDown, Coins, DollarSign
+  Activity, Radio, Wallet, Settings, BarChart2, Zap, Menu, X, ShieldCheck, Brain, Globe, ChevronDown, Coins, DollarSign, Lock
 } from "lucide-react";
 import { useGetEngineStatus } from "@/lib/api";
 import { useTheme } from "next-themes";
@@ -28,6 +28,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const isRunning = status?.running;
   const mode = status?.mode ?? "STOPPED";
   const isShadowMode = mode === "SHADOW";
+  const isGhostMode = status?.ghostMode;
 
   return (
     <div className="min-h-screen flex font-sans selection:bg-cyan-500/20 relative overflow-hidden bg-[#1a1c20] text-zinc-300">
@@ -53,15 +54,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               theme === 'colorblind' ? 'text-black' :
               'text-white'
             }`}>
-              BRIGHT
-              <span className={`${
-                theme === 'light' ? 'text-cyan-600' :
-                theme === 'colorblind' ? 'text-red-600' :
-                'text-cyan-500'
-              }`}>SKY</span>
+              {isGhostMode ? 'ELITE PROTOCOL' : (
+                <>
+                  BRIGHT
+                  <span className={`${
+                    theme === 'light' ? 'text-cyan-600' :
+                    theme === 'colorblind' ? 'text-red-600' :
+                    'text-cyan-500'
+                  }`}>SKY</span>
+                </>
+              )}
             </span>
             <div className="text-[8px] text-muted-foreground uppercase tracking-widest">
-              Elite Trading Protocol
+              {isGhostMode ? 'Operational Command' : 'Elite Trading Protocol'}
             </div>
           </div>
         </div>
@@ -77,6 +82,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               isShadowMode ? "text-amber-400 bg-amber-500/10" : "text-emerald-400 bg-emerald-500/10"
             }`}>
               {isShadowMode ? "Shadow Simulation" : "Live Listening"}
+            </span>
+          )}
+          {!isRunning && (
+            <span className="flex items-center gap-1 text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-tighter text-red-500 bg-red-500/10 border border-red-500/20 animate-pulse">
+              <Lock size={10} />
+              Lockdown
             </span>
           )}
         </div>
@@ -114,11 +125,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               {mode} MODE ACTIVE
             </div>
             <div className="text-[9px] text-zinc-600 font-medium uppercase">
-              BrightSky v2.6.0
+              {isGhostMode ? 'Elite Protocol' : 'allbright'} v2.6.0
             </div>
             <div className="mt-2 pt-2 border-t border-zinc-800/30">
               <div className="text-[7px] text-zinc-500 uppercase tracking-widest font-black">Branding & Credits</div>
-              <div className="text-[8px] text-zinc-600 font-bold uppercase mt-0.5">BrightSky DeFi Software Developer Ltd.</div>
+              <div className="text-[8px] text-zinc-600 font-bold uppercase mt-0.5">
+                {isGhostMode ? 'Elite Protocol Operations' : 'allbright DeFi Software Developer Ltd.'}
+              </div>
             </div>
           </div>
         </div>
@@ -136,6 +149,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <div className="flex flex-col">
             <span className="text-[9px] text-zinc-500 uppercase tracking-[0.2em] font-bold">Network Bridge</span>
             <span className="text-[11px] text-zinc-400 font-medium">IPC ACTIVE • 4001</span>
+            <span className="text-[7px] text-zinc-600 font-black uppercase tracking-tighter mt-0.5">
+              {isGhostMode ? 'Elite Protocol Operations' : 'allbright DeFi Software Developer Ltd.'}
+            </span>
           </div>
           
           <div className="flex-1 flex justify-center items-center gap-8">

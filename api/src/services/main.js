@@ -10,7 +10,7 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
-    title: "BrightSky Elite Arbitrage",
+    title: "allbright Elite Arbitrage",
     backgroundColor: '#111217',
     webPreferences: {
       nodeIntegration: false,
@@ -40,7 +40,7 @@ function startBackend() {
   apiProcess = fork(apiPath, [], {
     env: { 
       ...process.env, 
-      BRIGHTSKY_DATA_DIR: app.getPath('userData'),
+      allbright_DATA_DIR: app.getPath('userData'),
       NODE_ENV: 'production'
     }
   });

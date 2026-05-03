@@ -54,7 +54,7 @@ pub struct SpecialistResult {
     pub gate_trigger: GateTriggerResult,
 }
 
-/// Core trait for all BrightSky Solver specialists.
+/// Core trait for all allbright Solver specialists.
 /// Ensures type-safe KPI tuning and status reporting across the system.
 pub trait SubsystemSpecialist: Send + Sync {
     fn name(&self) -> &str;

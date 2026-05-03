@@ -1,8 +1,8 @@
 /**
- * BrightSky Bribe Engine with AI-Powered Analysis
+ * allbright Bribe Engine with AI-Powered Analysis
  * Deterministic, ultra-low latency risk and bribe calculation engine.
  */
-export class BrightSkyBribeEngine {
+export class allbrightBribeEngine {
   // BSS-07: Bribe Engine / BSS-20: Self-Heal Loop
   // Config is mutable to allow BSS-20 (Feedback Engine) to optimize parameters 
   // based on block-inclusion success rates and competitive gas auctions.
@@ -27,7 +27,7 @@ export class BrightSkyBribeEngine {
    * BSS-20 Integration: Allows the autonomous feedback loop to tweak
    * performance parameters 24/7 based on real-world success rates.
    */
-  static updateTuning(newParams: Partial<typeof BrightSkyBribeEngine.CONFIG>) {
+  static updateTuning(newParams: Partial<typeof allbrightBribeEngine.CONFIG>) {
     this.CONFIG = { ...this.CONFIG, ...newParams };
     console.log("[LEARNING_LOOP] Parameters optimized:", this.CONFIG);
   }

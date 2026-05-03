@@ -10,7 +10,7 @@ import { desc } from "drizzle-orm";
 import { getEthPriceUsd } from "../services/priceOracle";
 import { getBlockStats } from "../services/blockTracker";
 import { sharedEngineState } from "../services/engineState";
-import { BrightSkyBribeEngine } from "../services/bribeEngine";
+import { allbrightBribeEngine } from "../services/bribeEngine";
 import { alphaCopilot } from "../services/alphaCopilot";
 
 const router = Router();
@@ -133,7 +133,7 @@ router.get("/telemetry", async (req, res) => {
 
     // �"?�"?�"? Module B: Neural Feedback Panel (God Tier KPI 19) �"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?�"?
     intelligence: {
-      tuning: BrightSkyBribeEngine.getTuning(),
+      tuning: allbrightBribeEngine.getTuning(),
       learningDelta: 0.02,
       competitiveOverlapPct: sharedEngineState.competitiveCollisionPct, // Audit Fix: Competitor Analysis
       alphaReasoning: sharedEngineState.marketPulse.latestAlphaReasoning, // Audit Fix: XAI Reasoning Trace

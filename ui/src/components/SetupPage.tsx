@@ -9,7 +9,7 @@ export default function SetupPage() {
           <CardTitle className="text-3xl font-bold">Setup Wizard Complete</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 pt-6">
-          <p className="text-lg text-gray-300">BrightSky is ready for deployment.</p>
+          <p className="text-lg text-gray-300">allbright is ready for deployment.</p>
           <ul className="space-y-2 text-sm text-gray-400">
             <li>✅ API Base URL configured</li>
             <li>✅ Engine readiness checked</li>

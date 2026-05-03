@@ -1,8 +1,8 @@
-# BrightSky Local Deployment Strategy (PowerShell)
+# allbright Local Deployment Strategy (PowerShell)
 # Runs all services on local ports for safe testing and profit monitoring
 
 Write-Host "═════════════════════════════════════════════════" -ForegroundColor Cyan
-Write-Host "     BrightSky Local Deployment Strategy" -ForegroundColor Cyan
+Write-Host "     allbright Local Deployment Strategy" -ForegroundColor Cyan
 Write-Host "═════════════════════════════════════════════════" -ForegroundColor Cyan
 
 # Port Configuration
@@ -76,9 +76,9 @@ Write-Host "Step 5: Start Services" -ForegroundColor Yellow
 Write-Host "───────────────────────────────────────────────────────"
 
 # Start Rust Solver
-if (Test-Path "solver\target\release\brightsky.exe") {
+if (Test-Path "solver\target\release\allbright.exe") {
     $env:RUST_LOG = "info"
-    Start-Process -FilePath "solver\target\release\brightsky.exe" -RedirectStandardOutput "logs\rust-solver.log" -RedirectStandardError "logs\rust-solver-error.log" -PassThru | Select-Object -ExpandProperty Id | Out-File "logs\rust-solver.pid"
+    Start-Process -FilePath "solver\target\release\allbright.exe" -RedirectStandardOutput "logs\rust-solver.log" -RedirectStandardError "logs\rust-solver-error.log" -PassThru | Select-Object -ExpandProperty Id | Out-File "logs\rust-solver.pid"
     Write-Host "Started Rust Solver (PID: $(Get-Content 'logs\rust-solver.pid'))" -ForegroundColor Green
 } else {
     Write-Host "WARN: Rust binary not found, skipping solver start" -ForegroundColor Yellow

@@ -1,7 +1,7 @@
 pub mod profitability;
 pub mod risk;
 
-use brightsky_solver::SubsystemSpecialist;
+use allbright_solver::SubsystemSpecialist;
 use std::sync::Arc;
 
 pub struct SpecialistRegistry {

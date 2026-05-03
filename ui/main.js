@@ -27,7 +27,7 @@ function createMenu() {
     {
       label: 'Help',
       submenu: [
-        { label: 'BrightSky Docs', click: () => shell.openExternal('https://brightsky.app/docs') },
+        { label: 'allbright Docs', click: () => shell.openExternal('https://allbright.app/docs') },
         { label: 'Copilot', accelerator: 'CmdOrCtrl+C', click: () => mainWindow.loadURL('http://localhost:3000/copilot') },
         { type: 'separator' },
         { label: 'About', click: () => ipcMain.emit('show-about') }
@@ -86,7 +86,7 @@ async function startAPIServer() {
       DATABASE_URL: process.env.DATABASE_URL || '',
       RPC_ENDPOINT: process.env.RPC_ENDPOINT || '',
       PIMLICO_API_KEY: process.env.PIMLICO_API_KEY || '',
-      BRIGHTSKY_DESKTOP: 'true'
+      allbright_DESKTOP: 'true'
     },
     stdio: ['pipe', 'pipe', 'pipe']
   });

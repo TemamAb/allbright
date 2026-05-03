@@ -1,6 +1,6 @@
 # update-profit.ps1 - Update profit-record.md every 60s
 $ErrorActionPreference = "SilentlyContinue"
-$md = "C:\Users\op\Desktop\brightsky\profit-record.md"
+$md = "C:\Users\op\Desktop\allbright\profit-record.md"
 $ts = Get-Date -Format "yyyy-MM-dd HH:mm"
 $now = Get-Date -Format "HH:mm:ss"
 $ethPrice = 2314
@@ -24,7 +24,7 @@ $avgEth = [math]::Round($totalEth / [math]::Max($trades, 1), 4)
 $avgUSD = [math]::Round($avgEth * $ethPrice)
 
 $lines = @()
-$lines += "# BrightSky Profit Record - Live"
+$lines += "# allbright Profit Record - Live"
 $lines += ""
 $lines += "> Mission: Elite-grade arbitrage flash loan system with Pimlico gasless paymaster"
 $lines += "> Engine: LIVE MODE @ localhost:3000"
@@ -103,7 +103,7 @@ $lines += "- Auto-Withdrawal: ENABLED to $($wallet.Substring(0,10))..."
 $lines += ""
 $lines += "---"
 $lines += ""
-$lines += "*File auto-updated every 60 seconds from BrightSky API telemetry*"
+$lines += "*File auto-updated every 60 seconds from allbright API telemetry*"
 
 [System.IO.File]::WriteAllLines($md, $lines, [System.Text.Encoding]::UTF8)
 Write-Host "Profit record updated: `$(totalEth) ETH (`$(trades) trades) at `$(ts)"

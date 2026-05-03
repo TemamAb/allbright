@@ -1,4 +1,4 @@
-# BrightSky KPI Improvement Implementation - Status Update
+# allbright KPI Improvement Implementation - Status Update
 
 **Date:** 2026-04-28  
 **Status:** Phase 1.1 (Sub-Block Timing Engine) - **IN PROGRESS**

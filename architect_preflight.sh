@@ -1,8 +1,8 @@
 #!/bin/bash
-# BrightSky Architect's Preflight Launcher
+# allbright Architect's Preflight Launcher
 # Phase 2.3: Local Simulation & Health Verification
 
-echo "[MISSION CONTROL] Initializing BrightSky 38-Subsystem Simulation..."
+echo "[MISSION CONTROL] Initializing allbright 38-Subsystem Simulation..."
 
 # Step 1: Load Environment Variables & Enforce Paper Trading
 if [ -f .env ]; then

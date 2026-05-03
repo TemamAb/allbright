@@ -1,11 +1,11 @@
-use brightsky_solver::specialists::{
+use allbright_solver::specialists::{
     SpecialistRegistry, profitability::ProfitabilitySpecialist, risk::RiskSpecialist, 
     api::ApiSpecialist, kpi::KpiSpecialist, performance::PerformanceSpecialist,
     efficiency::EfficiencySpecialist, health::HealthSpecialist, auto_optimization::AutoOptimizationSpecialist};
-use brightsky_solver::benchmarks::load_benchmarks;
-use brightsky_solver::timing::sub_block_timing::SubBlockTiming;
-use brightsky_solver::rpc::rpc_orchestrator::RpcOrchestrator;
-use brightsky_solver::{WatchtowerStats, SubsystemSpecialist, GES_WEIGHTS};
+use allbright_solver::benchmarks::load_benchmarks;
+use allbright_solver::timing::sub_block_timing::SubBlockTiming;
+use allbright_solver::rpc::rpc_orchestrator::RpcOrchestrator;
+use allbright_solver::{WatchtowerStats, SubsystemSpecialist, GES_WEIGHTS};
 use std::env;
 use std::sync::Mutex;
 use std::sync::Arc;
@@ -24,7 +24,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .as_secs();
 
     println!("==================================================");
-    println!("BRIGHTSKY SOLVER V2 - STARTING UP");
+    println!("allbright SOLVER V2 - STARTING UP");
     println!("TIMESTAMP: {}", startup_time);
     println!("==================================================");
     
@@ -80,16 +80,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Attempting to bind to {}...", addr);
     let listener = TcpListener::bind(&addr).await?;
     println!("SUCCESS: Listening on {}", addr);
-    println!("BrightSky Solver - LIVE [TCP HEALTHCHECK ACTIVE]");
+    println!("allbright Solver - LIVE [TCP HEALTHCHECK ACTIVE]");
     
-    // BSS-26: Spawn the BrightSky Orchestrator loop here to manage the 46 subsystems
+    // BSS-26: Spawn the allbright Orchestrator loop here to manage the 46 subsystems
     let registry_arc = Arc::new(registry); // Wrap registry in Arc for the orchestrator task
     let watchtower_stats_arc = Arc::clone(&watchtower_stats);
     let mut rpc_orchestrator = RpcOrchestrator::new(Arc::clone(&watchtower_stats));
     let mut sub_block_timing = SubBlockTiming::new();
 
     tokio::spawn(async move {
-        info!("BrightSky Orchestrator started.");
+        info!("allbright Orchestrator started.");
         let mut cycle_count = 0;
         loop {
             {

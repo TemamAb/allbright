@@ -1,5 +1,5 @@
 /**
- * BrightSky Bribe Engine with AI-Powered Analysis
+ * allbright Bribe Engine with AI-Powered Analysis
  * Deterministic, ultra-low latency risk and bribe calculation engine.
  *
  * Single Source of Truth: bribe parameters come from `sharedEngineState`
@@ -8,7 +8,7 @@
  */
 import { sharedEngineState } from './engineState';
 
-export class BrightSkyBribeEngine {
+export class allbrightBribeEngine {
   // BSS-07: Bribe Engine / BSS-20: Self-Heal Loop
   // Parameters are read from sharedEngineState at runtime — no local CONFIG copy.
   // Defaults: min_margin=10%, bribe_ratio=5% (set in engineState.ts)

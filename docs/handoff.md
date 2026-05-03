@@ -1,4 +1,4 @@
-# BrightSky Handoff — Directory Restructure & Modularization (Final)
+# allbright Handoff — Directory Restructure & Modularization (Final)
 
 **Date:** 2026-04-27 12:45 PST  
 **Engineer:** Kilo AI  
@@ -30,7 +30,7 @@
 - **Restructured:**
   ```
   ai/
-  ├── agents/          (control/, memory/, BRIGHTSKY-*.md, *.sh)
+  ├── agents/          (control/, memory/, allbright-*.md, *.sh)
   ├── telemetry/       (placeholder; was used for kois.json)
   ├── metrics/kois.json (moved from ai/telemetry/)
   ├── training/        (placeholder)
@@ -114,7 +114,7 @@
 - **Blocked:** Node.js handler for gate override event not yet implemented
 
 ### Task 2.4 — MetaLearner State Persistence (Not Started)
-- Fields identified in `WatchtowerStats`; checkpoint file path `/var/lib/brightsky/meta_state.json`
+- Fields identified in `WatchtowerStats`; checkpoint file path `/var/lib/allbright/meta_state.json`
 - Requires `meta_persistence.rs` + hourly write + startup reload
 
 ---
@@ -136,7 +136,7 @@
 
 ## 🔧 Build & Deployment
 
-**Build:** `cargo build --release` encounters pre-existing dependency compilation issues (unrelated to refactor); binary expected at `solver/target/release/brightsky.exe` (Windows) or `brightsky` (Unix) once environment is fixed.
+**Build:** `cargo build --release` encounters pre-existing dependency compilation issues (unrelated to refactor); binary expected at `solver/target/release/allbright.exe` (Windows) or `allbright` (Unix) once environment is fixed.
 
 **Startup Sequence:**
 1. `run_watchtower()` begins
@@ -157,7 +157,7 @@
 ## 📦 Distribution Summary
 
 ```
-brightsky/
+allbright/
 ├── ai/
 │   ├── agents/           (control/, memory/, supervisor scripts, specialists)
 │   ├── telemetry/        (placeholder)

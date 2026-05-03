@@ -233,7 +233,7 @@ export class MempoolIntelligenceService {
    * Update bribe engine with current market intelligence
    */
   static async updateBribeEngine() {
-    const { BrightSkyBribeEngine } = await import('./bribeEngine');
+    const { allbrightBribeEngine } = await import('./bribeEngine');
 
     try {
       const mempoolData = await this.analyzeMempoolState();
@@ -244,7 +244,7 @@ export class MempoolIntelligenceService {
       const baseInclusionProb = Math.max(0.05, 0.15 - competitiveFactor * 0.05); // Lower base prob when competition is high
       const bribeElasticity = 0.03 + competitiveFactor * 0.02; // Higher elasticity when competition is intense
 
-      BrightSkyBribeEngine.updateAuctionParams(
+      allbrightBribeEngine.updateAuctionParams(
         baseInclusionProb,
         bribeElasticity,
         0.95, // Keep max inclusion stable
@@ -255,7 +255,7 @@ export class MempoolIntelligenceService {
         updated: true,
         mempoolData,
         builderData,
-        auctionParams: BrightSkyBribeEngine.getAuctionParams()
+        auctionParams: allbrightBribeEngine.getAuctionParams()
       };
     } catch (error) {
       console.error('[MempoolIntelligence] Failed to update bribe engine:', error);

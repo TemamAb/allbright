@@ -1,7 +1,7 @@
-# Stop all BrightSky local services (PowerShell)
+# Stop all allbright local services (PowerShell)
 
 Write-Host "═════════════════════════════════════════════════" -ForegroundColor Cyan
-Write-Host "  Stopping BrightSky Local Services" -ForegroundColor Cyan
+Write-Host "  Stopping allbright Local Services" -ForegroundColor Cyan
 Write-Host "═════════════════════════════════════════════════" -ForegroundColor Cyan
 Write-Host ""
 
@@ -18,7 +18,7 @@ if (Test-Path "logs\rust-solver.pid") {
     Remove-Item "logs\rust-solver.pid"
 } else {
     Write-Host "WARN: No PID file found for Rust Solver" -ForegroundColor Yellow
-    Get-Process | Where-Object { $_.ProcessName -like "*brightsky*" } | Stop-Process -Force -ErrorAction SilentlyContinue
+    Get-Process | Where-Object { $_.ProcessName -like "*allbright*" } | Stop-Process -Force -ErrorAction SilentlyContinue
 }
 
 # Stop API Server

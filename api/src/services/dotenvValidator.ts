@@ -60,7 +60,7 @@ export function validateDotenv(content: string): EnvValidation {
 
 // Auto-configure system with parsed vars (simulate Render dashboard)
 export function configureFromEnv(parsedVars: Record<string, string>) {
-  const configPath = process.env.BRIGHTSKY_CONFIG_PATH || '.brightsky.config.json';
+  const configPath = process.env.allbright_CONFIG_PATH || '.allbright.config.json';
   const config = {
     rpc: parsedVars.RPC_URL_BASE,
     privateKey: parsedVars.PRIVATE_KEY,

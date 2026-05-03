@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSocket } from '../App';
-import { Bot, User, Send, Sparkles, Terminal, Brain, ChevronRight, Loader2, History } from 'lucide-react';
+import { Bot, User, Send, Sparkles, Terminal, Brain, ChevronRight, Loader2, History, Zap, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { Be } from '@/lib/utils';
+import { useGetEngineStatus } from "@workspace/api-client-react";
 
 interface Message {
   id: string;
@@ -15,12 +16,13 @@ interface Message {
 
 /**
  * BSS-28: Alpha-Copilot Interactive Panel
- * Professional assistant-grade interface for BrightSky orchestration.
+ * Professional assistant-grade interface for allbright orchestration.
  */
 export default function AlphaCopilotPanel() {
   const { socket } = useSocket();
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
+  const { data: engineStatus, refetch: refetchStatus } = useGetEngineStatus({ query: { refetchInterval: 5000, queryKey: ["engineStatus"] } });
   const [suggestedCommand, setSuggestedCommand] = useState<string | null>(null);
   const [commandHistory, setCommandHistory] = useState<string[]>(() => {
     try {
@@ -31,6 +33,20 @@ export default function AlphaCopilotPanel() {
   const [showHistory, setShowHistory] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (messages.length === 0 && engineStatus) {
+      const systemName = engineStatus.ghostMode ? "Elite Protocol" : "allbright";
+      setMessages([
+        { 
+          id: 'init-' + Date.now(),
+          role: "assistant", 
+          content: `Hello! I am your ${systemName} Alpha-Copilot. How can I assist you with your arbitrage operations today?`,
+          timestamp: Date.now()
+        }
+      ]);
+    }
+  }, [engineStatus, messages.length]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -70,6 +86,8 @@ export default function AlphaCopilotPanel() {
         }]);
       } else if (type === 'ai-status') {
         setIsTyping(true);
+      } else if (type === 'engine-update') {
+        refetchStatus();
       }
     };
 
@@ -128,16 +146,58 @@ export default function AlphaCopilotPanel() {
     }
   };
 
+  const handleLockdown = async () => {
+    if (!engineStatus?.running) return;
+    
+    try {
+      const res = await fetch('/api/engine/stop', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        toast.error("SYSTEM LOCKDOWN INITIATED", { 
+          description: "All engine operations halted immediately.",
+          icon: <Lock className="text-red-500" />
+        });
+      }
+    } catch (e) {
+      toast.error("Lockdown Dispatch Failed");
+    }
+  };
+
   return (
     <div className="flex flex-col h-[calc(100vh-10rem)] bg-[#111217] border border-zinc-800 rounded-xl overflow-hidden shadow-2xl animate-in fade-in duration-500">
       <div className="px-6 py-4 border-b border-zinc-800 bg-black/20 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20"><Brain size={18} className="text-cyan-400" /></div>
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded bg-gradient-to-br from-cyan-500 to-cyan-700 flex items-center justify-center mr-1">
+            <Zap className="text-white" size={20} />
+          </div>
           <div className="flex flex-col">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-white">Alpha-Copilot Interface</h2>
-            <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">Autonomous Systems Orchestrator</span>
+            <h2 className="text-lg font-bold tracking-tighter uppercase text-white leading-none flex items-center">
+              {engineStatus?.ghostMode ? (
+                "ELITE PROTOCOL"
+              ) : (
+                <>BRIGHT<span className="text-cyan-500">SKY</span></>
+              )}
+              <span className="text-zinc-500 ml-2">Alpha-Copilot</span>
+            </h2>
+            <span className="text-[7px] text-zinc-600 font-black uppercase tracking-tighter mt-0.5">
+              {engineStatus?.ghostMode ? 'Elite Protocol Operations' : 'allbright DeFi Software Developer Ltd.'}
+            </span>
           </div>
         </div>
+
+        {/* Emergency System Lockdown */}
+        <button 
+          onClick={handleLockdown}
+          disabled={!engineStatus?.running}
+          className={`flex items-center gap-2 px-3 h-9 rounded border transition-all ${
+            engineStatus?.running 
+              ? 'bg-red-500/10 border-red-500/40 text-red-500 hover:bg-red-500/20 shadow-[0_0_10px_rgba(239,68,68,0.1)]' 
+              : 'bg-zinc-800/50 border-zinc-800 text-zinc-600 cursor-not-allowed opacity-50'
+          }`}
+        >
+          <Lock size={12} className={engineStatus?.running ? 'animate-pulse' : ''} />
+          <span className="text-[9px] font-black uppercase tracking-widest leading-none">Lockdown</span>
+        </button>
       </div>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-hide bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.02),transparent)]">
@@ -191,7 +251,17 @@ export default function AlphaCopilotPanel() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="p-8 bg-black/40 border-t border-zinc-800/50 backdrop-blur-sm">
+      <form onSubmit={handleSubmit} className="p-8 bg-black/40 border-t border-zinc-800/50 backdrop-blur-sm relative">
+        {!engineStatus?.running && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-[2px] transition-all">
+            <div className="flex items-center gap-3 px-6 py-2 rounded-xl bg-red-500/10 border border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.15)] animate-in fade-in zoom-in duration-300">
+              <div className="p-1 rounded-full bg-red-500/20">
+                <Lock size={14} className="text-red-500 animate-pulse" />
+              </div>
+              <span className="text-[11px] font-black text-red-500 uppercase tracking-[0.3em]">Operational Lockdown Active</span>
+            </div>
+          </div>
+        )}
         <div className="relative">
           <button type="button" onClick={() => setShowHistory(!showHistory)} className="absolute left-3 top-1/2 -translate-y-1/2 p-2 text-zinc-500 hover:text-cyan-400 transition-colors"><History size={16} /></button>
           <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder={suggestedCommand ? "Awaiting confirmation above..." : "Enter command for Alpha-Copilot..."} disabled={isTyping || !!suggestedCommand} className="font-mono w-full bg-[#1a1c20] border border-zinc-800 rounded-xl pl-12 pr-12 py-4 text-[13px] font-medium text-zinc-300 focus:outline-none focus:ring-1 focus:ring-cyan-500/30 shadow-inner" />
@@ -205,7 +275,7 @@ export default function AlphaCopilotPanel() {
               </div>
             </div>
           )}
-          <button type="submit" disabled={isTyping || !input.trim() || !!suggestedCommand} className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-black transition-all active:scale-95"><Send size={16} /></button>
+          <button type="submit" disabled={isTyping || !input.trim() || !!suggestedCommand || !engineStatus?.running} className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-black transition-all active:scale-95"><Send size={16} /></button>
         </div>
       </form>
     </div>

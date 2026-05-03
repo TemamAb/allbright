@@ -1,14 +1,14 @@
-# BrightSky AI Integration — Elite Grade Gap Analysis & Upgrade Roadmap
+# allbright AI Integration — Elite Grade Gap Analysis & Upgrade Roadmap
 
 **Date:** 2026-04-27  
 **Auditor:** Kilo AI (External Systems Engineering)  
-**Objective:** Compare current BrightSky AI capabilities against top-tier elite-grade standards and define implementation path to achieve them.
+**Objective:** Compare current allbright AI capabilities against top-tier elite-grade standards and define implementation path to achieve them.
 
 ---
 
 ## **Executive Summary**
 
-BrightSky has a **sound architectural foundation** (federated specialists, weighted GES scoring, safety layers) but **critical capability gaps** prevent it from being considered "elite grade":
+allbright has a **sound architectural foundation** (federated specialists, weighted GES scoring, safety layers) but **critical capability gaps** prevent it from being considered "elite grade":
 
 | Gap Category | Current State | Elite Grade Requirement | Severity |
 |--------------|---------------|------------------------|----------|
@@ -22,13 +22,13 @@ BrightSky has a **sound architectural foundation** (federated specialists, weigh
 | **Model serving** | Rule-based `if/else` thresholds | ✅ Configurable policies (weights, thresholds) stored externally | 🟢 Low |
 | **Explainability** | Console logs only | ✅ Structured audit trail of all AI decisions with rationale | 🟢 Low |
 
-**Bottom line:** BrightSky is a **rule-based automation system**, not an AI/ML system. The "AI" label is currently aspirational — there is no machine learning component anywhere in the stack.
+**Bottom line:** allbright is a **rule-based automation system**, not an AI/ML system. The "AI" label is currently aspirational — there is no machine learning component anywhere in the stack.
 
 ---
 
 ## **Comparison Table: Current vs Elite Grade**
 
-| # | Capability Domain | Current BrightSky Implementation | Elite Grade Standard (Top-Tier Trading Systems) | Gap Description | Priority | Estimated Effort |
+| # | Capability Domain | Current allbright Implementation | Elite Grade Standard (Top-Tier Trading Systems) | Gap Description | Priority | Estimated Effort |
 |---|-------------------|----------------------------------|-----------------------------------------------|-----------------|----------|------------------|
 | **1** | **Pre-Deployment Validation Gate** | No gate. Engine auto-starts scanning within 15s (`engine.ts:531`). `bss_43_simulator.run_system_audit_simulation()` exists but **never called**. | Systems must pass a **simulation gate** before LIVE deployment: <br>• Load benchmark targets from config<br>• Run 100–1000 cycle Monte Carlo sim<br>• Compute GES; require ≥82.5%<br>• Auto-tuning if GES < elite threshold<br>• Abort deployment if gate fails | **MISSING**: No validation prevents underperforming config from going live. High risk of mainnet failure. | **P0** | 2–3 days |
 | **2** | **Meta-Learner (BSS-28) Training Pipeline** | `MetaLearner` struct has `success_ratio: AtomicUsize` (mock). `run_diagnostic()` returns hardcoded `model_drift: 0.02, learning_rate: 0.005`. **Never updated** from `tradesTable`. | **Online learning engine**:<br>• Ingest every trade outcome (profit, latency, slippage)<br>• Update feature vector in real-time<br>• Retrain policy weights hourly<br>• Produce tuning recommendations (e.g., "increase min_profit_bps by 5 due to rising MEV")<br>• Persist model state to disk for recovery | **STUB**: No learning occurs. System cannot adapt to market regime changes. All "AI" decisions are static rules. | **P0** | 3–5 days |
@@ -36,7 +36,7 @@ BrightSky has a **sound architectural foundation** (federated specialists, weigh
 | **4** | **Specialist Modularization** | 15+ specialists defined **inline** in `main.rs:63-719` as `pub struct` + `impl`. Monolithic file >1900 LOC. | **One specialist per file**:<br>• `solver/src/specialists/profitability.rs`<br>• `solver/src/specialists/risk.rs`<br>• Each implemented as **library crate** with clear trait bounds<br>• Independent unit tests<br>• Faster compile times | **POOR STRUCTURE**: Hard to test, review, or replace individual AI agents. Violates single responsibility. | **P1** | 2–3 days |
 | **5** | **API ↔ Rust AI Bridge** | `api/src/lib/specialists.ts` — all 7 classes return **empty stubs** (`return { tuned: true, nrp_target: 22.5 }`). No actual AI logic in Node.js layer. | **Bidirectional sync**:<br>• Node.js specialists implement real tuning logic (e.g., Bayesian optimization)<br>• Periodically push tuning params to Rust via IPC (`policy_tx`)<br>• Rust acknowledges and applies<br>• Full round-trip test coverage | **NON-FUNCTIONAL**: Node.js AI layer is a placeholder. All intelligence lives (statically) in Rust. | **P1** | 3–4 days |
 | **6** | **Benchmark Target Management** | `benchmark-30-kpis.md` is **static markdown**. Never parsed. No code references it. | **Dynamic benchmark service**:<br>• `BenchmarkManager` loads targets at startup<br>• Supports per-chain, per-protocol adjustments<br>• API endpoint `/api/benchmarks` exposes current targets<br>• Auto-update from remote config (feature flag) | **UNUSED**: Benchmarks are documentation, not living targets. | **P1** | 1 day |
-| **7** | **Bribe Engine State Sync** | `BrightSkyBribeEngine` lives **only in Node.js** (`api/src/lib/bribeEngine.ts`). Tuning updated after trades (`engine.ts:1170-1185`), but **Rust solver never sees these values**. | **Single source of truth**:<br>• Bribe parameters (`MIN_MARGIN_RATIO`, `BRIBE_RATIO`) stored in `WatchtowerStats`<br>• Both Rust and Node.js read from shared memory (IPC)<br>• Updates原子化 via `policy_tx` broadcast | **SYNC BREAK**: Node.js and Rust can diverge on bribe strategy, causing inconsistent profit calculations. | **P1** | 2 days |
+| **7** | **Bribe Engine State Sync** | `allbrightBribeEngine` lives **only in Node.js** (`api/src/lib/bribeEngine.ts`). Tuning updated after trades (`engine.ts:1170-1185`), but **Rust solver never sees these values**. | **Single source of truth**:<br>• Bribe parameters (`MIN_MARGIN_RATIO`, `BRIBE_RATIO`) stored in `WatchtowerStats`<br>• Both Rust and Node.js read from shared memory (IPC)<br>• Updates原子化 via `policy_tx` broadcast | **SYNC BREAK**: Node.js and Rust can diverge on bribe strategy, causing inconsistent profit calculations. | **P1** | 2 days |
 | **8** | **Circuit Breaker Auto-Reset** | `CircuitBreaker::is_tripped()` checks threshold; once tripped, `blockedUntil` set to `now + 3min`. **No auto-recovery** — requires manual intervention or engine restart. | **Progressive recovery**:<br>• After cooldown, allow 1 trial transaction<br>• If success → reset; if fail → extend cooldown<br>• Health probe every 30s during blocked period<br>• Dashboard alert with "Reset Now" button | **FRAGILE**: Single trip halts all trading until timeout. No self-healing. | **P2** | 1 day |
 | **9** | **Domain Score Normalization** | Each specialist computes `domain_score_X` differently (e.g., Profit: `(actual/22.5).min(1.0)`; Risk: `(50/loss_rate).min(1.0)`). No centralized normalization. | **Standardized scoring framework**:<br>• All scores ∈ [0, 1] with clear mapping function<br>• Documented inverse/linear/log scaling per domain<br>• Unit tests verify score bounds under edge cases | **INCONSISTENT**: Risk score can be NaN if `loss_rate=0`? Need defensive checks. | **P2** | 1 day |
 | **10** | **GES Weight Authority** | Weights defined in **three places**:<br>1. `bss_36_auto_optimizer.rs:114-119` (0.30, 0.20, …)<br>2. `main.rs:54-60` (WEIGHT_* constants, unused)<br>3. `benchmark-30-kpis.md` (text description) | **Single source of truth**:<br>• `lib.rs` defines `pub const GES_WEIGHTS: GESWeights`<br>• All consumers import from lib<br>• Compile-time check: `weights.sum() == 1.0 ± 0.001`<br>• Dashboard displays current weights | **DRIFT RISK**: Weights can diverge across files, causing GES mis-calculation. | **P2** | 0.5 day |
@@ -173,7 +173,7 @@ BrightSky has a **sound architectural foundation** (federated specialists, weigh
 - **Effort:** 4h
 
 #### **Task 3.2 — Bribe Engine State Sharing (P1) ⚠️ SYNC FIX**
-- **Problem:** Node.js `BrightSkyBribeEngine` tuning diverges from Rust policy
+- **Problem:** Node.js `allbrightBribeEngine` tuning diverges from Rust policy
 - **Solution A (Preferred):** Move bribe tuning into `WatchtowerStats`:
   ```rust
   pub struct WatchtowerStats {
@@ -274,7 +274,7 @@ impl SubsystemSpecialist for ProfitSpecialist { ... }
 ## **Implementation Checklist (TODO.md Format)**
 
 ```markdown
-# BrightSky AI Upgrade — Implementation TODO
+# allbright AI Upgrade — Implementation TODO
 
 ## Phase 0: Foundation (Day 1)
 
@@ -448,10 +448,10 @@ impl SubsystemSpecialist for ProfitSpecialist { ... }
 - `npm run build` — API compiles
 
 ### **Runtime Validation**
-1. **Gate check:** `systemctl start brightsky` → logs must show `[BSS-43] GATE CHECK: GES = XX.X% ≥ 82.5% — PASS`
+1. **Gate check:** `systemctl start allbright` → logs must show `[BSS-43] GATE CHECK: GES = XX.X% ≥ 82.5% — PASS`
 2. **KPI snapshots:** `psql` query `SELECT COUNT(*) FROM kpi_snapshots WHERE timestamp > now() - interval '1 hour'` → >12 entries (5min interval)
 3. **MetaLearner:** After 100 trades, `SELECT success_ratio FROM meta_learner_state` should be ≠ initial 9500
-4. **Bribe sync:** Compare `min_margin_ratio_bps` from Rust IPC heartbeat vs Node.js `BrightSkyBribeEngine.getTuning().MIN_MARGIN_RATIO` — must match
+4. **Bribe sync:** Compare `min_margin_ratio_bps` from Rust IPC heartbeat vs Node.js `allbrightBribeEngine.getTuning().MIN_MARGIN_RATIO` — must match
 
 ### **Performance**
 - Added KPI snapshot task: < 50ms overhead per 5min cycle
@@ -495,7 +495,7 @@ impl SubsystemSpecialist for ProfitSpecialist { ... }
 
 ## **Conclusion**
 
-BrightSky's **architectural vision** for a federated AI agent system is sound and matches elite trading system design patterns (e.g., Citadel, Jump Trading). However, the **implementation is currently at 30% maturity**:
+allbright's **architectural vision** for a federated AI agent system is sound and matches elite trading system design patterns (e.g., Citadel, Jump Trading). However, the **implementation is currently at 30% maturity**:
 
 ✅ **Strong foundations:** trait-based specialists, GES scoring, safety layers  
 ❌ **Missing core:** No learning, no pre-deployment gate, no persistence, no API bridge
@@ -505,6 +505,6 @@ BrightSky's **architectural vision** for a federated AI agent system is sound an
 2. **MetaLearner activation** — without learning, system cannot adapt
 3. **KPI persistence** — required for any ML training
 
-With **6–8 development weeks** following this roadmap, BrightSky can reach **production-grade AI integration** suitable for mainnet arbitrage at scale.
+With **6–8 development weeks** following this roadmap, allbright can reach **production-grade AI integration** suitable for mainnet arbitrage at scale.
 
 **Next step:** Create `TODO.md` with above tasks, assign owners, and begin Phase 0.

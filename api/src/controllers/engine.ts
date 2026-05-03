@@ -1,5 +1,5 @@
 /**
- * BrightSky Engine — Production-hardened for Render deployment.
+ * allbright Engine — Production-hardened for Render deployment.
  *
  * ARCHITECTURE:
  * ─────────────
@@ -41,7 +41,7 @@ import { runStartupChecks } from "../services/startup_checks.js";
 import { startBlockTracking, stopBlockTracking, fetchCurrentBlock, getBlockStats } from "../services/blockTracker.js";
 import { getEthPriceUsd } from "../services/priceOracle.js";
 import { scanForOpportunities } from "../services/opportunityScanner.js";
-import { BrightSkyBribeEngine } from "../services/bribeEngine.js";
+import { allbrightBribeEngine } from "../services/bribeEngine.js";
 import {
   checkExecutionGate,
   createCircuitBreakerState,
@@ -152,7 +152,7 @@ async function sendControlToRust(msg: any): Promise<void> {
         client.write(JSON.stringify(msg) + "\n");
       });
     } else {
-      const socketPath = process.env.BRIGHTSKY_SOCKET_PATH || "/tmp/brightsky_bridge.sock";
+      const socketPath = process.env.allbright_SOCKET_PATH || "/tmp/allbright_bridge.sock";
       client = net.createConnection({ path: socketPath }, () => {
         client.write(JSON.stringify(msg) + "\n");
       });
@@ -239,13 +239,13 @@ function handleRustMessage(opp: any) {
 import { startMockRustBridge } from "../services/mockRustBridge";
 
 // Start mock Rust bridge for development (simulates TCP IPC on port 4003)
-// In production, the actual Rust solver connects on BRIGHTSKY_TCP_HOST:BRIGHTSKY_TCP_PORT
+// In production, the actual Rust solver connects on allbright_TCP_HOST:allbright_TCP_PORT
 startMockRustBridge();
 
 async function connectToRustBridge() {
   const useTcp = process.env.USE_TCP_BRIDGE === "true" || process.platform === "win32";
-  const port = parseInt(process.env.INTERNAL_BRIDGE_PORT || process.env.BRIGHTSKY_TCP_PORT || "4003");
-  const host = useTcp ? (process.env.BRIGHTSKY_TCP_HOST || "127.0.0.1") : undefined;
+  const port = parseInt(process.env.INTERNAL_BRIDGE_PORT || process.env.allbright_TCP_PORT || "4003");
+  const host = useTcp ? (process.env.allbright_TCP_HOST || "127.0.0.1") : undefined;
   
   logger.info(`[BRIDGE] Connecting to Rust solver at ${host || 'Unix socket'}:${port}`);
   
@@ -297,7 +297,7 @@ async function autoStartEngine() {
 
   const caps = await detectLiveCapability();
   const mode = caps.liveCapable ? "LIVE" : "SHADOW";
-  logger.info(`Auto-starting BrightSky Engine in ${mode} mode for dashboard`);
+  logger.info(`Auto-starting allbright Engine in ${mode} mode for dashboard`);
 
   // Verify System Integrity against Over-Engineering
   const integrityCheck = await alphaCopilot.evaluateEngineeringIntegrity({
@@ -386,7 +386,7 @@ async function autoStartEngine() {
       block: currentBlock,
       ethPrice,
     },
-    "BrightSky Engine AUTO-STARTED",
+    "allbright Engine AUTO-STARTED",
   );
 
   // Auto-scan every 15s
@@ -412,7 +412,7 @@ function broadcastTelemetry(type: string, payload: any) {
   // Integrated with global Socket.io instance if available
   const io = (global as any).io;
   if (io) {
-    io.emit("brightsky_telemetry", { type, payload, timestamp: Date.now() });
+    io.emit("allbright_telemetry", { type, payload, timestamp: Date.now() });
   }
   // Avoid console/file log bloat for high-frequency RUST_OPPORTUNITY signals
   if (type !== "RUST_OPPORTUNITY") {
@@ -723,7 +723,7 @@ async function buildAndSubmitUserOp(
     // Note: In a production BSS-35 implementation, you would calculate the UserOp hash
     // using the entryPoint address and chainId.
     userOperation.signature = await signer.signMessage(
-      "BrightSky-Authorization-UserOp",
+      "allbright-Authorization-UserOp",
     );
 
     logger.info({ chainName }, "BSS-35: Submitting UserOperation via Pimlico");
@@ -919,7 +919,7 @@ async function scanCycle() {
         ).toFixed(6),
       );
 
-      const bribeAnalysis = BrightSkyBribeEngine.calculateProtectedBribe(
+      const bribeAnalysis = allbrightBribeEngine.calculateProtectedBribe(
         opp.estProfitEth,
       );
 
@@ -1038,11 +1038,11 @@ async function scanCycle() {
            // KPI 19: Elite Feedback Loop (Continual Optimization)
            // Instead of static math, we apply a 2% 'Learning Delta'
            // If we win, we slightly lower the required margin to capture more volume.
-           const currentTuning = BrightSkyBribeEngine.getTuning();
+           const currentTuning = allbrightBribeEngine.getTuning();
            const learningDelta = 0.02; // 2% adjustment per success
            const newMinMargin = Math.max(0.1, currentTuning.MIN_MARGIN_RATIO * (1 - learningDelta));
            const newBribeRatio = Math.min(0.15, currentTuning.BRIBE_RATIO * (1 + learningDelta));
-            BrightSkyBribeEngine.updateTuning({
+            allbrightBribeEngine.updateTuning({
               minMarginRatio: parseFloat(newMinMargin.toFixed(4)),
               bribeRatio: parseFloat(newBribeRatio.toFixed(4)),
             });
@@ -1388,8 +1388,9 @@ router.get("/engine/status", async (_req, res) => {
     consecutiveFailures: engineState.circuitBreaker.consecutiveFailures,
     circuitBreakerUntil: engineState.circuitBreaker.blockedUntil,
     lastFailureReason: engineState.circuitBreaker.lastFailureReason,
-    appName: sharedEngineState.appName,
-    logoUrl: sharedEngineState.logoUrl,
+    appName: sharedEngineState.ghostMode ? 'Elite Protocol' : sharedEngineState.appName,
+    logoUrl: sharedEngineState.ghostMode ? null : sharedEngineState.logoUrl,
+    ghostMode: !!sharedEngineState.ghostMode,
     intelligenceSource: sharedEngineState.intelligenceSource,
     clientProfile: sharedEngineState.clientProfile,
     integrityThreshold: sharedEngineState.integrityThreshold,
@@ -1573,6 +1574,8 @@ async function stopEngineInternal(): Promise<boolean> {
   }
   stopBlockTracking();
 
+  broadcastCopilotEvent('engine-stopped', { mode: engineState.mode, timestamp: Date.now() });
+
   await safeDbOperation(async () =>
     db!.insert(streamEventsTable).values({
       id: genId("evt"),
@@ -1598,6 +1601,8 @@ async function stopEngineInternal(): Promise<boolean> {
   sharedEngineState.running = false;
   sharedEngineState.mode = "STOPPED";
   sharedEngineState.startedAt = null;
+
+  broadcastCopilotEvent('engine-update', { running: false, mode: 'STOPPED' });
 
   return true;
 }

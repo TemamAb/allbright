@@ -1,11 +1,11 @@
-# Brightsky Monorepo Restructuring Plan
+# allbright Monorepo Restructuring Plan
 
 ## Current Issues (Analyzed)
 ```
-brightsky/ (ROOT - POLLUTED)
+allbright/ (ROOT - POLLUTED)
 ├── Cargo.toml, main.rs, bss_*.rs (Rust solver - WRONG LOCATION)
 ├── pnpm-workspace.yaml, package.json (PNPM monorepo)
-├── artifacts/brightsky/ (React Vite app - BURIED)
+├── artifacts/allbright/ (React Vite app - BURIED)
 ├── artifacts/api-server/ (Node TS API - BURIED)
 ├── lib/ (Shared TS libs - OK)
 ├── scripts/ (OK)
@@ -19,7 +19,7 @@ brightsky/ (ROOT - POLLUTED)
 
 ## Proposed Structure (Production Monorepo)
 ```
-brightsky/
+allbright/
 ├── Cargo.toml (workspace)
 │
 ├── solver/ (Rust arbitrage engine ⭐ NEW)
@@ -38,7 +38,7 @@ brightsky/
 │   └── src/
 │
 ├── ui/ (React Vite - MOVED)
-│   ├── package.json (from artifacts/brightsky/)
+│   ├── package.json (from artifacts/allbright/)
 │   └── src/
 │
 ├── lib/ (shared - UNCHANGED)
@@ -76,7 +76,7 @@ packages:
 ```
 rm -rf artifacts/
 mv artifacts/api-server/ → api/
-mv artifacts/brightsky/ → ui/
+mv artifacts/allbright/ → ui/
 ```
 
 ### Phase 4: Fix Imports/Docker [EDIT]
@@ -108,7 +108,7 @@ pnpm install && pnpm build
 
 ## Files Affected (12 total)
 **Create (4):** solver/src/bss/mod.rs, solver/src/lib.rs, root Cargo.toml workspace
-**Move (6):** Cargo.toml, main.rs, bss_*.rs, api-server/, brightsky/  
+**Move (6):** Cargo.toml, main.rs, bss_*.rs, api-server/, allbright/  
 **Edit (2):** pnpm-workspace.yaml, Dockerfile
 
 **Approve to proceed?** Reply `APPROVE_RESTRUCTURE` to execute Phase 1-5 automatically.

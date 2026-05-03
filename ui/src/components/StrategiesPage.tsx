@@ -76,7 +76,7 @@ export default function StrategiesPage() {
       </div>
 
       <p className="text-[10px] text-muted-foreground uppercase tracking-wide">
-        Toggle BrightSky Specialists (BSS) on/off. Disabling a strategy removes it from active consideration.
+        Toggle allbright Specialists (BSS) on/off. Disabling a strategy removes it from active consideration.
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

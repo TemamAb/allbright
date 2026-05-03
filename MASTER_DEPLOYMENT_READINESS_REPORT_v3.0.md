@@ -1,4 +1,4 @@
-# 🚀 BRIGHTSKY MASTER DEPLOYMENT READINESS REPORT (v3.3 - PRODUCTION AUTHORIZED)
+# 🚀 allbright MASTER DEPLOYMENT READINESS REPORT (v3.3 - PRODUCTION AUTHORIZED)
 
 **Generated**: 2026-05-01 | **Live GES**: 85.0% (Target >82.5%) | **Status**: 🟢 DEPLOYMENT AUTHORIZED - ELITE GRADE
 
@@ -71,7 +71,7 @@
 2. **TS Errors** (15min): Install React types (`pnpm add -D @types/react @types/react-dom`), fix imports (shadcn/ui, VITE_*), resolve @workspace paths.
 3. **Env Vars** (2min): Add to .env:
    ```
-   DATABASE_URL=postgresql://user:pass@host:5432/brightsky
+   DATABASE_URL=postgresql://user:pass@host:5432/allbright
    RPC_ENDPOINT=https://base.llamarpc.com
    PIMLICO_API_KEY=your_key
    PRIVATE_KEY=0x...
@@ -104,4 +104,4 @@ git add . && git commit -m "Fix readiness blockers" && git push origin main
 
 **Post-Fix ETA**: 30min → FULLY READY. Safety gates prevent bad deploys. GES trending optimal.
 
-BrightSky is **production-viable post-fixes**! 🎯
+allbright is **production-viable post-fixes**! 🎯

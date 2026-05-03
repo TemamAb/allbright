@@ -1,6 +1,6 @@
 # Unified Deployment Readiness Report - Implementation TODO
 
-Current Working Directory: c:/Users/op/Desktop/brightsky
+Current Working Directory: c:/Users/op/Desktop/allbright
 
 ## Goal
 Replace scattered readiness checks with **SINGLE** `generateDeploymentReadinessReport()` in deploy_gatekeeper.ts
@@ -25,7 +25,7 @@ Replace scattered readiness checks with **SINGLE** `generateDeploymentReadinessR
 
 ### 4. [ ] Test
    ```
-   cd c:/Users/op/Desktop/brightsky
+   cd c:/Users/op/Desktop/allbright
    node -e "import('./api/src/services/deploy_gatekeeper.js').then(m => m.generateDeploymentReadinessReport()).then(console.log)"
    ```
 

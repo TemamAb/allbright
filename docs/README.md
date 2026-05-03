@@ -1,3 +1,3 @@
-# BrightSky Documentation
+# allbright Documentation
 
 Architecture specs, API docs, deployment guides, and operational runbooks.

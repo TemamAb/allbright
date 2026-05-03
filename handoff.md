@@ -1,4 +1,4 @@
-# BrightSky Complete Handoff - RenderCloud Deployed (v4e80f7a)
+# allbright Complete Handoff - RenderCloud Deployed (v4e80f7a)
 
 **Deployment Status**: 🛠️ TROUBLESHOOTING - Dashboard Crash (White Page)
 

@@ -5,10 +5,10 @@ import archiver from 'archiver';
 
 /**
  * BSS-PACK: Elite Production Bundler
- * Packages BrightSky artifacts for commercial installation.
+ * Packages allbright artifacts for commercial installation.
  */
 async function bundle() {
-  console.log('--- INITIALIZING BRIGHTSKY PRODUCTION BUNDLE ---');
+  console.log('--- INITIALIZING allbright PRODUCTION BUNDLE ---');
   
   // 1. Build React UI
   console.log('[1/3] Building Optimized Frontend...');
@@ -20,7 +20,7 @@ async function bundle() {
 
   // 3. Create Package
   console.log('[3/3] Archiving Production Artifacts...');
-  const output = fs.createWriteStream(path.join(process.cwd(), 'brightsky-v2.6-production.zip'));
+  const output = fs.createWriteStream(path.join(process.cwd(), 'allbright-v2.6-production.zip'));
   const archive = archiver('zip', { zlib: { level: 9 } });
 
   archive.pipe(output);
@@ -28,14 +28,14 @@ async function bundle() {
   // Add built UI
   archive.directory('ui/dist/', 'ui/dist');
   // Add Rust binary
-  archive.file('solver/target/release/brightsky', { name: 'bin/brightsky' });
+  archive.file('solver/target/release/allbright', { name: 'bin/allbright' });
   // Add API logic
   archive.directory('api/dist/', 'api/dist');
   archive.file('package.json', { name: 'package.json' });
   archive.file('render.yaml', { name: 'render.yaml' });
 
   await archive.finalize();
-  console.log('--- BUNDLE COMPLETE: brightsky-v2.6-production.zip ---');
+  console.log('--- BUNDLE COMPLETE: allbright-v2.6-production.zip ---');
 }
 
 bundle();

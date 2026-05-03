@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
 
-# BrightSky Local Deployment Strategy
+# allbright Local Deployment Strategy
 # Runs all services on local ports for safe testing and profit monitoring
 
 echo "═══════════════════════════════════════════════════"
-echo "     BrightSky Local Deployment Strategy"
+echo "     allbright Local Deployment Strategy"
 echo "═══════════════════════════════════════════════════"
 
 # Color codes for output
@@ -67,12 +67,12 @@ echo -e "${YELLOW}Step 3: Rust Solver Compilation${NC}"
 echo "───────────────────────────────────────────────────────"
 if command -v cargo &> /dev/null; then
     echo "Compiling Rust solver in release mode..."
-    cd solver && cargo build --release 2>&1 | tee /tmp/brightsky-cargo.log
+    cd solver && cargo build --release 2>&1 | tee /tmp/allbright-cargo.log
     if [ ${PIPESTATUS[0]} -eq 0 ]; then
         echo -e "${GREEN}✓${NC} Rust solver compiled successfully"
     else
         echo -e "${RED}ERR: Compilation failed${NC}"
-        tail -20 /tmp/brightsky-cargo.log
+        tail -20 /tmp/allbright-cargo.log
         exit 1
     fi
     cd ..
@@ -108,9 +108,9 @@ check_port $API_PORT || exit 1
 check_port $UI_PORT || exit 1
 
 echo "Starting Rust Solver on port $RUST_SOLVER_PORT..."
-if [ -f "solver/target/release/brightsky" ]; then
+if [ -f "solver/target/release/allbright" ]; then
     export RUST_LOG=info
-    nohup ./solver/target/release/brightsky > logs/rust-solver.log 2>&1 &
+    nohup ./solver/target/release/allbright > logs/rust-solver.log 2>&1 &
     RUST_PID=$!
     echo "  PID: $RUST_PID"
     echo $RUST_PID > logs/rust-solver.pid

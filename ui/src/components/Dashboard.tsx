@@ -1,10 +1,13 @@
 import React, { useState } from "react";
 import { useTelemetry } from "@/hooks/useTelemetry";
 import { TrendingUp, Shield } from "lucide-react";
+import { useGetEngineStatus } from "@workspace/api-client-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
 
 export default function Dashboard() {
   const { kpis, isLive } = useTelemetry();
+  const { data: engineStatus } = useGetEngineStatus();
+  const isGhostMode = engineStatus?.ghostMode;
 
   return (
     <div className="h-full space-y-6 animate-in fade-in duration-500">
@@ -15,8 +18,8 @@ export default function Dashboard() {
           <h2 className="text-3xl font-black uppercase tracking-tighter text-white">Global Efficiency</h2>
           <p className="text-[10px] text-zinc-500 font-bold mt-1 uppercase tracking-[0.3em]">Last Heartbeat: {new Date().toLocaleTimeString()}</p>
         </div>
-        <div className="text-7xl font-black text-emerald-500 font-mono tabular-nums tracking-tighter"> {/* Placeholder for real GES */}
-          {(kpis.ges || 0).toFixed(1)}%
+        <div className="text-7xl font-black text-emerald-500 font-mono tabular-nums tracking-tighter">
+          {isGhostMode ? <span className="text-zinc-500">MASKED</span> : `${(kpis.ges || 0).toFixed(1)}%`}
         </div>
       </div>
 

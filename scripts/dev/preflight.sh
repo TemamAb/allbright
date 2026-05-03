@@ -69,7 +69,7 @@ echo "🔐 GATE KEEPER PROTOCOL: DEPLOYMENT CLEARED FOR LAUNCH"
 echo ""
 
 # Record approvals in audit log
-echo "[$(date)] DEPLOYMENT AUTHORIZED - All gates approved by human operators" >> /var/log/brightsky/audit.log
+echo "[$(date)] DEPLOYMENT AUTHORIZED - All gates approved by human operators" >> /var/log/allbright/audit.log
 
 # Display deployment authorization certificate
 echo ""
@@ -97,7 +97,7 @@ if [[ "$*" != *"migrate"* ]]; then
     echo "─── [BSS-39] COMPILATION GUARD ───"
     if command -v cargo &> /dev/null; then
         echo "Running cargo build --release..."
-        if cargo build --release --bin brightsky 2>&1 | tee /tmp/cargo-output.log; then
+        if cargo build --release --bin allbright 2>&1 | tee /tmp/cargo-output.log; then
             echo "✓ [BSS-39] Rust Code Compiles Successfully"
         else
             echo "ERR: [BSS-39] COMPILATION FAILED"
@@ -160,7 +160,7 @@ echo "✓ Database Reachable"
 
 # 3. Verify Binary Integrity
 if [[ "$*" != *"migrate"* ]]; then
-    if [ ! -f "/usr/local/bin/brightsky-solver" ]; then
+    if [ ! -f "/usr/local/bin/allbright-solver" ]; then
         echo "ERR: High-speed solver binary missing from OCI layer"
         exit 1
     fi

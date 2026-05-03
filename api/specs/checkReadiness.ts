@@ -122,7 +122,7 @@ function statusColor(status: string): string {
 }
 
 async function checkReadiness() {
-  console.log(`${colors.bold}${colors.cyan}=== BrightSky Master Deployment Readiness Analysis ===${colors.reset}\n`);
+  console.log(`${colors.bold}${colors.cyan}=== allbright Master Deployment Readiness Analysis ===${colors.reset}\n`);
 
   try {
     if (db) {

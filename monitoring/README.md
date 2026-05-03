@@ -1,4 +1,4 @@
-# BrightSky Monitoring
+# allbright Monitoring
 
 Observability, alerting, and metrics infrastructure.
 

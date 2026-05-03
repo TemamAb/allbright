@@ -1,9 +1,9 @@
 #!/bin/bash
-# Build BrightSky Solver (Rust) — Release mode
+# Build allbright Solver (Rust) — Release mode
 # This script runs cargo build and waits for completion.
-# Expected output: binary at target/release/brightsky.exe (or brightsky on *nix)
+# Expected output: binary at target/release/allbright.exe (or allbright on *nix)
 
 cd "$(dirname "$0")/.."
-echo "[BSS-BUILD] Compiling brightsky-solver (release)..."
+echo "[BSS-BUILD] Compiling allbright-solver (release)..."
 cargo build --release
-echo "[BSS-BUILD] Done. Binary: target/release/brightsky$( [ "$OSTYPE" = "msys" ] && echo .exe )"
+echo "[BSS-BUILD] Done. Binary: target/release/allbright$( [ "$OSTYPE" = "msys" ] && echo .exe )"

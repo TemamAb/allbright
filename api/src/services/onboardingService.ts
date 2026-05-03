@@ -9,7 +9,7 @@ export class OnboardingService {
 
   constructor() {
     // Use the AppData directory provided by Electron
-    this.dataDir = process.env.BRIGHTSKY_DATA_DIR || path.join(process.cwd(), '.data');
+    this.dataDir = process.env.allbright_DATA_DIR || path.join(process.cwd(), '.data');
     
     if (!fs.existsSync(this.dataDir)) {
       fs.mkdirSync(this.dataDir, { recursive: true });

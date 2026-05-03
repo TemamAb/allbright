@@ -10,7 +10,7 @@ while ($true) {
 
     Clear-Host
     Write-Host "══════════════════════════════════════════════════" -ForegroundColor Cyan
-    Write-Host "   BRIGHTSKY ELITE - ARCHITECT MONITOR (PORT 3000)" -ForegroundColor Cyan
+    Write-Host "   allbright ELITE - ARCHITECT MONITOR (PORT 3000)" -ForegroundColor Cyan
     Write-Host "══════════════════════════════════════════════════" -ForegroundColor Cyan
     Write-Host " Status:    $status" -ForegroundColor $color
     Write-Host " Profit:    $profit ETH (est)" -ForegroundColor Green

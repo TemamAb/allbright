@@ -1,4 +1,4 @@
-# BrightSky AI Integration — Elite Upgrade TODO
+# allbright AI Integration — Elite Upgrade TODO
 
 **Owner:** Engineering Team  
 **Target:** Achieve elite-grade AI integration (Phase 1–7)  
@@ -273,7 +273,7 @@
   - [ ] Add `MetaLearner::load_state(path) -> Self` — fallback to defaults if file missing/corrupt
   - [ ] Call `save_state` every hour via timer in `run_watchtower`
   - [ ] Call `load_state` at startup before loop
-  - [ ] Store to `./model_state.json` or `/var/lib/brightsky/model_state.json`
+  - [ ] Store to `./model_state.json` or `/var/lib/allbright/model_state.json`
   - [ ] Test: kill process, restart, confirm state restored
 
 **Phase 2 Acceptance:**
@@ -340,11 +340,11 @@
     if (opp.min_margin_ratio_bps !== undefined) sharedEngineState.minMarginRatioBps = opp.min_margin_ratio_bps;
     if (opp.bribe_ratio_bps !== undefined) sharedEngineState.bribeRatioBps = opp.bribe_ratio_bps;
     ```
-  - [ ] **Update `BrightSkyBribeEngine`** to read from `sharedEngineState` instead of local-only state
+  - [ ] **Update `allbrightBribeEngine`** to read from `sharedEngineState` instead of local-only state
     - In `bribeEngine.ts:calculateProtectedBribe()`, replace `config.MIN_MARGIN_RATIO` with `sharedEngineState.minMarginRatioBps / 10000`
   - [ ] **Write-back path:** Where does bribe tuning happen? Currently `engine.ts:1170`:
     ```typescript
-    BrightSkyBribeEngine.updateTuning({ MIN_MARGIN_RATIO: …, BRIBE_RATIO: … });
+    allbrightBribeEngine.updateTuning({ MIN_MARGIN_RATIO: …, BRIBE_RATIO: … });
     ```
     Change to: **send IPC message to Rust** to update `WatchtowerStats` fields:
     ```typescript
@@ -359,7 +359,7 @@
 - **Effort:** 2h (Rust) + 2h (Node) = **0.5 day**
 
 **Phase 3 Acceptance:**
-- [ ] `brightsky_bridge` heartbeat includes `min_margin_ratio_bps`, `bribe_ratio_bps`
+- [ ] `allbright_bridge` heartbeat includes `min_margin_ratio_bps`, `bribe_ratio_bps`
 - [ ] Node.js `sharedEngineState` shows same values as Rust `WatchtowerStats`
 - [ ] Trade execution uses updated bribe parameters from shared state
 - [ ] After "Update Tuning" from Alpha-Copilot, values round-trip correctly

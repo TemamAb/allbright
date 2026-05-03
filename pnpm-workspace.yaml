@@ -36,7 +36,7 @@ minimumReleaseAgeExclude:
 packages:
   - 'api'
   - 'ui'
-  - '@brightsky/ui'
+  - '@allbright/ui'
   - 'lib/*'
   - 'lib/integrations/*'
   - 'scripts'

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# BrightSky Profit Monitor
+# allbright Profit Monitor
 # Continuously monitors profit generation and system health
 
 API_PORT=3000
@@ -14,14 +14,14 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo "═════════════════════════════════════════════════"
-echo "     BrightSky Profit Monitor"
+echo "     allbright Profit Monitor"
 echo "══════════════════════════════════════════════════"
 echo ""
 
 while true; do
     clear
     echo "═════════════════════════════════════════════════"
-    echo "  BrightSky Live Monitor - $(date '+%Y-%m-%d %H:%M:%S')"
+    echo "  allbright Live Monitor - $(date '+%Y-%m-%d %H:%M:%S')"
     echo "══════════════════════════════════════════════════"
     echo ""
     

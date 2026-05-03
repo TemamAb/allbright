@@ -14,7 +14,7 @@ const router: IRouter = Router();
 
 router.get("/", (_req, res) => {
   res.json({
-    message: "BrightSky Elite Engine Online",
+    message: "allbright Elite Engine Online",
     version: "1.0.0-production",
     mode: process.env.NODE_ENV || "development",
     system: "TypeScript/Node.js",

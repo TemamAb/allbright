@@ -1,11 +1,11 @@
 #!/bin/bash
-# BRIGHTSKY FREE-TIER EFFICIENCY & SECURITY OVERHAUL
+# allbright FREE-TIER EFFICIENCY & SECURITY OVERHAUL
 BASE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 OUTPUT_FILE="$BASE/output.txt"
-AUDITOR_SCRIPT="$BASE/brightsky-auditor.sh"
+AUDITOR_SCRIPT="$BASE/allbright-auditor.sh"
 ENGINE_CONFIG="$BASE/../api/src/routes/engine.ts"
 
-echo "🚀 Initiating Free-Tier Optimization for BrightSky..."
+echo "🚀 Initiating Free-Tier Optimization for allbright..."
 
 # 1. ENFORCE JIT SANDWICH PROTECTION (BSS-16)
 echo "🛡️  Action: Hardening Security Gate (BSS-16)..."
@@ -30,8 +30,8 @@ echo "⚡ Action: Refreshing IPC Bridge Sockets..."
 rm -f "$BASE/../"*.ipc 2>/dev/null
 echo "   [FIXED] IPC sockets cleared."
 
-# 4. PATCH BRIGHTSKY AUDITOR
-echo "🔍 Action: Patching BrightSky Auditor..."
+# 4. PATCH allbright AUDITOR
+echo "🔍 Action: Patching allbright Auditor..."
 cat << 'AUDIT' > "$AUDITOR_SCRIPT"
 #!/bin/bash
 BASE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"

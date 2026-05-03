@@ -79,7 +79,7 @@ export const CloudSelectionModal: React.FC = () => {
             Select Cloud Provider
           </DialogTitle>
           <DialogDescription>
-            Transition your local BrightSky engine to a professional cloud environment with one click.
+            Transition your local allbright engine to a professional cloud environment with one click.
           </DialogDescription>
         </DialogHeader>
 

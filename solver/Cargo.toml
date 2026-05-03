@@ -1,14 +1,14 @@
 # Force rebuild v2
 [package]
-name = "brightsky-solver"
+name = "allbright-solver"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "brightsky_solver"
+name = "allbright_solver"
 
 [[bin]]
-name = "brightsky"
+name = "allbright"
 path = "src/main.rs"
 
 [dependencies]

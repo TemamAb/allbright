@@ -1,4 +1,4 @@
-# BrightSky - Vercel Live Deployment Report
+# allbright - Vercel Live Deployment Report
 
 ## Deployment Status: RECOVERING ⚠️
 
@@ -14,15 +14,15 @@
 
 ### Frontend (Vercel Static)
 
-- **URL**: https://brightsky.vercel.app (or your custom domain)
-- **Build Command**: `export VITE_API_BASE_URL=https://brightsky-api.vercel.app && pnpm install --frozen-lockfile && pnpm --filter @brightsky/ui run build`
+- **URL**: https://allbright.vercel.app (or your custom domain)
+- **Build Command**: `export VITE_API_BASE_URL=https://allbright-api.vercel.app && pnpm install --frozen-lockfile && pnpm --filter @allbright/ui run build`
 - **Output Directory**: `dist/public`
 - **Node Version**: 22.18.0
 - **Package Manager**: pnpm 9
 
 ### API Server (Vercel Serverless)
 
-- **URL**: https://brightsky-api.vercel.app
+- **URL**: https://allbright-api.vercel.app
 - **Runtime**: Node.js serverless functions
 - **Build Command**: `pnpm --filter @workspace/api-server run build`
 - **Start Command**: `pnpm --filter @workspace/api-server run start`
@@ -34,7 +34,7 @@
 ### Frontend
 
 - `NODE_ENV`: production
-- `VITE_API_BASE_URL`: https://brightsky-api.vercel.app
+- `VITE_API_BASE_URL`: https://allbright-api.vercel.app
 
 ### API Server
 
@@ -63,7 +63,7 @@
 
 ---
 
-## Rust Solver (brightsky-solver)
+## Rust Solver (allbright-solver)
 
 ### CI/CD Status
 

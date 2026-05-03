@@ -37,5 +37,5 @@ foreach ($line in $lines) {
 [Environment]::SetEnvironmentVariable("PAPER_TRADING_MODE", "false", "Process")
 [Environment]::SetEnvironmentVariable("PORT", $Port.ToString(), "Process")
 
-Write-Host "Starting BrightSky API in LIVE verification mode on port $Port using $resolvedEnvFile"
+Write-Host "Starting allbright API in LIVE verification mode on port $Port using $resolvedEnvFile"
 node .\artifacts\api-server\dist\index.mjs

@@ -1,7 +1,7 @@
-# Stop all BrightSky local services (Simple version)
+# Stop all allbright local services (Simple version)
 
 Write-Host "════════════════════════════════════════════════" -ForegroundColor Cyan
-Write-Host "  Stopping BrightSky Local Services" -ForegroundColor Cyan
+Write-Host "  Stopping allbright Local Services" -ForegroundColor Cyan
 Write-Host "════════════════════════════════════════════════" -ForegroundColor Cyan
 Write-Host ""
 
@@ -14,7 +14,7 @@ if ($jobs) {
 }
 
 # Also kill any remaining processes
-Get-Process -Name "brightsky" -ErrorAction SilentlyContinue | Stop-Process -Force
+Get-Process -Name "allbright" -ErrorAction SilentlyContinue | Stop-Process -Force
 Get-Process -Name "node" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -like "*api-server*" -or $_.CommandLine -like "*vite*" } | Stop-Process -Force
 
 Write-Host ""

@@ -1,4 +1,4 @@
-# BrightSky UI Dashboard - Revised Analysis (Post-Fixes)
+# allbright UI Dashboard - Revised Analysis (Post-Fixes)
 
 **Build Success:** Vite chunks split (vendor/charts/motion), 26s. Secure/deploy-ready.
 

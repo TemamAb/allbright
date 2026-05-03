@@ -1,6 +1,6 @@
 {
-  "appId": "com.brightsky.app",
-  "productName": "Brightsky",
+  "appId": "com.allbright.app",
+  "productName": "allbright",
   "directories": {
     "output": "dist-electron"
   },
@@ -31,6 +31,6 @@
     "installerHeaderIcon": "assets/icon.ico",
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,
-    "shortcutName": "Brightsky"
+    "shortcutName": "allbright"
   }
 }

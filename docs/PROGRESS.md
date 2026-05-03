@@ -1,4 +1,4 @@
-# BrightSky AI Upgrade — Implementation Status
+# allbright AI Upgrade — Implementation Status
 
 **Last Updated:** 2026-04-27 (Post Phase 0–2 + Phase 3 partial)
 
@@ -27,7 +27,7 @@
 
 ### Phase 3: Bridge Unification (Bribe Sync)
 | 3.1 | API Specialists activation | ⏳ Not started (stubs remain) | `api/src/lib/specialists.ts` |
-| 3.2 | Bribe Engine state sync (Node ↔ Rust) | ✅ Complete | Heartbeat sends bribe params (min_margin_bps, bribe_bps) → Node updates `sharedEngineState`; `BrightSkyBribeEngine` reads from `sharedEngineState`; `updateTuning` sends UPDATE_BRIBE → Rust updates atoms |
+| 3.2 | Bribe Engine state sync (Node ↔ Rust) | ✅ Complete | Heartbeat sends bribe params (min_margin_bps, bribe_bps) → Node updates `sharedEngineState`; `allbrightBribeEngine` reads from `sharedEngineState`; `updateTuning` sends UPDATE_BRIBE → Rust updates atoms |
 | 3.3 | Full KPI round-trip validation | ✅ Implicit via flow | Verified end-to-end compilation |
 
 ### Phase 4–7: Future Work
@@ -101,7 +101,7 @@
 | Benchmark target loader (0.2) | P2 | Parse `benchmark-30-kpis.md` and feed into gate for dynamic thresholds |
 | Gate retry/auto-tune (1.3) | P1 | On gate failure, call AutoOptimizer, wait, retry up to 3× |
 | Override audit logging (1.4) | P2 | Write override events to `audit_decisions` table |
-| MetaLearner persistence (2.4) | P2 | Periodic JSON dump of meta fields to `/var/lib/brightsky/meta_state.json` |
+| MetaLearner persistence (2.4) | P2 | Periodic JSON dump of meta fields to `/var/lib/allbright/meta_state.json` |
 | Specialist modularization (Phase 4) | P3 | Move inline specialists from `main.rs` to separate files |
 | Circuit breaker auto-reset (6.1) | P2 | Probe trade after cooldown |
 | Shadow mode UI banner (6.2) | P3 | Dashboard warning when `shadowModeActive` |

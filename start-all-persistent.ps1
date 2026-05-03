@@ -1,10 +1,10 @@
-# Start BrightSky Services Persistently
+# Start allbright Services Persistently
 $root = $PWD.Path
-Write-Host "Starting BrightSky Services in $root..." -ForegroundColor Cyan
+Write-Host "Starting allbright Services in $root..." -ForegroundColor Cyan
 
 # Solver
 Write-Host "Starting Rust Solver..." -ForegroundColor Yellow
-$solverExe = Join-Path $root "target\release\brightsky.exe"
+$solverExe = Join-Path $root "target\release\allbright.exe"
 if (Test-Path $solverExe) {
     # Set env vars for the current process so they are inherited by the child
     $env:INTERNAL_BRIDGE_PORT = "4001"

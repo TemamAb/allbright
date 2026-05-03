@@ -1,4 +1,4 @@
-# Deployment Guide — BrightSky
+# Deployment Guide — allbright
 
 ## Table of Contents
 1. [Prerequisites](#prerequisites)
@@ -28,8 +28,8 @@
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/<your-org>/brightsky.git
-cd brightsky
+git clone https://github.com/<your-org>/allbright.git
+cd allbright
 
 # Install dependencies (pnpm workspace)
 pnpm install
@@ -43,7 +43,7 @@ cp .env.example .env
 
 ```bash
 # Start Postgres locally (Docker)
-docker run --name brightsky-postgres -e POSTGRES_PASSWORD=brightsky -e POSTGRES_DB=brightsky -p 5432:5432 -d postgres:16-alpine
+docker run --name allbright-postgres -e POSTGRES_PASSWORD=allbright -e POSTGRES_DB=allbright -p 5432:5432 -d postgres:16-alpine
 
 # Or connect to Neon:
 # DATABASE_URL=postgresql://user:pass@host/db?sslmode=require
@@ -55,7 +55,7 @@ Edit `.env`:
 
 ```bash
 # Required
-DATABASE_URL=postgresql://brightsky:brightsky@localhost:5432/brightsky
+DATABASE_URL=postgresql://allbright:allbright@localhost:5432/allbright
 RPC_ENDPOINT=https://base.llamarpc.com
 PIMLICO_API_KEY=pim_your_key
 PRIVATE_KEY=0x...      # For LIVE mode (or leave blank for SHADOW)
@@ -86,7 +86,7 @@ pnpm run dev
 Access:
 - API: http://localhost:3000/api/health
 - Dashboard: http://localhost:3000 (if UI built)
-- Solver IPC: Unix socket `/tmp/brightsky_bridge.sock`
+- Solver IPC: Unix socket `/tmp/allbright_bridge.sock`
 
 ### 5. Pre-flight Check
 
@@ -122,8 +122,8 @@ The preflight script validates environment and binary:
    - Environment variables: (see below)
 3. **Web Service — Solver** (`solver/`)
    - Runtime: Docker
-   - Build Command: `cargo build --release --bin brightsky`
-   - Start Command: `./target/release/brightsky`
+   - Build Command: `cargo build --release --bin allbright`
+   - Start Command: `./target/release/allbright`
    - Health Check: TCP port 4003 (default)
 4. **Web Service — Dashboard** (optional, `ui/`)
    - Static build served by nginx
@@ -142,7 +142,7 @@ PIMLICO_API_KEY=<your-pimlico-key>
 PRIVATE_KEY=<your-private-key>         # For LIVE mode
 WALLET_ADDRESS=0x...
 INTERNAL_BRIDGE_PORT=4001
-BRIGHTSKY_SOCKET_PATH=/tmp/brightsky_bridge.sock
+allbright_SOCKET_PATH=/tmp/allbright_bridge.sock
 PRE_FLIGHT_STRICT=true
 ```
 
@@ -200,7 +200,7 @@ Configure `vercel.json` routes to proxy API calls.
 ```bash
 cd ui
 pnpm run build-desktop
-# Output: dist-electron/brightsky-desktop-setup.exe
+# Output: dist-electron/allbright-desktop-setup.exe
 ```
 
 Requires Electron Builder configuration.

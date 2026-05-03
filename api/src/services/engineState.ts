@@ -161,7 +161,7 @@ export interface SharedEngineState {
   
   currentUserRole: 'USER' | 'ADMIN'; // Commercialization: Role-based access
 
-  intelligenceSource: 'BRIGHTSKY_BOOTSTRAP' | 'USER_PRIVATE'; // Cognitive transition
+  intelligenceSource: 'allbright_BOOTSTRAP' | 'USER_PRIVATE'; // Cognitive transition
 
   clientProfile: ClientProfile | null;
   integrityThreshold: number; // Percentage threshold for pulsing red alert
@@ -290,10 +290,10 @@ avgLatencyMs: 9,
   autoWithdrawEnabled: false,
   withdrawalHistory: [],
   deploymentHistory: [],
-  appName: 'BrightSky', // Standard default branding
+  appName: 'allbright', // Standard default branding
   logoUrl: null,
   ghostMode: false,
-  intelligenceSource: 'BRIGHTSKY_BOOTSTRAP',
+  intelligenceSource: 'allbright_BOOTSTRAP',
   clientProfile: null,
   integrityThreshold: 70, // Default 70% of benchmark
   currentUserRole: 'USER', // Default to User for commercial safety

@@ -5,7 +5,7 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import { sharedEngineState } from "./engineState";
 import { gateKeeper } from "./gateKeeper";
-import { BrightSkyBribeEngine } from "./bribeEngine";
+import { allbrightBribeEngine } from "./bribeEngine";
 import { MempoolIntelligenceService } from './mempoolIntelligence';
 import * as net from "net";
 import * as crypto from "crypto";
@@ -172,7 +172,7 @@ export class AlphaCopilot {
         
         // BSS-28: Bayesian Bribe Tuning Feedback Loop
         const lastBribeRatio = sharedEngineState.bribeRatioBps / 10000;
-        BrightSkyBribeEngine.updateBayesianElasticity(lastBribeRatio, success);
+        allbrightBribeEngine.updateBayesianElasticity(lastBribeRatio, success);
 
         // Recommendation 4: Detect Adversarial Mempool Overlap
         if (!success && latency < 50) {
@@ -586,7 +586,7 @@ l    valid: boolean;
        const isUserManaged = sharedEngineState.intelligenceSource === 'USER_PRIVATE';
        const apiKey = isUserManaged 
          ? (process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY)
-         : (process.env.BRIGHTSKY_BOOTSTRAP_KEY); // Internal fallback key during wizard
+         : (process.env.allbright_BOOTSTRAP_KEY); // Internal fallback key during wizard
 
        if (!apiKey) {
          return "I am currently running in offline mock mode. To unlock my full AI capabilities, please configure OPENROUTER_API_KEY or OPENAI_API_KEY in the environment.";
@@ -600,7 +600,7 @@ l    valid: boolean;
        const baseUrl = isOpenRouter ? "https://openrouter.ai/api/v1/chat/completions" : "https://api.openai.com/v1/chat/completions";
        const model = isOpenRouter ? "mistralai/mistral-7b-instruct:free" : "gpt-3.5-turbo";
        
-       const systemPrompt = `You are Alpha-Copilot, an elite AI assistant for the BrightSky Arbitrage Engine. 
+       const systemPrompt = `You are Alpha-Copilot, an elite AI assistant for the allbright Arbitrage Engine. 
 The system state:
 - Live Mode Capable: ${sharedEngineState.liveCapable}
 - Running Mode: ${sharedEngineState.mode}
@@ -611,7 +611,7 @@ Provide technically precise responses in a well-structured outlining format usin
          headers: {
            "Content-Type": "application/json",
            "Authorization": `Bearer ${apiKey}`,
-           ...(isOpenRouter ? { "HTTP-Referer": "https://brightsky.app", "X-Title": "BrightSky" } : {})
+           ...(isOpenRouter ? { "HTTP-Referer": "https://allbright.app", "X-Title": "allbright" } : {})
          },
          body: JSON.stringify({
            model,
@@ -663,7 +663,7 @@ Provide technically precise responses in a well-structured outlining format usin
     * Explains the automation of Render environment variable injection.
     */
    async adviseZeroConfigSetup(): Promise<string> {
-     const prompt = `A user is in the BrightSky setup wizard. Explain the 'Zero-Config' cloud synchronization feature. 
+     const prompt = `A user is in the allbright setup wizard. Explain the 'Zero-Config' cloud synchronization feature. 
      Detail how uploading their .env file allows the Alpha-Copilot (via Cloud Orchestrator) 
      to programmatically configure their Render/Cloud environment, enabling a seamless 
      'Push to GitHub -> Auto-Run' workflow without manual dashboard entries. 
@@ -677,7 +677,7 @@ Provide technically precise responses in a well-structured outlining format usin
     * Parses Render logs to identify configuration gaps.
     */
    async analyzeRenderLogs(logs: string): Promise<string> {
-     const prompt = `Analyze the following Render deployment logs for the BrightSky application:
+     const prompt = `Analyze the following Render deployment logs for the allbright application:
      ---
      ${logs}
      ---
@@ -717,7 +717,7 @@ Provide technically precise responses in a well-structured outlining format usin
 
      await this.save_model(); // Automated Save on Hardening transition
 
-     const prompt = `A BrightSky deployment has achieved an Elite GES of ${(currentGes / 10).toFixed(1)}%. 
+     const prompt = `A allbright deployment has achieved an Elite GES of ${(currentGes / 10).toFixed(1)}%. 
      The system is now 'Hardening' this configuration. Explain to the user how this baseline 
      protects them from API drift, unauthorized changes, and ensures world-class software reliability 
      for repeated commercial runs.`;
@@ -849,7 +849,7 @@ Provide technically precise responses in a well-structured outlining format usin
      }
 
      const pdfBuffer = await this.generateAuditPDFBuffer();
-     const appName = sharedEngineState.appName || (sharedEngineState.ghostMode ? 'Elite Protocol' : 'BrightSky');
+     const appName = sharedEngineState.appName || (sharedEngineState.ghostMode ? 'Elite Protocol' : 'allbright');
 
      const transporter = nodemailer.createTransport({
        host: process.env.SMTP_HOST,
@@ -886,7 +886,7 @@ Provide technically precise responses in a well-structured outlining format usin
        doc.on('end', () => resolve(Buffer.concat(chunks)));
        doc.on('error', reject);
 
-       const appName = sharedEngineState.appName || (sharedEngineState.ghostMode ? 'Elite Protocol' : 'BrightSky');
+       const appName = sharedEngineState.appName || (sharedEngineState.ghostMode ? 'Elite Protocol' : 'allbright');
        const profile = sharedEngineState.clientProfile;
 
        // Header Branding

@@ -1,6 +1,6 @@
 #!/bin/bash
-# BrightSky Automated Workflow Orchestrator
-# Path: C:\Users\op\Desktop\brightsky\ai\run_task.sh
+# allbright Automated Workflow Orchestrator
+# Path: C:\Users\op\Desktop\allbright\ai\run_task.sh
 
 echo "[BSS-TASK] Initializing Automated Audit & Deployment Sequence..."
 

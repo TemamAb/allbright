@@ -1,5 +1,5 @@
 /**
- * BrightSky Production Bundler
+ * allbright Production Bundler
  * Packages the built UI and API into a distribution-ready ZIP.
  */
 const fs = require('fs');
@@ -9,7 +9,7 @@ const archiver = require('archiver'); // Requires 'npm install archiver'
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const DIST_DIR = path.join(ROOT_DIR, 'dist_package');
-const ZIP_NAME = 'BrightSky_Production_Bundle.zip';
+const ZIP_NAME = 'allbright_Production_Bundle.zip';
 
 async function pack() {
   console.log('--- Initializing Production Pack ---');
@@ -33,7 +33,7 @@ async function pack() {
   // 3.1 Create Setup Icon / Shortcut file
   console.log('Generating setup entry point...');
   const setupInstructions = `
-BRIGHTSKY DEFI SOFTWARE DEVELOPER LTD.
+allbright DEFI SOFTWARE DEVELOPER LTD.
 ======================================
 To start the setup wizard, run the 'server' application and open your browser to the local port.
   `;

@@ -14,11 +14,11 @@ const httpServer = createServer(app);
 
 // CORS Configuration: Restrict to known origins
 // Development: http://localhost:3000 (Vite dev server)
-// Production: https://brightsky-ui.vercel.app (or your deployed domain)
+// Production: https://allbright-ui.vercel.app (or your deployed domain)
 const corsOrigins = process.env.CORS_ORIGINS?.split(',') ?? [
   "http://localhost:3000",
   "http://localhost:5173", // Vite default
-  process.env.UI_URL || "https://brightsky-ui.vercel.app"
+  process.env.UI_URL || "https://allbright-ui.vercel.app"
 ];
 
 // BSS-06: Initialize Socket.io with restricted CORS
@@ -77,7 +77,7 @@ app.use(rateLimiter);
 // Public routes (no auth required)
 app.get("/", (_req, res) => {
   res.json({
-    message: "BrightSky Elite Engine Online",
+    message: "allbright Elite Engine Online",
     version: "1.0.0-production",
     mode: process.env.NODE_ENV || "development",
     system: "TypeScript/Node.js",

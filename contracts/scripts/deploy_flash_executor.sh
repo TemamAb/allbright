@@ -1,5 +1,5 @@
 #!/bin/bash
-# BrightSky FlashExecutor Deployment Script
+# allbright FlashExecutor Deployment Script
 # Deploys FlashExecutor.sol to Base chain for Pimlico paymaster integration
 set -e
 

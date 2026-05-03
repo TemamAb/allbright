@@ -1,4 +1,4 @@
-# BrightSky GES Optimization to >95% - TODO Tracker
+# allbright GES Optimization to >95% - TODO Tracker
 
 ## Current: 85% → Target: >95% (Elite Grade)
 **Bottlenecks**: System Health=0 (uptime/IPC), Efficiency CRITICAL, Perf throughput=0.
@@ -14,7 +14,7 @@
 ### 2. Infra & Local Stack
 - [ ] .env.prod:
   ```
-  DATABASE_URL=postgresql://brightsky:brightsky@localhost:5432/brightsky
+  DATABASE_URL=postgresql://allbright:allbright@localhost:5432/allbright
   RPC_ENDPOINT=https://base.llamarpc.com
   PIMLICO_API_KEY=pk_...
   PRIVATE_KEY=0x...

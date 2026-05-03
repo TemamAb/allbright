@@ -42,7 +42,7 @@ export default function Sidebar() {
       </nav>
       <div className="p-4 border-t border-zinc-800">
         <div className="text-xs text-muted-foreground">
-          BrightSky v1.0.0
+          allbright v1.0.0
         </div>
       </div>
     </aside>

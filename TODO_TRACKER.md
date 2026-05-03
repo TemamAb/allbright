@@ -1,4 +1,4 @@
-# BrightSky TODO Tracker (Phase 1 Complete)
+# allbright TODO Tracker (Phase 1 Complete)
 
 ## Phase 1: Local Final Blockers [70%]
 - [x] solver/src/specialists.rs created

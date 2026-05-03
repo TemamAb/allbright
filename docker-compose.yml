@@ -2,18 +2,18 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: brightsky
-      POSTGRES_USER: brightsky
-      POSTGRES_PASSWORD: brightsky
+      POSTGRES_DB: allbright
+      POSTGRES_USER: allbright
+      POSTGRES_PASSWORD: allbright
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U brightsky -d brightsky"]
+      test: ["CMD-SHELL", "pg_isready -U allbright -d allbright"]
       interval: 10s
       timeout: 5s
       retries: 10
     volumes:
-      - brightsky-postgres:/var/lib/postgresql/data
+      - allbright-postgres:/var/lib/postgresql/data
 
   solver:
     build:
@@ -24,7 +24,7 @@ services:
       INTERNAL_BRIDGE_PORT: "4001"
       FLASH_EXECUTOR_ADDRESS: ${FLASH_EXECUTOR_ADDRESS}
       BASE_WS_URL: "wss://base-rpc.publicnode.com"
-      BRIGHTSKY_SOCKET_PATH: /ipc/brightsky_bridge.sock
+      allbright_SOCKET_PATH: /ipc/allbright_bridge.sock
       EXECUTOR_CODE_HASH: "0x6f2a4c10da345e0d48f2b1c93a9b1e7f3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f"
       CHAIN_ID: "8453"
       PIMLICO_NETWORK: base
@@ -35,7 +35,7 @@ services:
       PIMLICO_API_KEY: ${PIMLICO_API_KEY}
       RPC_ENDPOINT: ${RPC_ENDPOINT}
     volumes:
-      - brightsky-ipc:/ipc
+      - allbright-ipc:/ipc
 
   api:
     build:
@@ -46,9 +46,9 @@ services:
     environment:
       NODE_ENV: development
       PORT: "10000"
-      DATABASE_URL: postgresql://brightsky:brightsky@postgres:5432/brightsky
+      DATABASE_URL: postgresql://allbright:allbright@postgres:5432/allbright
       INTERNAL_BRIDGE_PORT: "4001"
-      BRIGHTSKY_SOCKET_PATH: /ipc/brightsky_bridge.sock
+      allbright_SOCKET_PATH: /ipc/allbright_bridge.sock
       PRE_FLIGHT_STRICT: "false"
       PAPER_TRADING_MODE: "false"
       SUDO_CONFIRMATION_ENABLED: "false"
@@ -72,7 +72,7 @@ services:
       solver:
         condition: service_started
     volumes:
-      - brightsky-ipc:/ipc
+      - allbright-ipc:/ipc
     healthcheck:
       test:
         [
@@ -99,5 +99,5 @@ services:
         condition: service_healthy
 
 volumes:
-  brightsky-ipc:
-  brightsky-postgres:
+  allbright-ipc:
+  allbright-postgres:

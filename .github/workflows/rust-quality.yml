@@ -43,7 +43,7 @@ jobs:
         run: cargo clippy --release -- -D warnings
 
       - name: Build check
-        run: cargo build --release --bin brightsky
+        run: cargo build --release --bin allbright
 
       - name: Tests (if any exist)
         run: cargo test --lib
@@ -67,7 +67,7 @@ jobs:
         run: |
           cargo fmt --all
           cargo clippy --release -- -D warnings
-          cargo build --release --bin brightsky
+          cargo build --release --bin allbright
 
       - name: Check for formatting changes
         run: |

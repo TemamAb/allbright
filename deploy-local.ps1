@@ -1,6 +1,6 @@
-# BrightSky Local Deployment - Simple Version
+# allbright Local Deployment - Simple Version
 
-Write-Host "Starting BrightSky Local Deployment..." -ForegroundColor Cyan
+Write-Host "Starting allbright Local Deployment..." -ForegroundColor Cyan
 
 # Load .env
 $envContent = Get-Content ".env"
@@ -34,7 +34,7 @@ $env:RUST_LOG = "info"
 $env:INTERNAL_BRIDGE_PORT = "4001"
 Start-Job -Name "RustSolver" -ScriptBlock {
     Set-Location $args[0]
-    & ".\solver\target\release\brightsky.exe"
+    & ".\solver\target\release\allbright.exe"
 } -ArgumentList $PWD.Path
 
 Start-Sleep -Seconds 3

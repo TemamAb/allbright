@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BASE="C:/Users/op/Desktop/brightsky"
+BASE="C:/Users/op/Desktop/allbright"
 
 case "$1" in
   status)

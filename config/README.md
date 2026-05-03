@@ -1,4 +1,4 @@
-# BrightSky Configuration
+# allbright Configuration
 
 Environment and deployment configuration templates.
 

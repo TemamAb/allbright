@@ -23,7 +23,7 @@ const checkAdmin = (req: any, res: any, next: any) => {
 
   const token = authHeader.split(' ')[1];
   try {
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET || 'brightsky-elite-secret');
+    const decoded: any = jwt.verify(token, process.env.JWT_SECRET || 'allbright-elite-secret');
     
     if (decoded.role !== 'ADMIN') {
       logger.warn({ user: decoded.email }, "[AUTH] Forbidden administrative action attempt");
@@ -136,7 +136,7 @@ router.put("/", checkAdmin, async (req, res) => {
 router.get("/audit/export", async (req, res) => {
   try {
     const pdfBuffer = await alphaCopilot.generateAuditPDFBuffer();
-    const appName = sharedEngineState.appName || (sharedEngineState.ghostMode ? 'Elite Protocol' : 'BrightSky');
+    const appName = sharedEngineState.appName || (sharedEngineState.ghostMode ? 'Elite Protocol' : 'allbright');
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     
     res.setHeader('Content-Type', 'application/pdf');

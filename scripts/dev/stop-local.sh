@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Stop all BrightSky local services
+# Stop all allbright local services
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -8,7 +8,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 echo "═════════════════════════════════════════════════"
-echo "  Stopping BrightSky Local Services"
+echo "  Stopping allbright Local Services"
 echo "═════════════════════════════════════════════════"
 echo ""
 
@@ -26,7 +26,7 @@ if [ -f "logs/rust-solver.pid" ]; then
 else
     echo -e "${YELLOW}WARN:${NC} No PID file found for Rust Solver"
     # Try to find and kill by process name
-    pkill -f "brightsky" 2>/dev/null && echo -e "${GREEN}✓${NC} Killed brightsky process" || true
+    pkill -f "allbright" 2>/dev/null && echo -e "${GREEN}✓${NC} Killed allbright process" || true
 fi
 
 # Stop API Server

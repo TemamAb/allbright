@@ -10,10 +10,10 @@ const logger = pino({
   // BSS-WhiteLabel: Stealth Log Sanitizer
   formatters: {
     log(object: any) {
-      const replacement = sharedEngineState.appName || (sharedEngineState.ghostMode ? 'Elite Protocol' : 'BrightSky');
+      const replacement = sharedEngineState.appName || (sharedEngineState.ghostMode ? 'Elite Protocol' : 'allbright');
       
       if (object.msg && typeof object.msg === 'string') {
-        object.msg = object.msg.replace(/BrightSky/gi, replacement);
+        object.msg = object.msg.replace(/allbright/gi, replacement);
       }
       return object;
     }

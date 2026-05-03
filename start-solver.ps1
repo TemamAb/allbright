@@ -3,12 +3,12 @@ $env:PORT = '4003'
 $env:INTERNAL_BRIDGE_PORT = '4003'
 Set-Location -Path "$PSScriptRoot\solver"
 
-if (!(Test-Path '.\target\release\brightsky.exe')) {
+if (!(Test-Path '.\target\release\allbright.exe')) {
     Write-Host "Error: Binary not found. Run 'cargo build --release' first." -ForegroundColor Red
     exit
 }
 
-Start-Process -FilePath '.\target\release\brightsky.exe' `
+Start-Process -FilePath '.\target\release\allbright.exe' `
     -ArgumentList "--release" `
     -RedirectStandardOutput "$PSScriptRoot\logs\rust-solver.log" `
     -RedirectStandardError "$PSScriptRoot\logs\rust-solver-error.log" `

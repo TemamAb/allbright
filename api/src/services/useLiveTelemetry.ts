@@ -10,7 +10,7 @@ export interface TelemetryHistory {
 
 /**
  * Elite-Grade Telemetry Hook
- * Manages high-frequency WebSocket synchronization with the BrightSky backbone.
+ * Manages high-frequency WebSocket synchronization with the allbright backbone.
  * Handles automatic reconnection, state snapshots, and incremental updates.
  * Maintains a local history buffer for real-time charting.
  */

@@ -1,13 +1,13 @@
 services:
-  # BrightSky Rust Solver (TCP IPC on port 4003)
+  # allbright Rust Solver (TCP IPC on port 4003)
   - type: web
-    name: brightsky-solver
+    name: allbright-solver
     env: docker
     plan: starter
     branch: main
     rootDir: solver
     buildCommand: cargo build --release
-    runCommand: ./target/release/brightsky
+    runCommand: ./target/release/allbright
     healthCheckPath: /health
     healthCheckTimeout: 10
     envVars:
@@ -34,9 +34,9 @@ services:
       - key: PORT
         value: "4003"
 
-  # BrightSky API Server (Node.js + TypeScript)
+  # allbright API Server (Node.js + TypeScript)
 - type: web
-    name: brightsky-api
+    name: allbright-api
     env: node
     plan: starter
     rootDir: api
@@ -82,18 +82,18 @@ services:
         value: "true"
       - key: USE_TCP_BRIDGE
         value: "true"
-      - key: BRIGHTSKY_TCP_HOST
-        value: brightsky-solver
-      - key: BRIGHTSKY_TCP_PORT
+      - key: allbright_TCP_HOST
+        value: allbright-solver
+      - key: allbright_TCP_PORT
         value: "4003"
       - key: DATABASE_URL
         value: sqlite::memory:
       - key: PRE_FLIGHT_STRICT
         value: "false"
 
-  # BrightSky Dashboard (React/Vite static build)
+  # allbright Dashboard (React/Vite static build)
 - type: web
-    name: brightsky-dashboard
+    name: allbright-dashboard
     env: static
     buildCommand: cd ui && pnpm install --frozen-lockfile && pnpm build
     publishDirectory: ui/dist

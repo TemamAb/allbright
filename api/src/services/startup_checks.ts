@@ -1,5 +1,5 @@
 /**
- * BrightSky Startup Check System
+ * allbright Startup Check System
  * Verifies all required environment variables and system dependencies.
  * Provides visual ✅/❌ feedback and system-ready signaling.
  */

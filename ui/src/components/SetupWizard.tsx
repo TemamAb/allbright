@@ -153,13 +153,13 @@ export default function SetupWizard() {
       <div className="bg-[#111217] border border-zinc-800/50 rounded-xl p-10 shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 blur-[50px] -mr-16 -mt-16" />
         <div className="flex flex-col gap-2 mb-10">
-          <div className="flex items-center gap-4">
-            <div className="p-3.5 rounded-xl bg-cyan-500/15 border border-cyan-500/30 shadow-[0_0_20px_rgba(6,182,212,0.15)]">
-              <Zap className="w-10 h-10 text-cyan-400 fill-cyan-400/10" />
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded bg-gradient-to-br from-cyan-500 to-cyan-700 flex items-center justify-center mr-1">
+              <Zap className="text-white" size={20} />
             </div>
             <div className="flex flex-col">
-              <h1 className="text-3xl font-black tracking-tighter uppercase text-white leading-none">BRIGHT<span className="text-cyan-400">SKY</span></h1>
-              <p className="text-[10px] text-cyan-500/70 uppercase tracking-[0.3em] font-black mt-1.5">BrightSky DeFi Software Developer Ltd.</p>
+              <h1 className="text-lg font-bold tracking-tighter uppercase text-white leading-none">BRIGHT<span className="text-cyan-500">SKY</span></h1>
+              <p className="text-[7px] text-zinc-600 font-black uppercase tracking-tighter mt-0.5">allbright DeFi Software Developer Ltd.</p>
             </div>
           </div>
           <div className="h-px w-full bg-zinc-800/50 my-2" />

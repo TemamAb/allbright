@@ -1,6 +1,6 @@
-# BrightSky Profit Monitor (Simple)
+# allbright Profit Monitor (Simple)
 
-Write-Host "BrightSky Profit Monitor" -ForegroundColor Cyan
+Write-Host "allbright Profit Monitor" -ForegroundColor Cyan
 Write-Host "Press Ctrl+C to stop`n" -ForegroundColor Yellow
 
 while ($true) {
@@ -36,7 +36,7 @@ while ($true) {
     # Clear and display
     Clear-Host
     Write-Host "═════════════════════════════════" -ForegroundColor Cyan
-    Write-Host "  BrightSky Monitor - $time" -ForegroundColor Cyan
+    Write-Host "  allbright Monitor - $time" -ForegroundColor Cyan
     Write-Host "═════════════════════════════════" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "API Server (3000): $apiStatus"

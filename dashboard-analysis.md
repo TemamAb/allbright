@@ -7,7 +7,7 @@ I'll extract your zip and audit the contents.
 I have enough. Here is the audit and prioritized fix plan.
 DABOARD ANALYSIS REPORT 
 PART I
-Audit — BrightSky UI dashboard, deployment readiness on Render
+Audit — allbright UI dashboard, deployment readiness on Render
 🔴 Critical — will block deploy or leak secrets
 Plaintext private key in browser state (src/pages/WalletPage.tsx, src/context/WalletContext.tsx). The UI accepts a raw EVM privateKey, stores it in React state and WalletContext, and the toast says "stored in secure enclave" — but nothing of the sort happens. For a flash-loan app this is the worst possible flaw.
 
@@ -66,7 +66,7 @@ Fix: only access localStorage inside the renderer, or via ipcRenderer.invoke('ge
 Electron auto-updater is invoked without a feedURL and uses default Squirrel — won't work on Windows NSIS builds. Use electron-updater (already a dep) and configure publish in electron-builder.json.
 
 🟡 Medium — quality / SEO / DX
-index.html title is generic ("BrightSky Elite Dashboard"), no <meta name="description">, no Open Graph, no canonical — fix for SEO/sharing. Add <meta name="theme-color">.
+index.html title is generic ("allbright Elite Dashboard"), no <meta name="description">, no Open Graph, no canonical — fix for SEO/sharing. Add <meta name="theme-color">.
 Google Fonts loaded via <link> blocks first paint; consider self-hosting via @fontsource/inter.
 package.json lists everything in devDependencies (including react, electron). For a Docker build that runs pnpm install --prod, runtime deps must be in dependencies. Even for static build it's misleading.
 eslint, prettier, tests, and a CI step are missing — no lint/test scripts; add pnpm lint and pnpm typecheck to CI.

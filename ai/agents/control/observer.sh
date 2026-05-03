@@ -1,8 +1,8 @@
 #!/bin/bash
 
-BASE="C:/Users/op/Desktop/brightsky"
+BASE="C:/Users/op/Desktop/allbright"
 
-echo "📡 BRIGHTSKY OBSERVER (GASLESS + KPI TRACKING)"
+echo "📡 allbright OBSERVER (GASLESS + KPI TRACKING)"
 
 while true; do
   echo "----------------------"

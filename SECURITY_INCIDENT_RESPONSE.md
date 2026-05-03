@@ -9,7 +9,7 @@
 
 ## Incident Summary
 
-Production secrets were discovered committed to the BrightSky repository in the `.env` file:
+Production secrets were discovered committed to the allbright repository in the `.env` file:
 
 | Secret | Risk Level | Status | Replacement Instructions |
 |--------|-----------|--------|-------------------------|
@@ -64,8 +64,8 @@ PRIVATE_KEY=0xYourNewPrivateKey66Chars
 curl -L https://repo1.maven.org/maven2/com/madgag/bfg/1.14.0/bfg-1.14.0.jar -o bfg.jar
 
 # Make bare clone
-git clone --mirror file://$PWD brightsky-mirror.git
-cd brightsky-mirror.git
+git clone --mirror file://$PWD allbright-mirror.git
+cd allbright-mirror.git
 
 # Remove all .env files from history
 java -jar ../bfg.jar --delete-files .env
@@ -130,7 +130,7 @@ git commit -m "🔒 security: sanitize .env, rotate exposed secrets
 # 1. Navigate to Service → Environment
 # 2. Replace all old values with newly generated ones
 # 3. Deploy to staging branch
-# 4. Verify health: https://staging-brightsky.onrender.com/api/health
+# 4. Verify health: https://staging-allbright.onrender.com/api/health
 ```
 
 **3.3 Verify no live trading on old keys**

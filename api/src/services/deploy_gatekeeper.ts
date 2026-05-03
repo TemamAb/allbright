@@ -119,7 +119,7 @@ export async function deployGate() {
  * Verify specified source files exist and are readable
  */
 function verifySourceFilesExist(): { passed: boolean; missing: string[]; errors: string[] } {
-  const workspaceRoot = process.env.BRIGHTSKY_DATA_DIR || path.resolve(__dirname, '..', '..', '..');
+  const workspaceRoot = process.env.allbright_DATA_DIR || path.resolve(__dirname, '..', '..', '..');
   const missing: string[] = [];
   const errors: string[] = [];
 
@@ -225,7 +225,7 @@ async function checkStrategicReadiness(kpiResults: any[]) {
    * Rejects integration if feature complexity outweighs Alpha ROI 
    */
   const integrityCheck = await alphaCopilot.evaluateEngineeringIntegrity({
-    featureName: "BrightSky-Elite-Deployment-v1",
+    featureName: "allbright-Elite-Deployment-v1",
     expectedProfitBps: 22.5,
     latencyPenaltyMs: 0.1,
     linesOfCode: 5000,
@@ -475,7 +475,7 @@ async function runDeploymentStages(root: string, timeline: DeploymentReadinessRe
   // 3. BUILD artifact verification
   const buildStart = Date.now();
   const hasApiDist = fsSync.existsSync(path.join(root, 'api', 'dist'));
-  const hasRustBinary = fsSync.existsSync(path.join(root, 'solver', 'target', 'release', 'brightsky-solver')) || fsSync.existsSync(path.join(root, 'app', 'bin', 'rust-backbone'));
+  const hasRustBinary = fsSync.existsSync(path.join(root, 'solver', 'target', 'release', 'allbright-solver')) || fsSync.existsSync(path.join(root, 'app', 'bin', 'rust-backbone'));
   
   stages.build = { 
     status: (hasApiDist) ? 'PASS' : 'FAIL', 

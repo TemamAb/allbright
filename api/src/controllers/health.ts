@@ -34,7 +34,7 @@ router.get("/health", async (_req, res) => {
     // BSS-38: Validate IPC Bridge Connectivity
     const bridgePort = parseInt(process.env.INTERNAL_BRIDGE_PORT || "4003");
     const bridgeSocketPath =
-      process.env.BRIGHTSKY_SOCKET_PATH || "/tmp/brightsky_bridge.sock";
+      process.env.allbright_SOCKET_PATH || "/tmp/allbright_bridge.sock";
     const hasBridgeSocket = fs.existsSync(bridgeSocketPath);
     const isBridgeAlive = hasBridgeSocket
       ? true

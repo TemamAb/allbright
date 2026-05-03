@@ -1,5 +1,5 @@
 /**
- * BrightSky Gate Keeper System
+ * allbright Gate Keeper System
  * Hardened deployment approval and authorization framework.
  */
 

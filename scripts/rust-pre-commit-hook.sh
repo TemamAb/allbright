@@ -43,7 +43,7 @@ echo "✅ Clippy OK"
 
 # 3. Build check
 echo "🔨 [3/4] Building..."
-if ! cargo build --release --bin brightsky 2>&1 | tee /tmp/build-output.txt; then
+if ! cargo build --release --bin allbright 2>&1 | tee /tmp/build-output.txt; then
     echo "❌ Build failed. Fix compilation errors."
     tail -20 /tmp/build-output.txt
     exit 1

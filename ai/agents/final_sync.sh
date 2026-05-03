@@ -1,7 +1,7 @@
 #!/bin/bash
 BASE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ENGINE_CONFIG="$BASE/../api/src/routes/engine.ts"
-AUDITOR_SCRIPT="$BASE/brightsky-auditor.sh"
+AUDITOR_SCRIPT="$BASE/allbright-auditor.sh"
 
 echo "🛠️  Applying robust configuration sync..."
 

@@ -1,6 +1,6 @@
-# BrightSky KPI Specialist AI Agents
+# allbright KPI Specialist AI Agents
 
-7 dedicated AI agents for 24/7 KPI fine-tuning, integrated with solver subsystems, api/telemetry, and ai/agents/brightsky-supervisor.sh.
+7 dedicated AI agents for 24/7 KPI fine-tuning, integrated with solver subsystems, api/telemetry, and ai/agents/allbright-supervisor.sh.
 
 ## 1. ProfitabilitySpecialist
 **Role:** Maximize NRP to 22.5 ETH/day. Monitors daily_profit_eth, success_rate. Fine-tunes bss_13_solver.rs pricing/exits.
@@ -37,5 +37,5 @@
 **Feeds:** Dashboard.tsx, bss_46_metrics.rs
 **Actions:** Visual alerts, rejection analysis.
 
-**Deployment:** ai/agents/brightsky-supervisor.sh spawns via ai/agents/run_task.sh. Memory: ai/agents/memory/memory.json. Run: `cd ai/agents && ./brightsky-supervisor.sh specialists`
+**Deployment:** ai/agents/allbright-supervisor.sh spawns via ai/agents/run_task.sh. Memory: ai/agents/memory/memory.json. Run: `cd ai/agents && ./allbright-supervisor.sh specialists`
 

@@ -7,9 +7,7 @@ import { useGetEngineStatus } from "@workspace/api-client-react";
 
 export default function Copilot() {
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState([
-    { role: "assistant", content: "Hello! I am your BrightSky Copilot. How can I assist you with your arbitrage operations today?" }
-  ]);
+  const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
 
   const [availableModels, setAvailableModels] = useState<Record<string, boolean>>({ gemini: false, openai: false, openrouter: false });
   const [selectedModel, setSelectedModel] = useState("gemini");
@@ -26,6 +24,18 @@ export default function Copilot() {
   const { data: engineStatus, refetch: refetchStatus } = useGetEngineStatus({ 
     query: { refetchInterval: 5000, queryKey: ["engineStatus"] } 
   });
+
+  useEffect(() => {
+    if (messages.length === 0 && engineStatus) {
+      const systemName = engineStatus.ghostMode ? "Elite Protocol" : "allbright";
+      setMessages([
+        { 
+          role: "assistant", 
+          content: `Hello! I am your ${systemName} Copilot. How can I assist you with your arbitrage operations today?` 
+        }
+      ]);
+    }
+  }, [engineStatus, messages.length]);
 
   const isRunning = engineStatus?.running;
   const currentMode = engineStatus?.mode || "STOPPED";
@@ -98,9 +108,23 @@ export default function Copilot() {
 
   return (
     <div className="p-6 h-full flex flex-col space-y-6">
-      <div className="flex items-center gap-3 mb-2">
-        <Bot className="w-8 h-8 text-primary" />
-        <h1 className="text-3xl font-black uppercase tracking-widest text-slate-100">Copilot Assistant</h1>
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-8 h-8 rounded bg-gradient-to-br from-cyan-500 to-cyan-700 flex items-center justify-center mr-1">
+          <Zap className="text-white" size={20} />
+        </div>
+        <div className="flex flex-col">
+          <h1 className="text-lg font-bold tracking-tighter uppercase text-white leading-none flex items-center">
+            {engineStatus?.ghostMode ? (
+              "ELITE PROTOCOL"
+            ) : (
+              <>BRIGHT<span className="text-cyan-500">SKY</span></>
+            )}
+            <span className="text-zinc-500 ml-2">Copilot</span>
+          </h1>
+          <p className="text-[7px] text-zinc-600 font-black uppercase tracking-tighter mt-0.5">
+            {engineStatus?.ghostMode ? 'Elite Protocol Operations' : 'allbright DeFi Software Developer Ltd.'}
+          </p>
+        </div>
       </div>
 
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-180px)]">

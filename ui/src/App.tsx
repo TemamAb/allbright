@@ -50,7 +50,7 @@ function SocketProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
     if (!API_BASE_URL) {
-      console.error("[BrightSky] VITE_API_BASE_URL is missing. UI will be restricted to offline mode.");
+      console.error("[allbright] VITE_API_BASE_URL is missing. UI will be restricted to offline mode.");
       return;
     }
 

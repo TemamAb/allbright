@@ -1,5 +1,5 @@
 # Disaster Recovery & Incident Response Runbook
-**System:** BrightSky Arbitrage Engine  
+**System:** allbright Arbitrage Engine  
 **Version:** 1.0  
 **Last Updated:** 2026-04-28  
 **Classification:** Internal - Engineering  
@@ -8,7 +8,7 @@
 
 ## 1. Overview
 
-This runbook provides step-by-step procedures for responding to incidents, performing disaster recovery, and maintaining business continuity for the BrightSky trading platform.
+This runbook provides step-by-step procedures for responding to incidents, performing disaster recovery, and maintaining business continuity for the allbright trading platform.
 
 **System Components:**
 - **Rust Solver** (`solver/`) — High-performance arbitrage detection engine
@@ -95,8 +95,8 @@ This runbook provides step-by-step procedures for responding to incidents, perfo
 **Diagnosis:**
 ```bash
 # Check logs
-docker logs brightsky-solver --tail 100
-# Or locally: journalctl -u brightsky-solver -n 100
+docker logs allbright-solver --tail 100
+# Or locally: journalctl -u allbright-solver -n 100
 
 # Look for "thread 'main' panicked" messages
 ```
@@ -115,7 +115,7 @@ docker logs brightsky-solver --tail 100
    - [ ] Note timestamp, block number, last successful trade
 
 2. **Mitigate (10 min):**
-   - [ ] Restart solver service: `systemctl restart brightsky-solver` or `docker restart brightsky-solver`
+   - [ ] Restart solver service: `systemctl restart allbright-solver` or `docker restart allbright-solver`
    - [ ] If OOM: reduce `MAX_PAIRS_TO_SCAN` or increase memory limit
    - [ ] If lock poisoning persisted: check for deadlocks in code (grep for `.lock()`)
 
@@ -149,7 +149,7 @@ docker logs brightsky-solver --tail 100
    # Or check dashboard for "sleeping" indicator
    
    # If self-hosted:
-   pg_isready -h localhost -p 5432 -U brightsky
+   pg_isready -h localhost -p 5432 -U allbright
    ```
 
 2. **If Sleeping (Neon free tier):**
@@ -170,7 +170,7 @@ docker logs brightsky-solver --tail 100
    - [ ] If tables missing: run `drizzle-kit push --force`
    - [ ] Restore from latest backup:
      - Neon: Point-in-time recovery via dashboard
-     - Self-hosted: `pg_restore -d brightsky latest.dump`
+     - Self-hosted: `pg_restore -d allbright latest.dump`
 
 5. **Validate:**
    - [ ] `curl http://localhost:3000/api/health` returns `status: "ok"`
@@ -257,22 +257,22 @@ docker logs brightsky-solver --tail 100
 **Manual Backup (if self-hosted Postgres):**
 ```bash
 # Full backup
-pg_dump -U brightsky brightsky > backup_$(date +%Y%m%d_%H%M%S).sql
+pg_dump -U allbright allbright > backup_$(date +%Y%m%d_%H%M%S).sql
 
 # Compressed
-pg_dump -U brightsky brightsky | gzip > backup_$(date +%Y%m%d).sql.gz
+pg_dump -U allbright allbright | gzip > backup_$(date +%Y%m%d).sql.gz
 
 # Store offsite: AWS S3, Google Drive, etc.
-aws s3 cp backup.sql.gz s3://brightsky-backups/
+aws s3 cp backup.sql.gz s3://allbright-backups/
 ```
 
 **Restore Procedure:**
 ```bash
 # Create fresh DB
-createdb -U postgres brightsky_restore
+createdb -U postgres allbright_restore
 
 # Restore
-gunzip -c backup_20260428.sql.gz | psql -U postgres brightsky_restore
+gunzip -c backup_20260428.sql.gz | psql -U postgres allbright_restore
 
 # Verify row counts
 psql -c "SELECT COUNT(*) FROM trades;"
@@ -300,10 +300,10 @@ COPY (SELECT * FROM kpi_snapshots ORDER BY timestamp DESC) TO '/tmp/kpi_export.c
 #### Strategy A: Docker Image Rollback
 ```bash
 # Find previous image ID
-docker images | grep brightsky
+docker images | grep allbright
 
 # Rollback to previous tag
-docker tag brightsky:previous brightsky:latest
+docker tag allbright:previous allbright:latest
 docker-compose up -d
 ```
 
@@ -318,11 +318,11 @@ git push origin main
 #### Strategy C: Hotfix Rollback (immediate)
 ```bash
 # SSH into server (if self-hosted)
-systemctl stop brightsky
-cd /opt/brightsky
+systemctl stop allbright
+cd /opt/allbright
 git checkout v1.2.3  # last known good tag
 cargo build --release
-systemctl start brightsky
+systemctl start allbright
 ```
 
 ---
@@ -335,10 +335,10 @@ Configure Prometheus AlertManager rules (place in `monitoring/alerts/`):
 
 ```yaml
 groups:
-- name: brightsky_critical
+- name: allbright_critical
   rules:
   - alert: SolverDown
-    expr: up{job="brightsky-solver"} == 0
+    expr: up{job="allbright-solver"} == 0
     for: 1m
     annotations:
       summary: "Solver process down"
@@ -387,9 +387,9 @@ groups:
 
 ### 7.1 Incident Notification Channels
 
-- **Slack:** `#brightsky-incidents` (primary), `#eng-alerts` (secondary)
+- **Slack:** `#allbright-incidents` (primary), `#eng-alerts` (secondary)
 - **PagerDuty:** On-call engineer (if SLA commitments)
-- **Email:** stakeholders@brightsky.ai (for P0 only)
+- **Email:** stakeholders@allbright.ai (for P0 only)
 
 ### 7.2 Stakeholder Updates
 
@@ -409,10 +409,10 @@ groups:
 | Task | Command |
 |------|---------|
 | Restart all services | `docker-compose restart` |
-| View solver logs | `docker logs -f brightsky-solver` |
-| View API logs | `docker logs -f brightsky-api` |
+| View solver logs | `docker logs -f allbright-solver` |
+| View API logs | `docker logs -f allbright-api` |
 | Check DB connectivity | `psql $DATABASE_URL -c "SELECT 1"` |
-| Force solver rebuild | `cargo build --release && systemctl restart brightsky` |
+| Force solver rebuild | `cargo build --release && systemctl restart allbright` |
 | Clear path cache (hot) | Send IPC command: `{"target":"BSS-13","intent":"Audit"}` |
 | Disable LIVE mode | Set `PAPER_TRADING_MODE=true` in env, restart |
 | Enable shadow mode | `PRE_FLIGHT_STRICT=false` (auto-enabled on errors) |
@@ -432,7 +432,7 @@ groups:
 6. Follow-up actions (owners + due dates)
 7. Prevention measures
 
-**Distribution:** Share in `#brightsky-incidents`, archive in `/docs/incidents/`.
+**Distribution:** Share in `#allbright-incidents`, archive in `/docs/incidents/`.
 
 ---
 
@@ -453,8 +453,8 @@ groups:
 |------|---------|------------|
 | On-Call Engineer | PagerDuty: /pd | Immediate |
 | Engineering Lead | Slack: @eng-lead | P0 incidents |
-| Security | security@brightsky.ai | Key compromise |
-| Infrastructure | devops@brightsky.ai | Cloud/provider issues |
+| Security | security@allbright.ai | Key compromise |
+| Infrastructure | devops@allbright.ai | Cloud/provider issues |
 
 ---
 

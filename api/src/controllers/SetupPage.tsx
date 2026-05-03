@@ -3,8 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { ShieldCheck, Zap, Globe, Key, HelpCircle, UserPlus, LogIn, Type, Image as ImageIcon, Upload, Loader2, Rocket, RefreshCw } from 'lucide-react';
+import { ShieldCheck, Zap, Globe, Key, HelpCircle, UserPlus, LogIn, Type, Image as ImageIcon, Upload, Loader2, Rocket, RefreshCw, Lock } from 'lucide-react';
 import { toast } from 'sonner';
+import { useGetEngineStatus } from "@workspace/api-client-react";
 import {
   Tooltip,
   TooltipContent,
@@ -28,6 +29,7 @@ export const SetupPage: React.FC = () => {
   const [isVerifying, setIsVerifying] = useState(false);
   const [isLaunching, setIsLaunching] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { data: engineStatus } = useGetEngineStatus({ query: { refetchInterval: 5000, queryKey: ["engineStatus"] } });
   const [credentials, setCredentials] = useState({
     email: '',
     password: '',
@@ -227,7 +229,7 @@ export const SetupPage: React.FC = () => {
       if (result.success) {
         // BSS-52 Point of Departure: Warm Announcement
         setIsLaunching(true);
-        toast.success(`${branding.appName || 'BrightSky'} is now LIVE and under your command.`);
+        toast.success(`${branding.appName || 'allbright'} is now LIVE and under your command.`);
         
         // Trigger backend telemetry for the bubble
         fetch('/api/debug/dispatch', {
@@ -257,10 +259,10 @@ export const SetupPage: React.FC = () => {
         </div>
         <div className="text-center space-y-4">
           <h1 className="text-4xl font-black text-[#d8d9da] tracking-tighter uppercase italic">
-            Launching <span className="text-[#73bf69]">{branding.appName || 'BrightSky'}</span>
+            Launching <span className="text-[#73bf69]">{engineStatus?.ghostMode ? 'Elite Protocol' : (branding.appName || 'allbright')}</span>
           </h1>
           <p className="text-[#8e8e8e] font-mono text-sm max-w-md mx-auto leading-relaxed">
-            Cognitive transition complete. Alpha-Copilot is now listening to your private intelligence endpoint. 
+            Cognitive transition complete. {engineStatus?.ghostMode ? 'Intelligence' : 'Alpha-Copilot'} is now listening to your private intelligence endpoint. 
             Elite Arbitrage systems are initializing...
           </p>
         </div>
@@ -277,18 +279,18 @@ export const SetupPage: React.FC = () => {
         <CardHeader className="space-y-1">
           <div className="flex items-center space-x-2">
             {isLoggedIn && branding.logoUrl ? (
-              <div className="w-8 h-8 rounded bg-[#1e1e1e] flex items-center justify-center overflow-hidden border border-[#404040]">
+              <div className="w-8 h-8 rounded bg-[#1e1e1e] flex items-center justify-center overflow-hidden border border-[#404040] mr-1">
                 <img src={branding.logoUrl} alt="Logo Preview" className="w-full h-full object-cover" />
               </div>
             ) : (
-              <div className="p-2 rounded-lg bg-cyan-500/20 border border-cyan-500/40 mr-2">
-                <Zap className="w-6 h-6 text-cyan-400" />
+              <div className="w-8 h-8 rounded bg-gradient-to-br from-cyan-500 to-cyan-700 flex items-center justify-center mr-1">
+                <Zap className="text-white" size={20} />
               </div>
             )}
             {!isLoggedIn && (
               <div className="flex flex-col">
-                <span className="text-lg font-black tracking-tighter text-white leading-none">BRIGHT<span className="text-cyan-500">SKY</span></span>
-                <span className="text-[7px] text-zinc-500 uppercase tracking-widest font-black">DeFi Software Developer Ltd.</span>
+                <span className="text-lg font-bold tracking-tighter uppercase text-white leading-none">BRIGHT<span className="text-cyan-500">SKY</span></span>
+                <span className="text-[7px] text-zinc-600 font-black uppercase tracking-tighter mt-0.5">allbright DeFi Software Developer Ltd.</span>
               </div>
             )}
             <CardTitle className="text-2xl font-bold tracking-tight text-[#d8d9da]">
@@ -300,7 +302,7 @@ export const SetupPage: React.FC = () => {
           <CardDescription className="text-[#8e8e8e]">
             {isLoggedIn 
               ? "Configure your elite-grade arbitrage parameters. These keys will be encrypted and stored locally."
-              : "Please verify your identity to access the BrightSky dashboard."}
+              : "Please verify your identity to access the allbright dashboard."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">

@@ -25,4 +25,4 @@ if [ -f "$OUTPUT_FILE" ]; then
 fi
 
 echo "✅ Fixes applied. Re-running Auditor check..."
-bash "$BASE/brightsky-auditor.sh"
+bash "$BASE/allbright-auditor.sh"

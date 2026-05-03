@@ -160,7 +160,7 @@ router.post('/login', async (req, res) => {
     // Generate JWT for session management
     const token = jwt.sign(
       { email, role: sharedEngineState.currentUserRole },
-      process.env.JWT_SECRET || 'brightsky-elite-secret',
+      process.env.JWT_SECRET || 'allbright-elite-secret',
       { expiresIn: '24h' }
     );
 
@@ -198,7 +198,7 @@ router.post('/branding', async (req, res) => {
   const { appName, logoUrl } = req.body;
   
   // Update persistent shared state
-  sharedEngineState.appName = appName || 'BrightSky Elite';
+  sharedEngineState.appName = appName || 'allbright Elite';
   sharedEngineState.logoUrl = logoUrl || null;
 
   logger.info({ appName }, "[COMMERCIAL] Application branding updated by operator.");
@@ -228,7 +228,7 @@ router.post('/upload-env', (req: any, res) => {
     
     // Save configured .env and config.json
     const envPath = path.join(process.cwd(), '.env');
-    const configPath = path.join(process.cwd(), '.brightsky.config.json');
+    const configPath = path.join(process.cwd(), '.allbright.config.json');
     fs.writeFileSync(envPath, envContent);
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
 
@@ -385,7 +385,7 @@ router.post('/copilot-guidance', async (req, res) => {
     if (field === 'rpc') {
       prompt = `A user is configuring their RPC endpoint as: ${value}. Provide a concise, elite-grade assessment of this RPC for high-frequency arbitrage. Focus on latency and privacy.`;
     } else if (field === 'pimlico') {
-      prompt = `A user is configuring their Pimlico API key. Provide a concise, professional explanation of why this is critical for gasless UserOperations in BrightSky.`;
+      prompt = `A user is configuring their Pimlico API key. Provide a concise, professional explanation of why this is critical for gasless UserOperations in allbright.`;
     }
 
       if (!prompt) {

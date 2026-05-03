@@ -1,10 +1,10 @@
-# Merged BrightSky KPIs - Benchmark + Run Task KOIs
+# Merged allbright KPIs - Benchmark + Run Task KOIs
 
 This document combines the 20 benchmark KPIs from benchmark-KPIs.md with the Key Operating Indicators (KOIs) from the run task system and additional metrics from audit outputs.
 
 ## Benchmark KPIs (from benchmark-KPIs.md)
 
-| # | KPI Benchmark | BrightSky (Free Tier) | Elite Grade (Industry) | Variance (+/- %) | Status |
+| # | KPI Benchmark | allbright (Free Tier) | Elite Grade (Industry) | Variance (+/- %) | Status |
 |---|---------------|----------------------|------------------------|------------------|--------|
 | 1 | **Net Realized Profit (NRP)** | 14.77 ETH/day (Proj) | 22.5 ETH/day | -34.3% | ⚠️ |
 | 2 | **Execution Success Rate** | 95.0% | 98.8% | -3.8% | ✅ |

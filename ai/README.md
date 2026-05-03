@@ -1,6 +1,6 @@
 # Artificial Intelligence
 
-AI agents, training, inference, and metrics for the BrightSky system.
+AI agents, training, inference, and metrics for the allbright system.
 
 - `agents/` — Specialized AI agents (supervisor, specialists, control)
 - `training/` — Model training and data pipelines

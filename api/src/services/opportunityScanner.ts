@@ -1,5 +1,5 @@
 /**
- * ENHANCED MEV Opportunity Scanner — BrightSky Free Tier Edition
+ * ENHANCED MEV Opportunity Scanner — allbright Free Tier Edition
  *
  * DATA SOURCES (all free, no API key required):
  * 1. DeFiLlama coins API — real spot prices (no key)
