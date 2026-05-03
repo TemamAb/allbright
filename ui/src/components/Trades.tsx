@@ -18,14 +18,20 @@ export default function Trades() {
             Execution Ledger
           </h1>
           <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Audit trail for all cross-chain arbitrage vectors</p>
-        </div>
+</div>
         <div className="flex gap-4">
           <div className="text-right">
             <div className="text-[10px] text-zinc-500 font-bold uppercase">Success Rate</div>
-            <div className="text-lg font-black text-emerald-500 
+            <div className="text-lg font-black text-emerald-500">
+              {summary?.successRate ? (summary.successRate * 100).toFixed(1) : "0.0"}%
+            </div>
+          </div>
           <div className="text-right">
             <div className="text-[10px] text-zinc-500 font-bold uppercase">Avg Latency</div>
-            <div className="text-lg font-black text-white font-mono tabular-nums">{(su
+            <div className="text-lg font-black text-white font-mono tabular-nums">
+              {summary?.avgLatencyMs ? summary.avgLatencyMs.toFixed(0) : "0"}ms
+            </div>
+          </div>
         </div>
       </div>
 

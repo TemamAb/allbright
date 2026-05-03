@@ -5,7 +5,7 @@ ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 
 # Install pnpm globally using npm
-RUN npm install -g pnpm@9.12.2
+RUN npm install -g pnpm@9.15.4
 
 # Install system dependencies required for native Node.js modules
 RUN apt-get update && apt-get install -y \
@@ -22,7 +22,7 @@ COPY lib ./lib
 COPY scripts ./scripts
 
 # Run install - prioritize frozen lockfile, fallback to full install
-RUN pnpm install --frozen-lockfile || pnpm install
+RUN pnpm install --no-frozen-lockfile
 
 RUN pnpm --filter @workspace/api-server run build
 
