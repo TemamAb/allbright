@@ -6,7 +6,7 @@ RUN apk add --no-cache python3 make g++ curl bash
 WORKDIR /app
 
 # Install pnpm globally
-RUN npm install -g pnpm@9.12.2
+RUN npm install -g pnpm@9.12.1
 
 # Copy dependency files first to leverage Docker cache
 COPY package.json pnpm-lock.yaml ./

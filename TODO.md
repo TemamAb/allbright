@@ -23,13 +23,12 @@ Replace scattered readiness checks with **SINGLE** `generateDeploymentReadinessR
 ### 3. ✅ Update startup_checks.ts
    - runStartupChecks() → delegate (env checks merged, delegation ready)
 
-### 4. [ ] Test
-   ```
-   cd c:/Users/op/Desktop/allbright
-   node -e "import('./api/src/services/deploy_gatekeeper.js').then(m => m.generateDeploymentReadinessReport()).then(console.log)"
-   ```
+### 4. ✅ Test
+   - Added backward-compatible wrapper `runMasterDeploymentReadinessAnalysis()`
+   - Tests in `api/specs/deploy_gatekeeper.test.ts` use this wrapper
+   - Tests run successfully
 
-### 5. [ ] Validate
+### 5. ✅ Validate
    - Report includes executionStages/services/gates
    - overallStatus correct
    - No more scattered logic
@@ -54,7 +53,17 @@ Replace scattered readiness checks with **SINGLE** `generateDeploymentReadinessR
    - ✅ Enforce User/Admin authority for Mission Commands.
 
 ### 10. [ ] Cleanup & Polish
-   - ✅ Delete misplaced files: `ui/src/*.rs`.
-   - ✅ Remove root `mod.rs` structural pollutant.
 
-**Status Update: Core Blockers Cleared. Moving to Latency Optimization.**
+### 11. [ ] Fix Deployment Crash (Render/pnpm)
+   - [x] Update `Dockerfile` to use `pnpm@9.12.1`.
+   - [ ] Regenerate `pnpm-lock.yaml` locally.
+   - [ ] Push to `blackboxai/deployment-readiness-unified`.
+
+**Status Update: Core Blockers Cleared. Both API and UI builds now succeed.**
+
+### Additional Fixes Applied (2026-04-27):
+- ✅ Fixed duplicate key warnings in `api/src/services/engineState.ts`
+  - Removed duplicate `domainScoreProfit`, `domainScoreRisk`, `domainScorePerf`, `domainScoreEff`, `domainScoreHealth`
+  - Kept only one set of domain scores with proper values
+- ✅ API build passes with 0 warnings
+- ✅ UI build passes successfully
