@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSocket } from '../App';
 import type { FullKPIState, KPI } from '../types/kpi';
-import { THIRTY_SIX_KPIS } from '../types/kpi';
+import { THIRTY_SIX_KPIS } from '../constants/kpi';
 
 const INITIAL_STATE: FullKPIState = {
   categories: {},

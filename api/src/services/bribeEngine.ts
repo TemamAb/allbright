@@ -305,13 +305,13 @@ export class allbrightBribeEngine {
     finalBribeRatio = Math.max(finalBribeRatio, 0.01); // Minimum 1% bribe
     finalBribeRatio = Math.min(finalBribeRatio, 0.5);   // Maximum 50% bribe
     
-    // Recalculate inclusion probability with final ratio
-    const params = sharedEngineState.auctionParams;
+// Recalculate inclusion probability with final ratio
+    const finalParams = sharedEngineState.auctionParams;
     const finalInclusionProb = Math.min(
-      params.maxInclusionProb,
-      params.baseInclusionProb + 
-        (params.bribeElasticity * finalBribeRatio * 100) *
-        params.competitiveFactor *
+      finalParams.maxInclusionProb,
+      finalParams.baseInclusionProb + 
+        (finalParams.bribeElasticity * finalBribeRatio * 100) *
+        finalParams.competitiveFactor *
         adjustedBaseSuccess
     );
     

@@ -13,12 +13,89 @@ async function apiFetch<T = unknown>(endpoint: string, options: RequestInit = {}
   return res.json();
 }
 
+// Trade Stream Hook
+export interface TradeEvent {
+  id: string;
+  type: string;
+  message: string;
+  timestamp?: string;
+  blockNumber?: number;
+}
+
+export interface TradeStreamResponse {
+  events: TradeEvent[];
+}
+
+export function useGetTradeStream(query?: { refetchInterval?: number }) {
+  return useQuery({
+    queryKey: ['trade-stream'],
+    queryFn: () => apiFetch<TradeStreamResponse>('/api/stream/trades'),
+    refetchInterval: query?.refetchInterval,
+  });
+}
+
+// Trade interfaces
+export interface Trade {
+  id: string;
+  tokenIn: string;
+  tokenOut: string;
+  amountIn: string;
+  amountOut: string;
+  timestamp: number;
+  status: 'pending' | 'filled' | 'failed';
+  profit?: string;
+  bribePaid?: string;
+  latencyMs?: number;
+  txHash?: string;
+}
+
+export interface TradesSummary {
+  totalTrades: number;
+  totalVolume: string;
+  profitable: number;
+  successRate?: number;
+  avgLatencyMs?: number;
+}
+
+// Trades Hook
+export function useGetTrades(query?: { refetchInterval?: number; limit?: number }) {
+  return useQuery({
+    queryKey: ['trades', query?.limit],
+    queryFn: () => apiFetch<{ trades: Trade[] }>(`/api/trades/activity${query?.limit ? `?limit=${query.limit}` : ''}`),
+    refetchInterval: query?.refetchInterval,
+  });
+}
+
+export function useGetTradesSummary(query?: { refetchInterval?: number }) {
+  return useQuery({
+    queryKey: ['trades-summary'],
+    queryFn: () => apiFetch<TradesSummary>('/api/trades/summary'),
+    refetchInterval: query?.refetchInterval,
+  });
+}
+
 // Engine Status Hook (replaces useGetEngineStatus)
 export function useGetEngineStatus() {
   return useQuery({
     queryKey: ['engine-status'],
     queryFn: () => apiFetch<{ running: boolean; mode: string }>('/api/engine/status'),
     refetchInterval: 2000,
+  });
+}
+
+// Wallet interfaces
+export interface Wallet {
+  address: string;
+  chain: string;
+  balance: string;
+}
+
+// Wallets Hook
+export function useWallets(query?: { refetchInterval?: number }) {
+  return useQuery({
+    queryKey: ['wallets'],
+    queryFn: () => apiFetch<{ wallets: Wallet[] }>('/api/wallets'),
+    refetchInterval: query?.refetchInterval,
   });
 }
 

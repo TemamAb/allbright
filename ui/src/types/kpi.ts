@@ -26,3 +26,11 @@ export interface GESState {
   opportunitiesExecuted?: number;
   uptimeSeconds?: number;
 }
+
+export interface FullKPIState {
+  categories: {
+    [key: string]: KPI[];
+  };
+  ges: number;
+  timestamp?: Date;
+}

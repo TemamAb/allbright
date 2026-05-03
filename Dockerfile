@@ -1,18 +1,20 @@
 FROM node:20-alpine
 
 # Install build essentials for native modules
-RUN apk add --no-cache python3 make g++
+RUN apk add --no-cache python3 make g++ curl
 
 WORKDIR /app
 
-# Install pnpm globally (matching package.json: pnpm@9.12.2)
-RUN npm install -g pnpm@9.12.2 serve
+# Enable corepack and use specific pnpm version
+RUN corepack enable && corepack prepare pnpm@9.12.2 --activate
 
 # Copy only dependency files first to leverage Docker cache
 COPY package.json pnpm-lock.yaml ./
 
-# Clean install ignoring scripts
-RUN pnpm install --frozen-lockfile --ignore-scripts
+# Run install without frozen lockfile first to ensure compatibility
+# Then run with frozen lockfile to lock versions
+RUN pnpm install --no-frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # Copy source code
 COPY . .
@@ -26,4 +28,4 @@ RUN pnpm build
 
 # Serve on the dynamic port provided by Render
 EXPOSE $PORT
-CMD serve -s dist -l $PORT
+CMD ["pnpm", "exec", "serve", "-s", "dist", "-l", "$PORT"]
