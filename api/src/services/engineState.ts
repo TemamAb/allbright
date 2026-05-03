@@ -233,9 +233,11 @@ export const sharedEngineState: SharedEngineState = {
   stateChecksum: '',
   startedAt: null,
   chainLatencies: {},
-  pathComplexity: { 2: 0, 3: 0, 4: 0, 5: 0 },
-domainScoreProfit: 908,
-domainScoreRisk: 936,
+pathComplexity: { 2: 0, 3: 0, 4: 0, 5: 0 },
+  
+  // Current domain scores (run-time)
+  domainScoreProfit: 908,
+  domainScoreRisk: 936,
   domainScorePerf: 880,
   domainScoreEff: 910,
   domainScoreHealth: 940,
@@ -304,14 +306,9 @@ avgLatencyMs: 9,
 
   goldStandardConfig: null,
   isConfigurationHardened: false,
-  lastHardeningAudit: null,
+lastHardeningAudit: null,
   
-  // Elite Benchmarks (BSS-43 Targets)
-  domainScoreProfit: 850, // Minimum for Elite
-  domainScoreRisk: 900,
-  domainScorePerf: 825,
-  domainScoreEff: 880,
-  domainScoreHealth: 920,
+  // Elite Benchmarks (BSS-43 Targets) - stored separately for comparison
   domainScoreAutoOpt: 800,
   targetGes: 825, // Elite Grade Deployment Floor (82.5%)
   

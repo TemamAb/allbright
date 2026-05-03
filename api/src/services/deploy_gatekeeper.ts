@@ -86,6 +86,39 @@ export interface DeploymentReadinessReport {
 // Legacy consumers will need minor type updates
 
 /**
+ * Backward compatibility wrapper for runMasterDeploymentReadinessAnalysis
+ * @deprecated Use generateDeploymentReadinessReport() instead
+ */
+export async function runMasterDeploymentReadinessAnalysis(skipRuntimeStage = false): Promise<DeploymentReadinessReport & {
+  authorizationMode: string;
+  deploymentAuthorized: boolean;
+  summary: {
+    totalGates: number;
+    autoApproved: number;
+    approved: number;
+    pendingHumanApproval: number;
+    failedAutomatedChecks: number;
+  };
+  globalEfficiencyScore?: number;
+}> {
+  const report = await generateDeploymentReadinessReport(skipRuntimeStage);
+  
+  return {
+    ...report,
+    authorizationMode: report.overrideActive ? 'emergency_override' : 'standard',
+    deploymentAuthorized: report.overallStatus === 'READY_FOR_DEPLOYMENT',
+    summary: {
+      totalGates: report.gates.length,
+      autoApproved: report.gates.filter(g => g.status === 'AUTO_APPROVED').length,
+      approved: report.gates.filter(g => g.approved).length,
+      pendingHumanApproval: report.gates.filter(g => g.status === 'PENDING_HUMAN_APPROVAL').length,
+      failedAutomatedChecks: report.gates.filter(g => g.status === 'FAILED_AUTOMATED_CHECKS').length
+    },
+    globalEfficiencyScore: report.deploymentScore / 100
+  } as any;
+}
+
+/**
  * Legacy deployment gate - now integrates with comprehensive gate keeper system
  * @deprecated Use gateKeeper.isDeploymentAuthorized() instead
  */
