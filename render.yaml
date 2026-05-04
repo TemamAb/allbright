@@ -1,5 +1,8 @@
+databases:
+  - name: allbright-db
+    plan: starter
+
 services:
-  # allbright Rust Solver (TCP IPC on port 4003)
   - type: web
     name: allbright-solver
     env: docker
@@ -34,8 +37,7 @@ services:
       - key: PORT
         value: "4003"
 
-  # allbright API Server (Node.js + TypeScript)
-- type: web
+  - type: web
     name: allbright-api
     env: node
     plan: starter
@@ -43,6 +45,7 @@ services:
     buildCommand: pnpm install --frozen-lockfile && pnpm build
     startCommand: node dist/index.js
     healthCheckPath: /api/health
+    database: allbright-db
     envVars:
       - key: NODE_ENV
         value: production
@@ -87,13 +90,18 @@ services:
       - key: allbright_TCP_PORT
         value: "4003"
       - key: DATABASE_URL
-        value: sqlite::memory:
+        fromDatabase: allbright-db
       - key: PRE_FLIGHT_STRICT
         value: "false"
 
-  # allbright Dashboard (React/Vite static build)
-- type: web
+  - type: web
     name: allbright-dashboard
     env: static
-    buildCommand: cd ui && pnpm install --frozen-lockfile && pnpm build
+    rootDir: .
+    buildCommand: pnpm install --frozen-lockfile && pnpm --filter ui build
     publishDirectory: ui/dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://allbright-api.onrender.com
+      - key: NODE_ENV
+        value: production
