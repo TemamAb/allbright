@@ -1,4 +1,6 @@
-import { Router, type IRouter } from "express";
+import express, { Router, type IRouter } from "express";
+import path from "path";
+import { fileURLToPath } from "url";
 import healthRouter from "./health";
 import engineRouter from "./engine";
 import tradesRouter from "./trades";
@@ -10,19 +12,16 @@ import autoOptimizerRouter from "./auto-optimizer";
 import copilotRouter from "./copilot";
 import setupRouter from "./setup";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const router: IRouter = Router();
 
-router.get("/", (_req, res) => {
-  res.json({
-    message: "allbright Elite Engine Online",
-    version: "1.0.0-production",
-    mode: process.env.NODE_ENV || "development",
-    system: "TypeScript/Node.js",
-    health: "/api/health",
-    docs: "/api/docs",
-    auth: "API key required via Authorization: Bearer <token>",
-  });
-});
+// In production (Docker), __dirname is /app/api/dist
+// ui/dist is copied to /app/ui/dist
+const uiDistPath = process.env.NODE_ENV === 'production' 
+  ? path.join(process.cwd(), "ui/dist")
+  : path.join(__dirname, "../../ui/dist");
 
 router.use(healthRouter);
 router.use(engineRouter);
@@ -34,5 +33,14 @@ router.use("/autodetect", autodetectRouter);
 router.use("/auto-optimizer", autoOptimizerRouter);
 router.use("/copilot", copilotRouter);
 router.use("/setup", setupRouter);
+
+// Serve static assets from the UI build
+router.use(express.static(uiDistPath));
+
+// Catch-all route for SPA - exclude /api routes and static files, allowing other middleware to handle
+router.get("*", (req, res, next) => {
+  if (req.path.startsWith('/api')) return next();
+  res.sendFile(path.join(uiDistPath, "index.html"));
+});
 
 export default router;
