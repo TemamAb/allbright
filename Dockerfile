@@ -43,10 +43,10 @@ COPY --from=builder /app/api/node_modules ./api/node_modules
 COPY --from=builder /app/ui/dist ./ui/dist
 
 ENV NODE_ENV=production
-ENV PORT=3000
-EXPOSE 3000
+ENV PORT=10000
+EXPOSE 10000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3000/api/health || exit 1
+  CMD curl -f http://localhost:${PORT}/api/health || exit 1
 
 CMD ["node", "api/dist/index.mjs"]

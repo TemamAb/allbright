@@ -34,21 +34,24 @@ services:
         value: info
       - key: INTERNAL_BRIDGE_PORT
         value: "4003"
+      - key: SKIP_GATE
+        value: "true"
       - key: PORT
         value: "4003"
 
   - type: web
     name: allbright-api
-    env: node
+    env: docker
     plan: starter
-    rootDir: api
-    buildCommand: pnpm install --frozen-lockfile && pnpm build
-    startCommand: node dist/index.mjs
+    rootDir: .
+    dockerfilePath: Dockerfile
     healthCheckPath: /api/health
     database: allbright-db
     envVars:
       - key: NODE_ENV
         value: production
+      - key: SKIP_GATE
+        value: "true"
       - key: JWT_SECRET
         sync: false
       - key: PIMLICO_API_KEY
