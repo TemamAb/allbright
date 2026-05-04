@@ -96,6 +96,13 @@ services:
       - key: PRE_FLIGHT_STRICT
         value: "false"
 
+      - key: CORS_ORIGINS
+        value: https://allbright-ez5o.onrender.com
+      - key: UI_URL
+        value: https://allbright-ez5o.onrender.com
+      - key: NODE_ENV
+        value: production
+
   - type: web
     name: allbright-dashboard
     env: static
