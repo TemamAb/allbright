@@ -43,7 +43,7 @@ services:
     plan: starter
     rootDir: api
     buildCommand: pnpm install --frozen-lockfile && pnpm build
-    startCommand: node dist/index.js
+    startCommand: node dist/index.mjs
     healthCheckPath: /api/health
     database: allbright-db
     envVars:
@@ -60,7 +60,7 @@ services:
       - key: PROFIT_WALLET_ADDRESS
         sync: false
       - key: CHAIN_ID
-        value: "1"
+        value: "8453" # Default to Base for lower gas
       - key: RPC_ENDPOINT
         value: https://base.llamarpc.com
       - key: ETH_RPC_URL
@@ -92,7 +92,7 @@ services:
       - key: DATABASE_URL
         fromDatabase: allbright-db
       - key: APP_INITIAL_SETUP
-        value: "true" # Will be flipped to false manually after cognitive handshake
+        value: "true"
       - key: PRE_FLIGHT_STRICT
         value: "false"
 
@@ -107,3 +107,4 @@ services:
         value: https://allbright-api.onrender.com
       - key: NODE_ENV
         value: production
+

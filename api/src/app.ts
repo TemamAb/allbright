@@ -87,7 +87,7 @@ app.get("/", (_req, res) => {
 });
 
 // Health check (public, for monitoring)
-app.use("/api/health", require("./controllers/health").default);
+app.use("/api", require("./controllers/health").default);
 
 // Metrics endpoint (Prometheus) - allow without auth for scraping
 app.get("/metrics", getMetrics);

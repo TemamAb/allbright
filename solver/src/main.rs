@@ -135,19 +135,40 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             match socket.read(&mut buf).await {
                 Ok(n) if n > 0 => {
                     let msg = String::from_utf8_lossy(&buf[..n]);
-                    if let Ok(json) = serde_json::from_str::<Value>(&msg) {
-                        if json["type"] == "UPDATE_BRIBE_TUNING" {
-                            let mut stats = watchtower_stats_arc.lock().unwrap();
-                            if let Some(min_margin) = json["min_margin_bps"].as_u64() {
-                                stats.min_margin_ratio_bps = min_margin;
+                    // Handle multiple JSON objects in one buffer if necessary (newline delimited)
+                    for line in msg.lines() {
+                        if let Ok(json) = serde_json::from_str::<Value>(line) {
+                            match json["type"].as_str() {
+                                Some("UPDATE_BRIBE") | Some("UPDATE_BRIBE_TUNING") => {
+                                    let mut stats = watchtower_stats_arc.lock().unwrap();
+                                    if let Some(min_margin) = json["min_margin_bps"].as_u64() {
+                                        stats.min_margin_ratio_bps = min_margin;
+                                    }
+                                    if let Some(bribe) = json["bribe_bps"].as_u64() {
+                                        stats.bribe_ratio_bps = bribe;
+                                    }
+                                    info!("[IPC] Bribe tuning updated: margin={} bps, bribe={} bps", 
+                                        stats.min_margin_ratio_bps, stats.bribe_ratio_bps);
+                                },
+                                Some("TRADE_OUTCOME") => {
+                                    let mut stats = watchtower_stats_arc.lock().unwrap();
+                                    let profit = json["profit_eth"].as_f64().unwrap_or(0.0);
+                                    let success = json["success"].as_bool().unwrap_or(false);
+                                    
+                                    if success {
+                                        stats.current_nrp_eth_per_day += profit;
+                                        info!("[IPC] Trade Success Recorded: +{} ETH", profit);
+                                    } else {
+                                        warn!("[IPC] Trade Failure Recorded");
+                                    }
+                                },
+                                _ => {
+                                    info!("[IPC] Received message: {}", line);
+                                }
                             }
-                            if let Some(bribe) = json["bribe_bps"].as_u64() {
-                                stats.bribe_ratio_bps = bribe;
-                            }
-                            info!("[IPC] Bribe tuning updated: margin={} bps, bribe={} bps", 
-                                stats.min_margin_ratio_bps, stats.bribe_ratio_bps);
                         }
                     }
+
                 }
                 _ => {}
             }

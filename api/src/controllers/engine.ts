@@ -26,7 +26,7 @@
  */
 
 import { Router } from "express";
-import { Wallet, HDNodeWallet } from "ethers";
+import { Wallet, HDNodeWallet, Interface, AbiCoder, parseUnits } from "ethers";
 import { db } from "@workspace/db";
 import { settingsTable, streamEventsTable, tradesTable, kpiSnapshotsTable } from "@workspace/db";
 import { sql } from "drizzle-orm";
@@ -1034,66 +1034,116 @@ async function scanCycle() {
         engineState.pimlicoApiKey &&
         engineState.rpcEndpoint
       ) {
-        // BSS-34: Encode call to FlashExecutor.execute(tokenIn, amount, path)
-        const calldata = "0xfe" + Buffer.from(opp.tokenIn).toString("hex");
-        const result = await buildAndSubmitUserOp(
-          engineState.pimlicoApiKey,
-          engineState.rpcEndpoint,
-          engineState.chainId,
-          engineState.walletPrivateKey!,
-          calldata,
-        );
+        // BSS-34: Robust ABI Encoding for FlashExecutor.executeFlashArbitrage
+        try {
+          const iface = new Interface([
+            "function executeFlashArbitrage((address tokenIn, address tokenOut, uint256 amountIn, uint8[] protocols, bytes[] swapData, uint256 minProfit))"
+          ]);
 
-        if (result.success && result.txHash) {
-          txHash = result.txHash;
-          execMode = "LIVE";
-          engineState.circuitBreaker = registerExecutionSuccess(
-            engineState.circuitBreaker,
+          // Token Mapping for Base (8453) - Expandable
+          const TOKEN_MAP: Record<number, Record<string, string>> = {
+            8453: {
+              "WETH": "0x4200000000000000000000000000000000000006",
+              "USDC": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+              "USDT": "0xfde4C962512795Fe9aaee7a90f89cc2829995200",
+              "DAI": "0x50c5725949A6E007296F7561d85E35624f15fCC0",
+              "ETH": "0x4200000000000000000000000000000000000006"
+            },
+            1: {
+              "WETH": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+              "USDC": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+              "USDT": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+              "DAI": "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+            }
+          };
+
+          const tokenInAddr = TOKEN_MAP[engineState.chainId]?.[opp.tokenIn] || opp.tokenIn;
+          const tokenOutAddr = TOKEN_MAP[engineState.chainId]?.[opp.tokenOut] || opp.tokenOut;
+
+          const decimalsMap: Record<string, number> = {
+            "WETH": 18,
+            "USDC": 6,
+            "USDT": 6,
+            "DAI": 18,
+            "ETH": 18
+          };
+          const tokenInDecimals = decimalsMap[opp.tokenIn] || 18;
+          const tokenOutDecimals = decimalsMap[opp.tokenOut] || 18;
+
+          // Encode Swap Data (Uniswap V3 default 500bps for stable/eth pools)
+          const abiCoder = AbiCoder.defaultAbiCoder();
+          const swapData = abiCoder.encode(
+            ["uint24", "uint256", "uint160"],
+            [500, 0, 0] // 500 bps fee, 0 minOut, 0 priceLimit
           );
 
-           // KPI 19: Elite Feedback Loop (Continual Optimization)
-           // Instead of static math, we apply a 2% 'Learning Delta'
-           // If we win, we slightly lower the required margin to capture more volume.
-           const currentTuning = allbrightBribeEngine.getTuning();
-           const learningDelta = 0.02; // 2% adjustment per success
-           const newMinMargin = Math.max(0.1, currentTuning.MIN_MARGIN_RATIO * (1 - learningDelta));
-           const newBribeRatio = Math.min(0.15, currentTuning.BRIBE_RATIO * (1 + learningDelta));
+          const calldata = iface.encodeFunctionData("executeFlashArbitrage", [{
+            tokenIn: tokenInAddr,
+            tokenOut: tokenOutAddr,
+            amountIn: parseUnits(opp.flashLoanSizeEth.toString(), tokenInDecimals),
+            protocols: [0], // Protocol.UNISWAP_V3
+            swapData: [swapData],
+            minProfit: parseUnits(minNetProfitEth.toString(), tokenOutDecimals)
+          }]);
+
+          const result = await buildAndSubmitUserOp(
+            engineState.pimlicoApiKey,
+            engineState.rpcEndpoint,
+            engineState.chainId,
+            engineState.walletPrivateKey!,
+            calldata,
+          );
+
+          if (result.success && result.txHash) {
+            txHash = result.txHash;
+            execMode = "LIVE";
+            engineState.circuitBreaker = registerExecutionSuccess(
+              engineState.circuitBreaker,
+            );
+
+            // KPI 19: Elite Feedback Loop (Continual Optimization)
+            const currentTuning = allbrightBribeEngine.getTuning();
+            const learningDelta = 0.02; 
+            const newMinMargin = Math.max(0.1, currentTuning.MIN_MARGIN_RATIO * (1 - learningDelta));
+            const newBribeRatio = Math.min(0.15, currentTuning.BRIBE_RATIO * (1 + learningDelta));
             allbrightBribeEngine.updateTuning({
               minMarginRatio: parseFloat(newMinMargin.toFixed(4)),
               bribeRatio: parseFloat(newBribeRatio.toFixed(4)),
             });
 
-           // Send bribe tuning update to Rust for synchronization (Phase 3 — Bribe Sync)
-           try {
-             await sendControlToRust({
-               type: "UPDATE_BRIBE",
-               min_margin_bps: Math.round(newMinMargin * 10000),
-               bribe_ratio_bps: Math.round(newBribeRatio * 10000),
-             });
-           } catch (err) {
-             logger.warn({ err }, "Failed to sync bribe tuning to Rust");
-           }
+            try {
+              await sendControlToRust({
+                type: "UPDATE_BRIBE",
+                min_margin_bps: Math.round(newMinMargin * 10000),
+                bribe_ratio_bps: Math.round(newBribeRatio * 10000),
+              });
+            } catch (err) {
+              logger.warn({ err }, "Failed to sync bribe tuning to Rust");
+            }
 
-           await autoWithdrawProfits(netProfit, engineState.chainId); // KPI 12: Auto-withdraw to user wallet
-        } else {
-          // Graceful fallback to shadow with reason logged
+            await autoWithdrawProfits(netProfit, engineState.chainId); 
+          } else {
+            throw new Error(result.error || "UserOp submission failed");
+          }
+        } catch (err: any) {
           txHash = "0x" + crypto.randomBytes(32).toString("hex");
           execMode = "LIVE_DEGRADED";
           engineState.circuitBreaker = registerExecutionFailure(
             engineState.circuitBreaker,
-            result.error ?? "UserOp submission failed",
+            err.message ?? "UserOp submission failed",
           );
           await safeDbOperation(async () =>
             db!.insert(streamEventsTable).values({
               id: genId("evt"),
               type: "SCANNING",
-              message: `[LIVE_DEGRADED] ${result.error ?? "UserOp submission failed"} — recording as SHADOW until FlashExecutor is deployed.`,
+              message: `[LIVE_DEGRADED] ${err.message ?? "UserOp submission failed"} — recording as SHADOW until FlashExecutor is deployed.`,
               blockNumber,
               protocol: opp.protocol,
             }),
           );
         }
       } else if (engineState.mode === "LIVE" && !engineState.liveCapable) {
+
         txHash = "0x" + crypto.randomBytes(32).toString("hex");
         execMode = "SHADOW";
         engineState.circuitBreaker = registerExecutionFailure(
