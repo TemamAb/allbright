@@ -14,6 +14,7 @@ import SetupWizard from './components/SetupWizard';
 import Trades from './components/Trades';
 import StrategiesPage from './components/StrategiesPage';
 import NotFound from './components/NotFound';
+import { Toaster } from "sonner";
 
 /**
  * Allbright Elite Dashboard - Unified Architecture
@@ -50,6 +51,7 @@ const App: React.FC = () => {
           <Route component={NotFound} />
         </Switch>
       </Layout>
+      <Toaster richColors position="top-right" theme="dark" />
     </ThemeProvider>
   );
 };

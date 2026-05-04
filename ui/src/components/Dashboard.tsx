@@ -1,18 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { TrendingUp, Shield, Activity } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
+import { useGetEngineStatus } from "@/lib/api";
 
 // Sample chart data
 const sampleData = [
   { time: '00:00', value: 0.1 }, { time: '04:00', value: 0.4 },
   { time: '08:00', value: 0.3 }, { time: '12:00', value: 0.8 }
 ];
-
-// Mock engine status (replace with API call in production)
-const useGetEngineStatus = () => {
-  const [data, setData] = useState({ running: true, mode: 'LIVE', ghostMode: false });
-  return { data };
-};
 
 export default function Dashboard() {
   const [ges, setGes] = useState(85.0);
