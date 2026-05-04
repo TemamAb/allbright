@@ -60,7 +60,7 @@ services:
       - key: PROFIT_WALLET_ADDRESS
         sync: false
       - key: CHAIN_ID
-        value: "8453" # Default to Base for lower gas
+        value: "8453"
       - key: RPC_ENDPOINT
         value: https://base.llamarpc.com
       - key: ETH_RPC_URL
@@ -95,13 +95,10 @@ services:
         value: "true"
       - key: PRE_FLIGHT_STRICT
         value: "false"
-
       - key: CORS_ORIGINS
         value: https://allbright-ez5o.onrender.com
       - key: UI_URL
         value: https://allbright-ez5o.onrender.com
-      - key: NODE_ENV
-        value: production
 
   - type: web
     name: allbright-dashboard
@@ -114,4 +111,5 @@ services:
         value: https://allbright-api.onrender.com
       - key: NODE_ENV
         value: production
-
+      - key: BASE_PATH
+        value: /
