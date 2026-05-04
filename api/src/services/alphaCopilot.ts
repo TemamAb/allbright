@@ -10,7 +10,7 @@ import { MempoolIntelligenceService } from './mempoolIntelligence';
 import * as net from "net";
 import * as crypto from "crypto";
 import type { AtomicU64, i64, Mutex, VecDeque } from "../lib/types";
-import { THIRTY_NINE_KPIS_CANONICAL } from "./kpiDefinitions";
+import { THIRTY_SIX_KPIS_CANONICAL } from "./kpiDefinitions";
 import cron from 'node-cron';
 import nodemailer from 'nodemailer';
 import PDFDocument from 'pdfkit';
@@ -340,10 +340,10 @@ export class AlphaCopilot {
      await MempoolIntelligenceService.discoverMarketPulse();
 
      // BSS-43: Dynamically load weights and domains from canonical KPI definitions
-     const domains = Object.keys(THIRTY_NINE_KPIS_CANONICAL);
+const domains = Object.keys(THIRTY_SIX_KPIS_CANONICAL);
      const weights: Record<string, number> = {};
      for (const domain of domains) {
-       weights[domain] = THIRTY_NINE_KPIS_CANONICAL[domain as keyof typeof THIRTY_NINE_KPIS_CANONICAL].weight;
+       weights[domain] = THIRTY_SIX_KPIS_CANONICAL[domain as keyof typeof THIRTY_SIX_KPIS_CANONICAL].weight;
      }
 
      for (const cat of domains) {

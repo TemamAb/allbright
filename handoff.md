@@ -4,6 +4,72 @@
 
 ---
 
+## LATEST UPDATE: Blank White Screen Fix - COMPLETED
+
+### Issue
+Render deployment showing blank white screen despite server returning 200 OK.
+
+### Root Cause
+- `ui/package.json` build script used `--base ./` flag
+- This forced **relative** asset paths (e.g., `./assets/index-xxx.js`)
+- Browser couldn't resolve relative paths in production
+
+### Fix Applied (Commit: 32adbe5)
+**File:** `ui/package.json`
+
+| Change | From | To |
+|--------|------|-----|
+| Build command | `vite build --base ./` | `vite build` |
+| Homepage | `"homepage": "./"` | (removed) |
+
+**Result:** Vite now generates **absolute** paths like `/assets/index-xxx.js`
+
+### Verification
+Built locally and confirmed in `dist/index.html`:
+```html
+<script src="/assets/index-BN2AOU_z.js"></script>
+```
+
+All paths now absolute (start with `/`).
+
+---
+
+## API Module Error - FIXED
+
+### Issue
+Render logs showing:
+```
+Error: Cannot find module '/app/api/dist/index.js'
+```
+
+### Root Cause
+- API builds to `dist/index.mjs` (ESM)
+- Render was looking for `.js` (incorrect extension)
+
+### Fix Applied
+**File:** `Dockerfile` (Root project)
+
+**Change:**
+```diff
+- CMD ["node", "api/dist/index.mjs"]
++ CMD ["node", "./api/dist/index.mjs"]
+```
+
+The root Dockerfile was missing `./` prefix in the CMD path. This ensures correct module resolution when running from `/app` directory.
+
+### Also Verified
+- `render.yaml` has correct: `startCommand: node dist/index.mjs`
+- `api/build.mjs` outputs: `{ outExtension: { ".js": ".mjs" } }`
+- `api/dist/index.mjs` exists in build output
+
+### Push to Deploy
+- Commit fix and push to trigger re-deploy
+- Wait for Render to rebuild all services
+
+---
+
+---
+
 ## Full CLI Output (npx tsx api/specs/checkReadiness.ts)
 
 ```
