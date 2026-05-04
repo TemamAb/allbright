@@ -2,7 +2,7 @@
  * Canonical 39-KPI Matrix Definitions
  * Aligns with ui/src/types/kpi.ts THIRTY_NINE_KPIS and AlphaCopilot domains.
  */
-export const THIRTY_SIX_KPIS_CANONICAL = {
+export const THIRTY_NINE_KPIS_CANONICAL = {
   Profitability: {
     weight: 0.30,
     kpis: [
@@ -83,6 +83,9 @@ export const THIRTY_SIX_KPIS_CANONICAL = {
     ]
   }
 } as const;
+
+// Backward-compatible alias
+export const THIRTY_SIX_KPIS_CANONICAL = THIRTY_NINE_KPIS_CANONICAL;
 
 export type CategoryId = keyof typeof THIRTY_NINE_KPIS_CANONICAL;
 export type KpiId = string;
