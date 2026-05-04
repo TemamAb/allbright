@@ -335,8 +335,11 @@ export class allbrightBribeEngine {
     const delta = learningRate * bribeRatio * signal;
     params.bribeElasticity = Math.max(0.01, Math.min(0.25, mu + delta));
     
-    // Bayesian decrease of uncertainty (simulated precision update)
-    params.bribeElasticityUncertainty = Math.max(0.005, sigma * 0.995);
+    // BSS-28: Bayesian curiosity floor
+    // Prevents sigma from hitting 0, which would stop the engine from 
+    // learning new market dynamics during high-volatility regimes.
+    const DECAY_FACTOR = 0.995;
+    params.bribeElasticityUncertainty = Math.max(0.008, sigma * DECAY_FACTOR);
     
     console.log(`[BSS-28] Bayesian Elasticity Update: mu=${params.bribeElasticity.toFixed(4)}, sigma=${params.bribeElasticityUncertainty.toFixed(4)}`);
   }

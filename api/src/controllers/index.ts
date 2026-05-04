@@ -17,11 +17,12 @@ const __dirname = path.dirname(__filename);
 
 const router: IRouter = Router();
 
-// BSS-ARCH: Ensure uiDistPath correctly points to /app/ui/dist in production Docker.
-// In Docker, process.cwd() is /app, and ui/dist is copied to /app/ui/dist.
+// BSS-ARCH: Unified Path Resolution
+// In production (Docker), we serve from /app/ui/dist. 
+// In development, we traverse up from /api/src/controllers to the workspace root.
 const uiDistPath = process.env.NODE_ENV === 'production' 
-  ? path.join(process.cwd(), "ui/dist") 
-  : path.join(__dirname, "../../ui/dist");
+  ? path.resolve(process.cwd(), "ui/dist") 
+  : path.resolve(__dirname, "../../../ui/dist");
 
 router.use(healthRouter);
 router.use(engineRouter);
@@ -34,18 +35,20 @@ router.use("/auto-optimizer", autoOptimizerRouter);
 router.use("/copilot", copilotRouter);
 router.use("/setup", setupRouter);
 
-// 1. Serve static assets with a definitive maxAge to prevent flickering
+// 1. Multi-Mount Static Serving
+// This ensures assets are found whether the HTML asks for /assets/... or /ui/dist/assets/...
 router.use(express.static(uiDistPath, { maxAge: '1d' }));
+router.use('/ui/dist', express.static(uiDistPath, { maxAge: '1d' }));
 
-// 2. Smart SPA Fallback: Only serve index.html for navigation requests.
-// This prevents the "White Page" caused by serving HTML for missing JS/CSS files.
+// 2. Hardened SPA Fallback
 router.get("*", (req, res, next) => {
-  // Skip if it's an API call or looks like a file request (has an extension)
+  // CRITICAL: Do not serve index.html for API calls or missing assets (anything with a dot).
+  // If a .js or .css file isn't found in express.static, it MUST 404, not fallback to HTML.
   if (req.path.startsWith('/api') || req.path.includes('.')) {
     return next();
   }
-  // Only send index.html if the browser explicitly wants HTML
-  res.sendFile(path.join(uiDistPath, "index.html"));
+  
+  res.sendFile(path.resolve(uiDistPath, "index.html"));
 });
 
 export default router;
