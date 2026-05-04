@@ -17,10 +17,10 @@ const __dirname = path.dirname(__filename);
 
 const router: IRouter = Router();
 
-// In production (Docker), __dirname is /app/api/dist
-// ui/dist is copied to /app/ui/dist
+// BSS-ARCH: Ensure uiDistPath correctly points to /app/ui/dist in production Docker.
+// In Docker, process.cwd() is /app, and ui/dist is copied to /app/ui/dist.
 const uiDistPath = process.env.NODE_ENV === 'production' 
-  ? path.join(process.cwd(), "ui/dist")
+  ? path.join(process.cwd(), "ui/dist") 
   : path.join(__dirname, "../../ui/dist");
 
 router.use(healthRouter);
@@ -34,12 +34,17 @@ router.use("/auto-optimizer", autoOptimizerRouter);
 router.use("/copilot", copilotRouter);
 router.use("/setup", setupRouter);
 
-// Serve static assets from the UI build
-router.use(express.static(uiDistPath));
+// 1. Serve static assets with a definitive maxAge to prevent flickering
+router.use(express.static(uiDistPath, { maxAge: '1d' }));
 
-// Catch-all route for SPA - exclude /api routes and static files, allowing other middleware to handle
+// 2. Smart SPA Fallback: Only serve index.html for navigation requests.
+// This prevents the "White Page" caused by serving HTML for missing JS/CSS files.
 router.get("*", (req, res, next) => {
-  if (req.path.startsWith('/api')) return next();
+  // Skip if it's an API call or looks like a file request (has an extension)
+  if (req.path.startsWith('/api') || req.path.includes('.')) {
+    return next();
+  }
+  // Only send index.html if the browser explicitly wants HTML
   res.sendFile(path.join(uiDistPath, "index.html"));
 });
 
