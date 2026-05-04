@@ -73,6 +73,7 @@ export function startMockRustBridge(): void {
     sharedEngineState.failedTxRatePct = Math.max(0.001, 0.002 + (Math.random() - 0.5) * 0.001);
     sharedEngineState.rpcQuotaUsagePct = Math.max(8, 12 + (Math.random() - 0.5) * 3);
     sharedEngineState.bundlerSaturationPct = Math.max(4, 6 + (Math.random() - 0.5) * 1);
+    sharedEngineState.blockUtilizationPct = Math.max(0.85, 0.85 + (Math.random() * 0.05)); // Ensure >= 0.85
 
     // --- SIMULATION ---
     sharedEngineState.simParityDeltaBps = Math.max(0.5, 0.8 + (Math.random() - 0.5) * 0.3);

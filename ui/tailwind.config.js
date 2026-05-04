@@ -25,6 +25,14 @@ module.exports = {
         'metallic-white': '#F5F7FA',
         'bright-blue': '#00A3FF',
         'neon-green': '#00FF94',
+        // Ash.Black Theme (Elite Grade per DASHBOARD-GUIDE.MD)
+        'ash-black': '#111217',
+        'ash-dark': '#1a1c20', 
+        'ash-border': '#27272a',
+        'ash-text': '#e5e7eb',
+        'ash-muted': '#71717a',
+        'cyan-accent': '#06b6d4',
+        'emerald-accent': '#10b981',
       },
       backdropBlur: {
         xs: '2px',

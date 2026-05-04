@@ -32,6 +32,7 @@ futures-util = "0.3"
 hex = "0.4"
 hmac = "0.12"
 sha2 = "0.10"
+async-trait = "0.1"
 dashmap = "5.5"
 fastrand = "2.0"
 # notify removed - desktop notifications not needed on headless server

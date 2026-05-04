@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useSocket } from '../App';
 import type { FullKPIState, KPI } from '../types/kpi';
 import { THIRTY_SIX_KPIS } from '../constants/kpi';
 
@@ -11,17 +10,15 @@ const INITIAL_STATE: FullKPIState = {
 
 // Initialize with mock data from THIRTY_SIX_KPIS
 Object.values(THIRTY_SIX_KPIS).forEach((cat) => {
-  INITIAL_STATE.categories![cat.id] = cat.kpis as KPI[];
+  INITIAL_STATE.categories[cat.id] = cat.kpis as KPI[];
 });
 
 export function useTelemetry() {
   const [kpis, setKpis] = useState<FullKPIState>(INITIAL_STATE);
   const [isLive, setIsLive] = useState(false);
-  const { socket } = useSocket();
 
   // Update handler for live data
   const handleTelemetryUpdate = useCallback((data: any) => {
-    console.log('[Telemetry] Live update:', data);
     setKpis((prev) => ({
       ...prev,
       categories: data.categories || prev.categories,
@@ -31,26 +28,25 @@ export function useTelemetry() {
     setIsLive(true);
   }, []);
 
+  // Simulated WebSocket effect - in production, connect to actual backend
   useEffect(() => {
-    if (!socket) return;
+    // Simulate initial data load
+    const interval = setInterval(() => {
+      setKpis(prev => ({
+        ...prev,
+        ges: prev.ges + (Math.random() - 0.5) * 0.1,
+        timestamp: new Date(),
+      }));
+    }, 5000);
 
-    // Listen for telemetry events (extend backend to emit 'telemetryKpis')
-    socket.on('engineStateFull', handleTelemetryUpdate);
-    socket.on('telemetryKpis', handleTelemetryUpdate);
-
-    return () => {
-      socket.off('engineStateFull', handleTelemetryUpdate);
-      socket.off('telemetryKpis', handleTelemetryUpdate);
-    };
-  }, [socket, handleTelemetryUpdate]);
+    return () => clearInterval(interval);
+  }, []);
 
   return {
     kpis,
     isLive,
     refetch: () => {
-      // Future: API poll fallback
-      console.log('[Telemetry] Manual refetch');
+      // Manual refetch placeholder
     },
   };
 }
-

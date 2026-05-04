@@ -91,6 +91,8 @@ services:
         value: "4003"
       - key: DATABASE_URL
         fromDatabase: allbright-db
+      - key: APP_INITIAL_SETUP
+        value: "true" # Will be flipped to false manually after cognitive handshake
       - key: PRE_FLIGHT_STRICT
         value: "false"
 

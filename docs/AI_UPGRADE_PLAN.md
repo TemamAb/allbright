@@ -13,7 +13,7 @@ allbright has a **sound architectural foundation** (federated specialists, weigh
 | Gap Category | Current State | Elite Grade Requirement | Severity |
 |--------------|---------------|------------------------|----------|
 | **AI Learning** | Stub MetaLearner (hardcoded), no training data pipeline | Online learning from trade outcomes, policy adaptation | 🔴 Critical |
-| **Pre-Deployment Gate** | ❌ No validation, scans start immediately | ✅ Simulation gate with GES ≥82.5% threshold | 🔴 Critical |
+| **Visual Integrity** | ❌ All-black, low contrast, difficult to differentiate | ✅ Tri-palette (Light/Grafana/Black) high-contrast UI | 🔴 Critical |
 | **Specialist Modularity** | 15+ specialists as inline monoliths in `main.rs` (600+ LOC each) | ✅ Each specialist in isolated `.rs` file with clear API | 🟡 Medium |
 | **KPI Persistence** | All metrics volatile (RAM only), no historical records | ✅ Time-series DB of all KPI snapshots for ML training | 🟡 Medium |
 | **API-AI Bridge** | `specialists.ts` are empty stubs, no actual tuning logic | ✅ Node.js specialists compute and send tuning parameters | 🟡 Medium |

@@ -1,10 +1,10 @@
 /**
- * Canonical 36-KPI Matrix Definitions
- * Aligns with ui/src/types/kpi.ts THIRTY_SIX_KPIS
+ * Canonical 39-KPI Matrix Definitions
+ * Aligns with ui/src/types/kpi.ts THIRTY_NINE_KPIS and AlphaCopilot domains.
  */
 export const THIRTY_SIX_KPIS_CANONICAL = {
-  profitability: {
-    weight: 0.25,
+  Profitability: {
+    weight: 0.30,
     kpis: [
       { id: 'nrp', name: 'Net Realized Profit (NRP)', target: 22.5, unit: 'ETH/day', higherIsBetter: true },
       { id: 'avg_profit_per_trade', name: 'Avg Profit per Trade', target: 0.05, unit: 'ETH', higherIsBetter: true },
@@ -14,8 +14,8 @@ export const THIRTY_SIX_KPIS_CANONICAL = {
       { id: 'risk_adjusted_return', name: 'Risk-Adjusted Return', target: 2.65, unit: 'ratio', higherIsBetter: true }
     ]
   },
-  timing: {
-    weight: 0.20,
+  Performance: {
+    weight: 0.10,
     kpis: [
       { id: 'inclusion_latency_ms', name: 'Inclusion Latency (Total)', target: 65, unit: 'ms', higherIsBetter: false },
       { id: 'solver_latency_ms', name: 'Solver Latency (p99)', target: 12, unit: 'ms', higherIsBetter: false },
@@ -26,8 +26,8 @@ export const THIRTY_SIX_KPIS_CANONICAL = {
       { id: 'signal_throughput', name: 'Signal Throughput', target: 1200, unit: 'msg/s', higherIsBetter: true }
     ]
   },
-  risk: {
-    weight: 0.15,
+  Risk: {
+    weight: 0.20,
     kpis: [
       { id: 'competitive_collision_pct', name: 'Competitive Collision Rate', target: 0.8, unit: '%', higherIsBetter: false },
       { id: 'revert_cost_impact_pct', name: 'Revert Cost Impact', target: 0.05, unit: '%', higherIsBetter: false },
@@ -36,8 +36,8 @@ export const THIRTY_SIX_KPIS_CANONICAL = {
       { id: 'pnl_volatility_pct', name: 'P&L Volatility', target: 1.0, unit: '%', higherIsBetter: false }
     ]
   },
-  capital: {
-    weight: 0.15,
+  Efficiency: {
+    weight: 0.10,
     kpis: [
       { id: 'capital_turnover_pct', name: 'Capital Turnover Speed', target: 25, unit: '%/trade', higherIsBetter: true },
       { id: 'capital_efficiency_pct', name: 'Capital Efficiency', target: 90, unit: '%', higherIsBetter: true },
@@ -46,7 +46,7 @@ export const THIRTY_SIX_KPIS_CANONICAL = {
       { id: 'mev_capture_rate_pct', name: 'MEV Capture Rate', target: 95, unit: '%', higherIsBetter: true }
     ]
   },
-  system: {
+  'System Health': {
     weight: 0.10,
     kpis: [
       { id: 'uptime_pct', name: 'Uptime', target: 99.99, unit: '%', higherIsBetter: true },
@@ -56,25 +56,33 @@ export const THIRTY_SIX_KPIS_CANONICAL = {
       { id: 'bundler_saturation_pct', name: 'Bundler Saturation', target: 8.0, unit: '%', higherIsBetter: false }
     ]
   },
-  simulation: {
+  'Auto-Optimization': {
     weight: 0.10,
-    kpis: [
-      { id: 'sim_parity_delta_bps', name: 'Sim Parity Delta', target: 1.0, unit: 'bps', higherIsBetter: false },
-      { id: 'cycle_accuracy_pct', name: 'Cycle Accuracy', target: 98, unit: '%', higherIsBetter: true },
-      { id: 'sim_success_rate_pct', name: 'Sim Success Rate', target: 99, unit: '%', higherIsBetter: true },
-      { id: 'risk_gate_rejections', name: 'Risk Gate Rejections', target: 1, unit: 'count', higherIsBetter: false }
-    ]
-  },
-  autoopt: {
-    weight: 0.05,
     kpis: [
       { id: 'opt_delta_improvement_pct', name: 'Opt Delta Improvement', target: 25, unit: '%', higherIsBetter: true },
       { id: 'perf_gap_throughput_pct', name: 'Perf Gap Throughput', target: 5, unit: '%', higherIsBetter: false },
       { id: 'wallet_eth_balance', name: 'Wallet ETH Balance', target: 50, unit: 'ETH', higherIsBetter: true },
       { id: 'opportunities_found', name: 'Opportunities Found', target: 5000, unit: 'count', higherIsBetter: true }
     ]
+  },
+  'Bribe-Optimization': {
+    weight: 0.05,
+    kpis: [
+      { id: 'bribe_elasticity', name: 'Bribe Elasticity', target: 0.05, unit: 'coeff', higherIsBetter: true },
+      { id: 'bribe_elasticity_uncertainty', name: 'Bribe Elasticity Uncertainty', target: 0.02, unit: 'coeff', higherIsBetter: false },
+      { id: 'market_intensity_index', name: 'Mempool Market Intensity', target: 1.0, unit: 'index', higherIsBetter: false },
+      { id: 'block_utilization_pct', name: 'Block Utilization', target: 0.85, unit: '%', higherIsBetter: true }
+    ]
+  },
+  'Cloud-Health': {
+    weight: 0.05,
+    kpis: [
+      { id: 'is_configuration_hardened', name: 'Config Hardened', target: 1, unit: 'bool', higherIsBetter: true }, // 1 for true
+      { id: 'config_drift_detected', name: 'Config Drift Detected', target: 1, unit: 'bool', higherIsBetter: true }, // 1 for false (no drift)
+      { id: 'last_cloud_sync_age_min', name: 'Last Cloud Sync Age', target: 15, unit: 'min', higherIsBetter: false }
+    ]
   }
 } as const;
 
-export type CategoryId = keyof typeof THIRTY_SIX_KPIS_CANONICAL;
+export type CategoryId = keyof typeof THIRTY_NINE_KPIS_CANONICAL;
 export type KpiId = string;

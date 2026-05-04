@@ -1,18 +1,25 @@
 import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import {
-  Activity, Radio, Wallet, Settings, BarChart2, Zap, Menu, X, ShieldCheck, Brain, Globe, ChevronDown, Coins, DollarSign, Lock
+  Activity, Radio, Wallet, Settings, BarChart2, Zap, Menu, X, ShieldCheck, Brain, Globe, ChevronDown, Coins, DollarSign, Lock, Terminal, Wrench
 } from "lucide-react";
 import { useGetEngineStatus } from "@/lib/api";
 import { useTheme } from "next-themes";
 
+// Per DASHBOARD-GUIDE.MD: Unified navigation
 const navItems = [
   { path: "/", label: "Mission Control", icon: Activity },
-  { path: "/stream", label: "Stream", icon: Radio },
+  { path: "/telemetry", label: "Telemetry", icon: ShieldCheck },
+  { path: "/events", label: "Live Events", icon: Radio },
+  { path: "/logs", label: "System Logs", icon: Terminal },
   { path: "/trades", label: "Trade History", icon: BarChart2 },
-  { path: "/vault", label: "Vault", icon: Wallet },
+  { path: "/wallet", label: "Vault", icon: Wallet },
   { path: "/copilot", label: "Alpha-Copilot", icon: Brain },
-]; // Removed Audit Report and Settings
+  { path: "/optimizer", label: "AI Optimizer", icon: Zap },
+  { path: "/strategies", label: "Strategies", icon: Globe },
+  { path: "/settings", label: "Settings", icon: Settings },
+  { path: "/setup", label: "Setup Wizard", icon: Wrench },
+];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
@@ -127,10 +134,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <div className="text-[9px] text-zinc-600 font-medium uppercase">
               {isGhostMode ? 'Elite Protocol' : 'allbright'} v2.6.0
             </div>
-            <div className="mt-2 pt-2 border-t border-zinc-800/30">
+<div className="mt-2 pt-2 border-t border-zinc-800/30">
               <div className="text-[7px] text-zinc-500 uppercase tracking-widest font-black">Branding & Credits</div>
               <div className="text-[8px] text-zinc-600 font-bold uppercase mt-0.5">
-                {isGhostMode ? 'Elite Protocol Operations' : 'allbright DeFi Software Developer Ltd.'}
+                allbright DeFi Software Engineering Ltd.
+              </div>
+              <div className="text-[7px] text-zinc-600 font-medium uppercase mt-0.5">
+                © 2026 Allbright Systems
               </div>
             </div>
           </div>

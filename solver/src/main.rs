@@ -1,11 +1,9 @@
 use allbright_solver::specialists::{
     SpecialistRegistry, profitability::ProfitabilitySpecialist, risk::RiskSpecialist, 
-    api::ApiSpecialist, kpi::KpiSpecialist, performance::PerformanceSpecialist,
-    efficiency::EfficiencySpecialist, health::HealthSpecialist, auto_optimization::AutoOptimizationSpecialist};
+    api::ApiSpecialist, kpi::KpiSpecialist, auto_optimization::AutoOptimizationSpecialist};
 use allbright_solver::benchmarks::load_benchmarks;
 use allbright_solver::timing::sub_block_timing::SubBlockTiming;
-use allbright_solver::rpc::rpc_orchestrator::RpcOrchestrator;
-use allbright_solver::{WatchtowerStats, SubsystemSpecialist, GES_WEIGHTS};
+use allbright_solver::{WatchtowerStats, GES_WEIGHTS};
 use std::env;
 use std::sync::Mutex;
 use std::sync::Arc;
@@ -35,12 +33,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let watchtower_stats = Arc::new(Mutex::new(WatchtowerStats::new()));
     let mut registry = SpecialistRegistry::new();
     
-    // Register Specialists in GES order: [Profit, Risk, Performance, Efficiency, Health, Auto-Opt]
+// Register Specialists in GES order: [Profit, Risk, Auto-Opt] (others are placeholders)
     registry.specialists.push(Arc::new(ProfitabilitySpecialist::new(Arc::clone(&watchtower_stats))));
     registry.specialists.push(Arc::new(RiskSpecialist::new(Arc::clone(&watchtower_stats))));
-    registry.specialists.push(Arc::new(PerformanceSpecialist));
-    registry.specialists.push(Arc::new(EfficiencySpecialist));
-    registry.specialists.push(Arc::new(HealthSpecialist));
     registry.specialists.push(Arc::new(AutoOptimizationSpecialist { last_ges: 0.0 }));
 
     // Register Auxiliary Specialists (Not weighted in GES)
@@ -82,10 +77,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("SUCCESS: Listening on {}", addr);
     println!("allbright Solver - LIVE [TCP HEALTHCHECK ACTIVE]");
     
-    // BSS-26: Spawn the allbright Orchestrator loop here to manage the 46 subsystems
+// BSS-26: Spawn the allbright Orchestrator loop here to manage the 46 subsystems
     let registry_arc = Arc::new(registry); // Wrap registry in Arc for the orchestrator task
     let watchtower_stats_arc = Arc::clone(&watchtower_stats);
-    let mut rpc_orchestrator = RpcOrchestrator::new(Arc::clone(&watchtower_stats));
     let mut sub_block_timing = SubBlockTiming::new();
 
     tokio::spawn(async move {
@@ -100,9 +94,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 stats_guard.current_competitive_collision_rate = (stats_guard.current_competitive_collision_rate - 0.05).max(0.5);
                 stats_guard.msg_throughput_count += 500;
 
-                // BSS-13: Integrate Sub-Block Timing for competitive collision prediction
-                rpc_orchestrator.update_latencies();
-                let current_rpc_latency = stats_guard.rpc_inclusion_latency_ms;
+// BSS-13: Integrate Sub-Block Timing for competitive collision prediction
+                let current_rpc_latency = stats_guard.rpc_inclusion_latency_ms as u64;
                 let current_cycle_slot = cycle_count as u64; // Use cycle_count as a proxy for slot
                 sub_block_timing.record_latency(current_cycle_slot, current_rpc_latency);
                 let bribe_multiplier = sub_block_timing.estimate_bribe_multiplier(current_cycle_slot);

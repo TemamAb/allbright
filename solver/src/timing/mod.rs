@@ -2,8 +2,10 @@
 //! Critical for deployment readiness
 
 pub mod sub_block_timing;
+pub mod rpc_orchestrator;
 
 pub use sub_block_timing::SubBlockTiming;
+pub use rpc_orchestrator::RpcOrchestrator;
 
 /// Timing configuration
 pub struct TimingConfig {

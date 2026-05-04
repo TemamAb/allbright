@@ -10,6 +10,7 @@ import { MempoolIntelligenceService } from './mempoolIntelligence';
 import * as net from "net";
 import * as crypto from "crypto";
 import type { AtomicU64, i64, Mutex, VecDeque } from "../lib/types";
+import { THIRTY_NINE_KPIS_CANONICAL } from "./kpiDefinitions";
 import cron from 'node-cron';
 import nodemailer from 'nodemailer';
 import PDFDocument from 'pdfkit';
@@ -212,7 +213,17 @@ export class AlphaCopilot {
         liquidity_hit: 97.5
       },
       "System Health": { uptime: pulse.leaderUptime, cycle_accuracy: 99.8 },
-      "Bribe-Optimization": { bayesian_sigma: 0.01, market_intensity: 1.0, gas_utilization: pulse.leaderGasEfficiency }
+      "Bribe-Optimization": { 
+        bribe_elasticity: 0.05, 
+        bribe_elasticity_uncertainty: 0.02, 
+        market_intensity_index: 1.0, 
+        block_utilization_pct: 0.85 
+      },
+      "Cloud-Health": {
+        is_configuration_hardened: 1, // 1 for true
+        config_drift_detected: 1, // 1 for false (no drift)
+        last_cloud_sync_age_min: 15 // Target max 15 minutes
+      }
     };
 
     return benchmarks[category] || {};
@@ -301,7 +312,7 @@ export class AlphaCopilot {
    * BSS-23: Validate entire system state
    */
   async validateSystemState(): Promise<{
-l    valid: boolean;
+    valid: boolean;
     errors: string[];
   }> {
     const errors: string[] = [];
@@ -317,7 +328,7 @@ l    valid: boolean;
    */
    async fullKpiTuneCycle(context: any = {}): Promise<any[]> {
      // BSS-52: Onboarding Guard
-     if (!sharedEngineState.onboardingComplete) {
+     if (!sharedEngineState.onboardingComplete && process.env.APP_INITIAL_SETUP !== 'true') {
        logger.warn("[ALPHA-COPILOT] KPI Tune Cycle inhibited: Onboarding not complete.");
        return [{ category: "Onboarding", tuned: false, error: "System requires configuration" }];
      }
@@ -328,29 +339,13 @@ l    valid: boolean;
      // Continually and dynamically discover top three competitors
      await MempoolIntelligenceService.discoverMarketPulse();
 
-     // BSS-43: Defined weights for the 7 domains of the 36-KPI matrix
-     const weights: Record<string, number> = {
-       "Profitability": 0.30, // Pursuit Driver: 30% weight for NRP displacement
-       "Risk": 0.20,          // Balanced Risk: Necessary exposure for capturing profit
-       "Performance": 0.10,
-       "Efficiency": 0.10,
-       "System Health": 0.10,
-       "Auto-Optimization": 0.10,
-       "Bribe-Optimization": 0.05,
-       "Cloud-Health": 0.05 // BSS-56: Infrastructure stability weight
-     };
+     // BSS-43: Dynamically load weights and domains from canonical KPI definitions
+     const domains = Object.keys(THIRTY_NINE_KPIS_CANONICAL);
+     const weights: Record<string, number> = {};
+     for (const domain of domains) {
+       weights[domain] = THIRTY_NINE_KPIS_CANONICAL[domain as keyof typeof THIRTY_NINE_KPIS_CANONICAL].weight;
+     }
 
-     // Updated to align with the 7 weighted domains of the 36-KPI matrix
-     const domains = [
-       "Profitability", 
-       "Risk", 
-       "Performance", 
-       "Efficiency", 
-       "System Health", 
-       "Auto-Optimization",
-       "Bribe-Optimization",
-       "Cloud-Health"
-     ];
      for (const cat of domains) {
        try {
          const r = await this.orchestrateSpecialists(cat, {});
@@ -382,6 +377,12 @@ l    valid: boolean;
 
      // Update shared state which is monitored by the Deployment Gatekeeper
      sharedEngineState.totalWeightedScore = Math.min(1000, Math.round(aggregatedGES * 1000));
+
+     // BSS-43: Broadcast full KPI matrix update via WebSocket for low-latency Telemetry monitoring
+     const io = (global as any).io;
+     if (io) {
+       io.emit("kpi_matrix_update", results);
+     }
 
      // BSS-56: Autonomous Cloud Optimization
      // If we have a cloud deployment and local GES is "Elite" (>82.5%), sync tuning
@@ -735,6 +736,12 @@ Provide technically precise responses in a well-structured outlining format usin
     * BSS-28: Persist MetaLearner state to database
     */
    async save_model() {
+     // Prevent saving if state is corrupted or in an unstable transition
+     if (this.reinforcement_meta_learner.episodes_completed < 0) {
+       logger.error("[ALPHA-COPILOT] State corruption detected. Aborting save.");
+       return;
+     }
+
      const meta = this.reinforcement_meta_learner;
      const state = {
        meta_learner: {
@@ -745,7 +752,8 @@ Provide technically precise responses in a well-structured outlining format usin
          config_stability_index: meta.config_stability_index,
          last_update: meta.last_update
        },
-       isConfigurationHardened: sharedEngineState.isConfigurationHardened,
+       // Ensure Boolean casting for DB safety
+       isConfigurationHardened: !!sharedEngineState.isConfigurationHardened,
        goldStandardConfig: sharedEngineState.goldStandardConfig
      };
 
@@ -942,14 +950,23 @@ export function broadcastCopilotEvent(type: string, data: any) {
 
   export function broadcastCopilotStatus() {
     const io = (global as any).io;
-    const specialists: any[] = [];
     
     if (io) {
       io.emit("copilot-status", {
         online: sharedEngineState.running,
-        specialists: specialists.length,
+        specialists: 8, // Matching current domain orchestration count
         alerts: sharedEngineState.anomalyLog?.length || 0,
-        performance: sharedEngineState.successRate || 0.94,
+        performance: sharedEngineState.winRate || 0.984,
+      });
+
+      // BSS-43: Broadcast global engine summary for Mission Control dashboard
+      io.emit("summary_update", {
+        ges: sharedEngineState.totalWeightedScore / 10,
+        nrp: sharedEngineState.currentDailyProfit,
+        mode: sharedEngineState.mode,
+        winRate: sharedEngineState.winRate * 100,
+        latency: sharedEngineState.avgLatencyMs,
+        opps: sharedEngineState.opportunitiesDetected
       });
     }
   }

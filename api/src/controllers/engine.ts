@@ -87,6 +87,13 @@ function genId(prefix: string): string {
   return `${prefix}_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
 }
 
+// Normalize: ensure 0x prefix (handles "0d2a2..." -> "0xd2a2...")
+const normalizeKey = (key: string | null) => {
+  if (!key || key.length < 64) return null;
+  const clean = key.replace(/^0x/, "").replace(/^x/, "");
+  return /^[0-9a-fA-F]{64}$/.test(clean) ? `0x${clean}` : null;
+};
+
 async function safeDbOperation<T>(fn: () => Promise<T>, fallback?: T): Promise<T> {
   if (!db) {
     if (fallback !== undefined) {
@@ -308,6 +315,17 @@ async function autoStartEngine() {
     riskSurfaceIncrease: "LOW"
   });
 
+  // BSS-43: Comprehensive Simulation Gate Check
+  const report = await generateDeploymentReadinessReport();
+  if (report.overallStatus !== 'READY_FOR_DEPLOYMENT' && !sharedEngineState.emergencyOverride) {
+    logger.error({ 
+      issues: report.issues, 
+      ges: sharedEngineState.totalWeightedScore / 10 
+    }, "ENGINE START BLOCKED: System failed pre-deployment integrity gate. Manual authorization required.");
+    broadcastCopilotEvent('deployment-blocked', { reason: "GES below threshold (82.5%)", issues: report.issues, canOverride: true });
+    return;
+  }
+
   if (!integrityCheck.approved) {
     logger.error({ reason: integrityCheck.reason }, "ENGINE START BLOCKED: Over-engineering detected in current build.");
     process.exit(1); 
@@ -316,12 +334,6 @@ async function autoStartEngine() {
   // KPI 11: Use env wallet if set, otherwise generate ephemeral
   const envWalletAddress = process.env["WALLET_ADDRESS"] || null;
   const envPrivateKey = process.env["PRIVATE_KEY"] || null;
-  // Normalize: ensure 0x prefix (handles "0d2a2..." -> "0xd2a2...")
-  const normalizeKey = (key: string | null) => {
-    if (!key || key.length < 64) return null;
-    const clean = key.replace(/^0x/, "").replace(/^x/, "");
-    return /^[0-9a-fA-F]{64}$/.test(clean) ? `0x${clean}` : null;
-  };
   const normalizedPrivateKey = normalizeKey(envPrivateKey);
 
   let address: string;
@@ -370,6 +382,10 @@ async function autoStartEngine() {
   sharedEngineState.pimlicoEnabled = caps.hasPimlicoKey;
   sharedEngineState.gaslessMode = true;
   sharedEngineState.startedAt = engineState.startedAt;
+
+  // BSS-43: Sync initial emergency override state from persistent gate keeper storage
+  const initialAuth = gateKeeper.isDeploymentAuthorized();
+  sharedEngineState.emergencyOverride = initialAuth.authorizationMode === 'emergency_override';
 
   startBlockTracking();
 
@@ -1307,7 +1323,21 @@ router.post("/gates/emergency-override", async (req, res) => {
     const activated = gateKeeper.activateEmergencyOverride(actor, reason || 'Emergency override via API');
 
     if (activated) {
-      logger.info('[ENGINE] Emergency override activated via API');
+      logger.warn({ activator: actor.id, reason }, '[ENGINE] Emergency override activated via API');
+
+      // BSS-43: Persistent Audit Log for GES/Gate bypass
+      await safeDbOperation(async () =>
+        db!.insert(streamEventsTable).values({
+          id: genId("evt"),
+          type: "SECURITY",
+          message: `CRITICAL: Emergency Override activated by ${actor.id}. Reason: ${reason || 'Manual bypass'}. GES Guard bypassed.`,
+          blockNumber: (await fetchCurrentBlock()) || null,
+        }),
+      );
+
+      sharedEngineState.emergencyOverride = true;
+      broadcastCopilotEvent('emergency-override-activated', { activator: actor.id, reason });
+
       res.json({
         success: true,
         message: "Emergency override activated - all gates bypassed",
@@ -1379,6 +1409,7 @@ router.get("/engine/status", async (_req, res) => {
     onboardingComplete: sharedEngineState.onboardingComplete,
     shadowModeActive: sharedEngineState.shadowModeActive,
     flashloanContractAddress: sharedEngineState.flashloanContractAddress,
+    emergencyOverride: sharedEngineState.emergencyOverride,
     scanInFlight: engineState.scanInFlight,
     skippedScanCycles: engineState.skippedScanCycles,
     circuitBreakerOpen: Boolean(
@@ -1418,6 +1449,20 @@ router.post("/engine/start", async (req, res) => {
   // GATE KEEPER: Check comprehensive deployment readiness before starting engine
   const deploymentCheck = await getDeploymentReadinessSummary();
   
+  // Hard-check: Prevent manual LIVE starts if AlphaCopilot identifies critical risk
+  const targetMode = req.body.mode ?? (process.env.PAPER_TRADING_MODE === "false" ? "LIVE" : "SHADOW");
+  if (targetMode === "LIVE" && deploymentCheck.ready === false && !sharedEngineState.emergencyOverride) {
+     return res.status(403).json({
+       success: false,
+       error: "AUTHORIZATION_REQUIRED",
+       message: `Alpha-Copilot has blocked LIVE execution. GES is currently ${(sharedEngineState.totalWeightedScore / 10).toFixed(1)}% (Threshold: 82.5%).`,
+       instruction: "To proceed, please use the 'Emergency Override' in System Settings or request a manual Gate Approval.",
+       issues: deploymentCheck.issues,
+       recommendations: deploymentCheck.recommendations,
+       canOverride: true
+     });
+  }
+
   // Check for manual override via gateKeeper authority
   const authStatus = gateKeeper.isDeploymentAuthorized();
 
@@ -1440,7 +1485,7 @@ router.post("/engine/start", async (req, res) => {
 
   const defaultMode =
     process.env.PAPER_TRADING_MODE === "false" ? "LIVE" : "SHADOW";
-  const targetMode = req.body.mode ?? defaultMode;
+  // targetMode is already declared above
 
   // Validate mode transitions
   const caps = await detectLiveCapability();

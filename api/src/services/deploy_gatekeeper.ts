@@ -1,12 +1,12 @@
 import { AlphaCopilot } from './alphaCopilot.js';
 import { gateKeeper, getDeploymentCriticalFiles, DEPLOYMENT_MODULE_ROOTS } from './gateKeeper.js';
 import { sharedEngineState } from './engineState.js';
-import { promises as fs } from 'fs';
-import * as fsSync from 'fs';
+import fs from 'node:fs';
 import * as path from 'path';
 import { fileURLToPath } from 'node:url';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+const execAsync = promisify(exec);
 import { db, kpiSnapshotsTable } from '@workspace/db';
 import { logger } from './logger.js';
 import { MempoolIntelligenceService } from './mempoolIntelligence.js';
@@ -60,6 +60,7 @@ export interface DeploymentReadinessReport {
     disaster_recovery: { status: 'PASS' | 'FAIL'; details: string };
     apex_pursuit_active: { status: 'PASS' | 'FAIL'; details: string };
     engineering_integrity: { status: 'PASS' | 'FAIL'; details: string };
+    private_relay_active: { status: 'PASS' | 'WARN'; details: string }; // New strategic check
   };
   overrideActive: boolean;
   overrideDetails?: { activatedBy: string; reason: string };
@@ -159,11 +160,11 @@ function verifySourceFilesExist(): { passed: boolean; missing: string[]; errors:
   for (const relPath of getDeploymentCriticalFiles()) {
     const fullPath = path.join(workspaceRoot, relPath);
     try {
-      if (!fsSync.existsSync(fullPath)) {
+      if (!fs.existsSync(fullPath)) {
         missing.push(relPath);
       } else {
         // Verify file is readable
-        const stats = fsSync.statSync(fullPath);
+        const stats = fs.statSync(fullPath);
         if (stats.size === 0) {
           errors.push(`File is empty: ${relPath}`);
         }
@@ -310,6 +311,12 @@ async function checkStrategicReadiness(kpiResults: any[]) {
         ? `Elite: Apex Pursuit active (Target: ${marketPulse.leaderNrp.toFixed(2)} ETH NRP)` 
         : 'FAIL: Apex Leader signatures not discovered in mempool.'
     },
+    private_relay_active: {
+      status: sharedEngineState.usePrivateRelay ? 'PASS' : 'WARN',
+      details: sharedEngineState.usePrivateRelay 
+        ? 'Elite: Private transaction relay active for latency enhancement.'
+        : 'WARN: Private transaction relay not active. Potential for higher latency.'
+    },
     engineering_integrity: {
       status: integrityCheck.approved ? 'PASS' : 'FAIL',
       details: integrityCheck.reason
@@ -353,7 +360,21 @@ export async function generateDeploymentReadinessReport(skipRuntimeStage = false
   // Define override status from gateKeeper authority
   const isOverrideActive = deploymentAuth.authorizationMode === 'emergency_override';
 
-  const strategicFails = Object.values(strategicChecklist).filter(v => v.status === 'FAIL').length;
+// Defensive: Ensure strategicChecklist has all required keys with proper types
+  const safeStrategicChecklist: DeploymentReadinessReport['strategicChecklist'] = {
+    bribe_engine_sync: { status: strategicChecklist?.bribe_engine_sync?.status === 'PASS' ? 'PASS' : 'FAIL', details: strategicChecklist?.bribe_engine_sync?.details || 'Not available' },
+    meta_learner_active: { status: strategicChecklist?.meta_learner_active?.status === 'PASS' ? 'PASS' : 'FAIL', details: strategicChecklist?.meta_learner_active?.details || 'Not available' },
+    kpi_persistence: { status: strategicChecklist?.kpi_persistence?.status === 'PASS' ? 'PASS' : 'FAIL', details: strategicChecklist?.kpi_persistence?.details || 'Not available' },
+    simulation_gate: { status: strategicChecklist?.simulation_gate?.status === 'PASS' ? 'PASS' : 'FAIL', details: strategicChecklist?.simulation_gate?.details || 'Not available' },
+    liquidity_gate: { status: strategicChecklist?.liquidity_gate?.status === 'PASS' ? 'PASS' : 'FAIL', details: strategicChecklist?.liquidity_gate?.details || 'Not available' },
+    orchestrator_health: { status: strategicChecklist?.orchestrator_health?.status === 'PASS' ? 'PASS' : 'FAIL', details: strategicChecklist?.orchestrator_health?.details || 'Not available' },
+    source_integrity: { status: strategicChecklist?.source_integrity?.status === 'PASS' ? 'PASS' : 'FAIL', details: strategicChecklist?.source_integrity?.details || 'Not available' },
+    disaster_recovery: { status: strategicChecklist?.disaster_recovery?.status === 'PASS' ? 'PASS' : 'FAIL', details: strategicChecklist?.disaster_recovery?.details || 'Not available' },
+    apex_pursuit_active: { status: strategicChecklist?.apex_pursuit_active?.status === 'PASS' ? 'PASS' : 'FAIL', details: strategicChecklist?.apex_pursuit_active?.details || 'Not available' },
+    engineering_integrity: { status: strategicChecklist?.engineering_integrity?.status === 'PASS' ? 'PASS' : 'FAIL', details: strategicChecklist?.engineering_integrity?.details || 'Not available' },
+    private_relay_active: { status: strategicChecklist?.private_relay_active?.status === 'PASS' ? 'PASS' : 'WARN', details: strategicChecklist?.private_relay_active?.details || 'Not available' },
+  };
+  const strategicFails = Object.values(safeStrategicChecklist).filter(v => v.status === 'FAIL').length;
 
   // Audit Coverage Mapping
   const allCheckedFiles: string[] = getDeploymentCriticalFiles();
@@ -424,7 +445,7 @@ export async function generateDeploymentReadinessReport(skipRuntimeStage = false
 
   const report: DeploymentReadinessReport = {
     generatedAt: new Date(),
-    overallStatus: (isOverrideActive || (finalScore >= 90 && (skipRuntimeStage || servicesHealthy) && deploymentAuth.authorized && strategicFails === 0)) 
+    overallStatus: (isOverrideActive || (finalScore >= 95 && (skipRuntimeStage || servicesHealthy) && deploymentAuth.authorized && strategicFails === 0)) 
                    ? 'READY_FOR_DEPLOYMENT' : 
                    (blockedByFailedChecks.length > 0 || strategicFails > 0) ? 'BLOCKED' : 'PENDING_APPROVALS',
     deploymentScore: Math.round(finalScore),
@@ -455,7 +476,8 @@ export async function generateDeploymentReadinessReport(skipRuntimeStage = false
       status: b.status,
       metrics: b.metrics
     })),
-    coverageByModuleRoot,
+coverageByModuleRoot,
+    strategicChecklist: safeStrategicChecklist,
   };
   
   return report;
@@ -482,7 +504,7 @@ async function runDeploymentStages(root: string, timeline: DeploymentReadinessRe
   // 1. DEPS verification
   const depsStart = Date.now();
   const hasNodeModules = fs.existsSync(path.join(root, 'api', 'node_modules'));
-  const hasRustLock = fsSync.existsSync(path.join(root, 'solver', 'Cargo.lock'));
+  const hasRustLock = fs.existsSync(path.join(root, 'solver', 'Cargo.lock'));
   
   stages.deps = { 
     status: (hasNodeModules && hasRustLock) ? 'PASS' : 'FAIL', 
@@ -495,7 +517,7 @@ async function runDeploymentStages(root: string, timeline: DeploymentReadinessRe
 
   // 2. TYPES verification (checked via source presence)
   const typesStart = Date.now();
-  const hasTsConfig = fsSync.existsSync(path.join(root, 'api', 'tsconfig.json'));
+  const hasTsConfig = fs.existsSync(path.join(root, 'api', 'tsconfig.json'));
   stages.types = { 
     status: hasTsConfig ? 'PASS' : 'FAIL', 
     score: hasTsConfig ? 100 : 0, 
@@ -507,8 +529,9 @@ async function runDeploymentStages(root: string, timeline: DeploymentReadinessRe
 
   // 3. BUILD artifact verification
   const buildStart = Date.now();
-  const hasApiDist = fsSync.existsSync(path.join(root, 'api', 'dist'));
-  const hasRustBinary = fsSync.existsSync(path.join(root, 'solver', 'target', 'release', 'allbright-solver')) || fsSync.existsSync(path.join(root, 'app', 'bin', 'rust-backbone'));
+  const hasApiDist = fs.existsSync(path.join(root, 'api', 'dist'));
+  const hasRustBinary = fs.existsSync(path.join(root, 'solver', 'target', 'release', 'allbright-solver')) || 
+                        fs.existsSync(path.join(root, 'app', 'bin', 'rust-backbone'));
   
   stages.build = { 
     status: (hasApiDist) ? 'PASS' : 'FAIL', 
@@ -519,18 +542,30 @@ async function runDeploymentStages(root: string, timeline: DeploymentReadinessRe
   };
   timeline.push({ stage: 'build', timestamp: new Date(), status: stages.build.status, message: stages.build.details });
 
-  // 4. ENV stage (merged from startup_checks)
+// 4. ENV stage (merged from startup_checks)
   const envStart = Date.now();
   let envDetails = [];
   if (!process.env.PORT) envDetails.push('PORT missing');
   if (!process.env.PIMLICO_API_KEY) envDetails.push('PIMLICO_API_KEY missing');
-  stages.env = {
-    status: envDetails.length === 0 ? 'PASS' : 'FAIL',
-    score: envDetails.length === 0 ? 100 : 0,
-    durationMs: Date.now() - envStart,
-    autoHealed: false,
-    details: envDetails.join(', ')
-  };
+  
+  // BSS-56: VITE_API_BASE_URL must be present for production frontend builds
+  if (!process.env.VITE_API_BASE_URL && process.env.NODE_ENV === 'production') {
+    stages.env = {
+      status: 'FAIL',
+      score: 0,
+      durationMs: Date.now() - envStart,
+      autoHealed: false,
+      details: 'CRITICAL: VITE_API_BASE_URL missing for production build'
+    };
+  } else {
+    stages.env = {
+      status: envDetails.length === 0 ? 'PASS' : 'FAIL',
+      score: envDetails.length === 0 ? 100 : 0,
+      durationMs: Date.now() - envStart,
+      autoHealed: false,
+      details: envDetails.length > 0 ? envDetails.join(', ') : 'VITE_API_BASE_URL and Secrets verified'
+    };
+  }
   timeline.push({ stage: 'env', timestamp: new Date(), status: stages.env.status, message: stages.env.details });
 
   // 5. PORTS stage
@@ -560,12 +595,15 @@ async function runDeploymentStages(root: string, timeline: DeploymentReadinessRe
     timeline.push({ stage: 'runtime', timestamp: new Date(), status: 'FAIL', message: e.message });
   }
 
-  // Create DEPLOYMENT_EXECUTION gate
-  const executionChecks = Object.entries(stages.executionStages).map(([stage, result]) => ({
+// Calculate stageScore for use in gate
+  const stageScore = Object.values(stages).reduce((sum, s) => sum + s.score, 0) / 6;
+
+// Create DEPLOYMENT_EXECUTION gate with proper type assertions
+  const executionChecks: DRRGateAnalysis['automatedChecks'] = Object.entries(stages).map(([stage, result]) => ({
     checkId: stage,
     checkName: stage.toUpperCase(),
     status: result.status,
-    severity: result.status === 'FAIL' ? 'HIGH' : result.status === 'WARN' ? 'MEDIUM' : 'LOW' as const,
+    severity: (result.status === 'FAIL' ? 'HIGH' : result.status === 'WARN' ? 'MEDIUM' : 'LOW') as DRRGateAnalysis['automatedChecks'][number]['severity'],
     details: result.details
   }));
 

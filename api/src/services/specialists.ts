@@ -1,5 +1,6 @@
 import { sharedEngineState } from './engineState';
 import { MempoolIntelligenceService } from './mempoolIntelligence';
+import { validateConfiguration } from './engineState';
 
 export interface Specialist {
   name: string;
@@ -93,6 +94,24 @@ export const specialists: Specialist[] = [
     },
     status: async () => ({ status: 'ready', specialist: 'BribeOptimizationSpecialist' })
   },
+  {
+    name: 'CloudHealthSpecialist',
+    category: 'Cloud-Health',
+    tuneKpis: async () => {
+      const configValidation = validateConfiguration();
+      const lastSyncAgeMin = sharedEngineState.lastCloudSync ? (Date.now() - sharedEngineState.lastCloudSync.getTime()) / 60000 : Infinity;
+
+      return {
+        tuned: true,
+        is_configuration_hardened: sharedEngineState.isConfigurationHardened,
+        config_drift_detected: configValidation.driftDetected,
+        last_cloud_sync_age_min: lastSyncAgeMin,
+        cloud_deployment_id: sharedEngineState.cloudDeploymentId,
+        cloud_sync_status: sharedEngineState.lastCloudSync ? 'synced' : 'not_synced'
+      };
+    },
+    status: async () => ({ status: 'ready', specialist: 'CloudHealthSpecialist' })
+  },
 ];
 
 export const kpiToSpecialistMapping = {
@@ -102,6 +121,7 @@ export const kpiToSpecialistMapping = {
   uptime: 'System Health',
   optimization: 'Auto-Optimization',
   bribe_sigma: 'Bribe-Optimization',
+  cloud_health: 'Cloud-Health',
 };
 
 export const specialistByCategory = {
@@ -111,4 +131,5 @@ export const specialistByCategory = {
   'System Health': { name: 'SystemHealthSpecialist' },
   'Auto-Optimization': { name: 'AutoOptimizationSpecialist' },
   'Bribe-Optimization': { name: 'BribeOptimizationSpecialist' },
+  'Cloud-Health': { name: 'CloudHealthSpecialist' },
 };

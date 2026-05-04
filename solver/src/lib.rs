@@ -1,6 +1,9 @@
 pub mod benchmarks;
-pub mod specialists;
 pub mod timing;
+pub mod specialists;
+pub mod performance;
+pub mod efficiency;
+pub mod health;
 pub mod rpc;
 
 use serde::{Deserialize, Serialize};
@@ -8,12 +11,16 @@ use std::error::Error;
 
 /// BSS-36: Centralized GES Weights (Total = 1.0)
 /// Optimized for Elite Grade performance targets.
-/// [Profit, Risk, Performance, Efficiency, Health, Auto-Opt]
-pub const GES_WEIGHTS: [f64; 6] = [
-    0.25, // Profitability (High alpha)
-    0.20, // Risk Management
-    0.15, // Execution Performance
-    0.10, 0.10, 0.20 // Efficiency, Health, Auto-Optimization
+/// [Profit, Risk, Performance, Efficiency, System Health, Auto-Optimization, Bribe-Optimization, Cloud-Health]
+pub const GES_WEIGHTS: [f64; 8] = [
+    0.30, // Profitability
+    0.20, // Risk
+    0.10, // Performance
+    0.10, // Efficiency
+    0.10, // System Health
+    0.10, // Auto-Optimization
+    0.05, // Bribe-Optimization
+    0.05  // Cloud-Health
 ];
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq)]
