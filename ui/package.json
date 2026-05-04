@@ -83,7 +83,7 @@
     "tsx": "^4.19.1"
   },
   "main": "main.js",
-  "homepage": "./",
+
   "engines": {
     "node": ">=20.11.0"
   }
