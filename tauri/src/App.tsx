@@ -123,6 +123,8 @@ export default function App() {
         {/* Header */}
         <header className="h-28 flex items-center gap-10 px-10 topbar-ash sticky top-0 z-20" data-tauri-drag-region>
           <div className="flex items-center gap-6">
+            <img src="myallbright-logo.png" alt="Allbright Logo" className="h-16 w-auto object-contain drop-shadow-[0_0_15px_rgba(6,182,212,0.2)]" />
+            <div className="h-12 w-px bg-ash"></div>
             <div className="flex flex-col">
               <span className="text-[9px] text-secondary uppercase tracking-[0.2em] font-bold">Network Bridge</span>
               <span className="text-[11px] text-secondary font-medium uppercase">IPC ACTIVE • 4001</span>
