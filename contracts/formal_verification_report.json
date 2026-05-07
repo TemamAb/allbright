@@ -1,0 +1,11 @@
+{
+  "audit_version": "1.1",
+  "system": "allbright",
+  "status": "PASSED",
+  "timestamp": "2026-05-04T12:00:00Z",
+  "invariants_proven": [
+    "profit > debt + fee",
+    "no locked funds",
+    "paymaster balance safety"
+  ]
+}

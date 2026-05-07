@@ -15,7 +15,7 @@ interface SidebarProps {
 
 const sidebarItems = [
   { name: 'Mission Control', path: '/', icon: LayoutDashboard },
-  { name: 'System Telemetry', path: '/telemetry', icon: ShieldCheck }, // Elite 39-KPI Audit Matrix
+  { name: 'Kpi-Matrix', path: '/kpi-matrix', icon: ShieldCheck }, // Elite 44-KPI Audit Matrix
   { name: 'Live Blockchain Events', path: '/events', icon: Activity },
   { name: 'Wallet Management', path: '/wallet', icon: Wallet },
   { name: 'AI Auto-Optimizer', path: '/ai-optimizer', icon: Brain },

@@ -31,6 +31,7 @@ module.exports = {
         'ash-border': '#27272a',
         'ash-text': '#e5e7eb',
         'ash-muted': '#71717a',
+        'data-black': '#000000',
         'cyan-accent': '#06b6d4',
         'emerald-accent': '#10b981',
       },

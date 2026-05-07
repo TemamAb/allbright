@@ -1,0 +1,87 @@
+AI AGENT EXECUTION PLAN (WITH CONTROLLED EXPLANATIONS)
+🟢 PHASE 1 — Initialize Tauri Project
+
+Instruction:
+Create a new desktop application project using Tauri with a React + TypeScript frontend.
+
+Explanation:
+This phase establishes the foundational project structure that combines a frontend UI and a Rust-based desktop runtime. The agent must not modify templates or introduce alternative frameworks—this ensures compatibility with later packaging and backend integration steps.
+
+🟢 PHASE 2 — Integrate Backend Binary
+
+Instruction:
+Copy the compiled arbitrage backend binary into the Tauri project and register it as a bundled resource.
+
+Explanation:
+The backend must remain a standalone executable and not be rewritten or embedded into new logic. This guarantees stability and preserves your already production-ready system while allowing the desktop app to control it as a subprocess.
+
+🟢 PHASE 3 — Build Process Manager in Rust
+
+Instruction:
+Implement Rust commands inside Tauri to start and stop the backend process.
+
+Explanation:
+This phase creates a strict control layer between UI and backend. The agent must only manage process lifecycle (start/stop/status) and must not alter trading logic. This prevents unintended behavior and keeps execution deterministic.
+
+🟢 PHASE 4 — Build Frontend Control Panel
+
+Instruction:
+Create a minimal React UI that triggers backend commands via Tauri invoke().
+
+Explanation:
+The UI must remain simple and functional, acting only as a control surface. The agent must avoid adding unnecessary complexity (routing, animations, etc.) and focus strictly on operational controls to reduce failure points.
+
+🟢 PHASE 5 — Implement Simulation vs Live Modes
+
+Instruction:
+Add mode selection (simulation/live) and pass it as an argument when starting the backend.
+
+Explanation:
+This enforces a clear operational boundary between safe testing and real trading. The agent must ensure modes are explicitly selected and never default to live execution to prevent accidental financial risk.
+
+🟢 PHASE 6 — Logging and Feedback System
+
+Instruction:
+Capture backend stdout/stderr and display logs in the UI in real time.
+
+Explanation:
+Users must see what the system is doing at all times. The agent must prioritize transparency and avoid silent execution, ensuring all actions and errors are visible for debugging and trust.
+
+🟢 PHASE 7 — Build Installable Application
+
+Instruction:
+Compile and package the app into native installers.
+
+Explanation:
+This phase transforms the project into a distributable product. The agent must ensure builds are clean, reproducible, and do not require developer tools on the end-user machine.
+
+🟢 PHASE 8 — Enforce User Experience Simplicity
+
+Instruction:
+Ensure the app operates entirely through UI controls without terminal usage.
+
+Explanation:
+The product is intended for non-technical users. The agent must eliminate any dependency on command-line interaction and ensure all core actions are accessible via buttons and visual feedback.
+
+🟢 PHASE 9 — Apply Security Constraints
+
+Instruction:
+Implement strict safeguards for sensitive operations and data.
+
+Explanation:
+The agent must treat this as a financial system and enforce safe handling of keys, execution confirmation, and risk warnings. No shortcuts or assumptions are allowed here, as mistakes directly impact user funds.
+
+🟢 PHASE 10 — Prepare Client Distribution
+
+Instruction:
+Package and deliver the application with simple usage instructions.
+
+Explanation:
+The final output must be a frictionless install-and-run experience. The agent must ensure users can install, launch, and operate the app without configuration complexity or technical knowledge.
+
+🔒 FINAL DIRECTIVE TO AI AGENT
+Do not deviate from the defined architecture
+Do not replace technologies (must use Tauri + React + Rust binary)
+Do not modify backend trading logic
+Do not introduce unnecessary features
+Prioritize stability, simplicity, and control

@@ -9,18 +9,18 @@ pub mod rpc;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 
-/// BSS-36: Centralized GES Weights (Total = 1.0)
-/// Optimized for Elite Grade performance targets.
-/// [Profit, Risk, Performance, Efficiency, System Health, Auto-Optimization, Bribe-Optimization, Cloud-Health]
-pub const GES_WEIGHTS: [f64; 8] = [
-    0.30, // Profitability
+/// BSS-43: Centralized Institutional GES Weights (Total = 1.0)
+/// Updated to support the 44-KPI Matrix across 9 weighted domains.
+pub const GES_WEIGHTS: [f64; 9] = [
+    0.25, // Profitability
     0.20, // Risk
-    0.10, // Performance
+    0.15, // Performance
     0.10, // Efficiency
     0.10, // System Health
-    0.10, // Auto-Optimization
+    0.05, // Auto-Optimization
     0.05, // Bribe-Optimization
-    0.05  // Cloud-Health
+    0.05, // Cloud-Health
+    0.05  // Vault-Integrity
 ];
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq)]
@@ -85,6 +85,10 @@ pub struct WatchtowerStats {
     pub rpc_inclusion_latency_ms: f64,
     pub active_rpc_count: u32,
     pub msg_throughput_count: u64,
+    pub total_vault_balance_usd: f64,
+    pub pending_withdrawals_count: u64,
+    pub withdrawal_policy_violations: u64,
+    pub multi_chain_variance_usd: f64,
 }
 
 impl WatchtowerStats {

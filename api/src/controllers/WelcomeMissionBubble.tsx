@@ -41,7 +41,7 @@ export const WelcomeMissionBubble: React.FC = () => {
               </div>
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-black text-[#5794f2] uppercase tracking-widest">Alpha-Copilot</span>
+                  <span className="text-[10px] font-black text-[#5794f2] uppercase tracking-widest">Copilot</span>
                   <div className="w-1 h-1 rounded-full bg-[#73bf69] animate-pulse" />
                 </div>
                 <p className="text-xs text-[#d8d9da] leading-relaxed font-medium italic">

@@ -6,18 +6,30 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-import { generateDeploymentReadinessReport } from '../src/services/deploy_gatekeeper.js';
-import { THIRTY_NINE_KPIS_CANONICAL } from '../src/services/kpiDefinitions.js';
+import { generateDeploymentReadinessReport } from '../src/services/deploy_gatekeeper';
+import { FORTY_FOUR_KPIS_CANONICAL } from '../src/services/kpiDefinitions.js';
 import { sharedEngineState } from '../src/services/engineState.js';
 import { db, kpiSnapshotsTable } from '@workspace/db';
 import { desc } from 'drizzle-orm';
 import { execSync } from 'node:child_process';
 
-/**
-// Use the canonical 39-KPI definition
-const THIRTY_NINE_KPIS = THIRTY_NINE_KPIS_CANONICAL;
+colors = {
+  reset: "\x1b[0m",
+  bold: "\x1b[1m",
+  red: "\x1b[31m",
+  green: "\x1b[32m",
+  yellow: "\x1b[33m",
+  blue: "\x1b[34m",
+  magenta: "\x1b[35m",
+  cyan: "\x1b[36m",
+  gray: "\x1b[90m",
+};
 
-type CategoryId = keyof typeof THIRTY_NINE_KPIS;
+/**
+// Use the canonical 44-KPI definition
+const FORTY_FOUR_KPIS = FORTY_FOUR_KPIS_CANONICAL;
+
+type CategoryId = keyof typeof FORTY_FOUR_KPIS;
 
 // Helper: Safely get nested property from an object
 function getNestedProperty(obj: any, path: string): any {
@@ -58,11 +70,11 @@ async function checkReadiness() {
   console.log(`${colors.bold}${colors.cyan}=== allbright Master Deployment Readiness Analysis ===${colors.reset}\n`);
 
   try {
-    if (db) {
+    if (db && process.env.DATABASE_URL) {
       let latest = [];
       try {
         latest = await db.select().from(kpiSnapshotsTable).orderBy(desc(kpiSnapshotsTable.timestamp)).limit(1);
-        if (latest.length > 0) {
+        if (latest && latest.length > 0) {
           const snap = latest[0];
           // Hydrate sharedEngineState from snapshot for accurate historical context
           sharedEngineState.totalWeightedScore = Number(snap.total_weighted_score);
@@ -74,7 +86,7 @@ async function checkReadiness() {
           // Hydrate all 39 KPIs from raw_stats for accurate historical context
           const rawStats = snap.raw_stats as Record<string, any>;
           if (rawStats) {
-            Object.values(THIRTY_NINE_KPIS).forEach(category => {
+            Object.values(FORTY_FOUR_KPIS).forEach(category => {
               category.kpis.forEach(kpi => {
                 const path = kpi.path || kpi.id;
                 const val = getNestedProperty(rawStats, path);
@@ -150,8 +162,8 @@ async function checkReadiness() {
       console.log('');
     }
 
-    // ========== PART II: 36-KPI MULTI-CYCLE MATRIX ==========
-    console.log(`${colors.bold}${colors.cyan}========== PART II: 36-KPI MULTI-CYCLE MATRIX ==========${colors.reset}\n`);
+    // ========== PART II: 44-KPI MULTI-CYCLE MATRIX ==========
+    console.log(`${colors.bold}${colors.cyan}========== PART II: 44-KPI MULTI-CYCLE MATRIX ==========${colors.reset}\n`);
 
     // GES
     if (report.deploymentScore !== undefined) {
@@ -200,7 +212,7 @@ async function checkReadiness() {
         }
       }
 
-      // Build row data: 36 rows
+      // Build row data: 44 rows
       const rows: Array<{
         catId: string;
         catLabel: string;
@@ -211,7 +223,8 @@ async function checkReadiness() {
         values: Array<{ value: number; status: string }>
       }> = [];
 
-      Object.entries(THIRTY_NINE_KPIS).forEach(([catId, catDef]) => {
+      Object.entries(FORTY_FOUR_KPIS).forEach(([catId, catDef]) => {
+      Object.entries(FORTY_FOUR_KPIS).forEach(([catId, catDef]) => {
         catDef.kpis.forEach(kpi => {
           const values = cycles.map(cycle => {
             const val = getValue(kpi, cycle.row);
@@ -258,14 +271,14 @@ async function checkReadiness() {
         const latest = row.values[0];
         const latestStr = `${statusColor(latest.status)}${latest.value.toFixed(2).padEnd(10)}${colors.reset} [${latest.status === 'good' ? colors.green : latest.status === 'warn' ? colors.yellow : colors.red}${latest.status.padEnd(6)}${colors.reset}]`;
 
-        const delta = row.values.length > 1 ? (row.values[0].value - row.values[1].value).toFixed(2) : 'N/A';
+        const delta = row.values.length > 1 ? (row.values[0].value - row.values[1].value).toFixed(2) : '0.00';
 
         console.log(`${colPrefix}${row.catId.padEnd(domainW)} | ${row.kpiName.padEnd(kpiW)} | ${cycleCells} | ${latestStr.padEnd(lastW)} | ${delta}`);
       });
 
       console.log('');
       console.log(`${colors.bold}COLOR KEY: ${colors.green}✔ good (≥95% of target)  ${colors.yellow}⚠ warn (80–94%)  ${colors.red}✖ bad (<80%)${colors.reset}`);
-      console.log(`${colors.bold}WEIGHTS: ${Object.entries(THIRTY_NINE_KPIS).map(([k,v])=>`${k.toUpperCase()}: ${(v.weight*100).toFixed(0)}%`).join('  ')}${colors.reset}\n`);
+      console.log(`${colors.bold}WEIGHTS: ${Object.entries(FORTY_FOUR_KPIS).map(([k,v])=>`${k.toUpperCase()}: ${(v.weight*100).toFixed(0)}%`).join('  ')}${colors.reset}\n`);
     }
 
     // Exit handling

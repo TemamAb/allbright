@@ -1,0 +1,193 @@
+<!DOCTYPE html>       
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Allbright | Grafana Dark +10% Ash | Black Data Fields</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    /* Elite Grade Ash.Black Palette per DASHBOARD-GUIDE.MD */
+    :root {
+      --ash-bg: #111217;
+      --ash-lighter: #1a1c20;
+      --ash-border: #27272a;
+      --black-data: #000000;
+      --text-primary: #f0f0f8;
+      --text-secondary: #b4b4c2;
+    }
+    body { background-color: var(--ash-bg); font-family: 'Inter', system-ui, sans-serif; color: var(--text-primary); }
+    .bg-ash { background-color: var(--ash-bg) !important; }
+    .bg-data-black { background-color: var(--black-data) !important; }
+    .border-ash { border-color: var(--ash-border) !important; }
+    .text-secondary { color: var(--text-secondary); }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--ash-bg); }
+    ::-webkit-scrollbar-thumb { background: #4a4a58; border-radius: 8px; }
+    .card-ash { background-color: var(--ash-bg); border: 1px solid var(--ash-border); border-radius: 1rem; }
+    .sidebar-ash { background-color: var(--ash-bg); border-right: 1px solid var(--ash-border); }
+    .topbar-ash { background-color: rgba(36,36,44,0.96); backdrop-filter: blur(4px); border-bottom: 1px solid var(--ash-border); }
+    table th { background-color: var(--ash-lighter); color: #cacad6; font-weight: 600; }
+    table td { background-color: var(--black-data); border-bottom: 1px solid #33333f; }
+    .chart-container { background-color: var(--black-data); border-radius: 0.75rem; padding: 1rem; }
+    canvas { background-color: var(--black-data); }
+    .message-bubble { background-color: var(--black-data) !important; }
+    .strategy-card { background-color: var(--ash-bg); border-color: var(--ash-border); }
+    .strategy-active { border-color: #06b6d4; background-color: rgba(6,182,212,0.08); }
+    .fade-in-up { animation: fadeSlide 0.2s ease-out; }
+    @keyframes fadeSlide { 0% { opacity:0; transform:translateY(4px);} 100% { opacity:1; transform:translateY(0);} }
+  </style>
+</head>
+<body class="bg-ash">
+
+<div id="app">
+  <div class="flex min-h-screen">
+    <!-- SIDEBAR (ash+10%) -->
+    <aside class="w-64 flex flex-col sidebar-ash fixed h-full z-30 overflow-y-auto">
+      <div class="px-6 py-6 border-b border-ash flex items-center gap-3">
+        <div class="w-8 h-8 rounded bg-gradient-to-br from-cyan-500 to-cyan-700 flex items-center justify-center"><i class="fas fa-bolt text-white text-sm"></i></div>
+        <div class="flex flex-col"><span class="font-bold text-lg tracking-tighter uppercase text-white">BRIGHT<span class="text-cyan-500">SKY</span></span><div class="text-[8px] text-secondary uppercase tracking-widest">Elite Protocol</div></div>
+      </div>
+      <div class="mx-4 mt-6 mb-4 px-4 py-3 rounded-lg bg-ash border border-ash flex justify-between items-center">
+        <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div><span class="text-[10px] font-bold uppercase tracking-widest text-secondary">LIVE</span></div>
+        <span class="text-[9px] font-bold px-2 py-0.5 rounded uppercase bg-emerald-500/10 text-emerald-400">Live Listening</span>
+      </div>
+      <nav class="flex-1 px-4 py-4 space-y-2">
+        <div class="text-[10px] font-bold text-secondary mb-3 ml-2 tracking-widest uppercase">Mission Segments</div>
+        <a v-for="item in navItems" :key="item.id" href="#" @click.prevent="currentPage = item.id" 
+           class="flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-medium uppercase tracking-widest transition-all"
+           :class="currentPage === item.id ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20' : 'text-secondary hover:text-white hover:bg-[#353542]'">
+          <i :class="item.icon" class="w-4"></i> {{ item.label }}
+        </a>
+      </nav>
+      <div class="px-6 py-4 border-t border-ash bg-black/10">
+        <div class="text-[10px] font-bold tracking-widest uppercase text-emerald-400">LIVE MODE</div>
+        <div class="text-[9px] text-secondary font-medium mt-1">allbright v2.6.0</div>
+        <div class="mt-2 pt-2 border-t border-ash text-[8px] text-secondary uppercase font-bold">allbright DeFi Software Ltd. © 2026</div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="flex-1 ml-64 flex flex-col min-h-screen relative">
+      <!-- Expanded Heading (h-28) -->
+      <header class="h-28 flex items-center gap-10 px-10 topbar-ash sticky top-0 z-20">
+        <div class="flex items-center gap-6">
+          <img src="myallbright-logo.png" alt="Allbright Logo" class="h-16 w-auto object-contain drop-shadow-[0_0_15px_rgba(6,182,212,0.2)]">
+          <div class="h-12 w-px bg-[#27272a]"></div>
+          <div class="flex flex-col">
+            <span class="text-[9px] text-secondary uppercase tracking-[0.2em] font-bold">Network Bridge</span>
+            <span class="text-[11px] text-secondary font-medium uppercase">IPC ACTIVE • 4001</span>
+            <span class="text-[7px] text-zinc-600 font-black uppercase tracking-tighter mt-0.5">Elite Protocol Operations</span>
+          </div>
+        </div>
+        
+        <div class="flex-1 flex justify-center items-center gap-8">
+          <div class="flex bg-ash border border-ash rounded-lg p-0.5">
+            <button @click="currency='ETH'" :class="currency === 'ETH' ? 'bg-black text-cyan-400 shadow-sm' : 'text-secondary'" class="px-3 py-1 rounded-md text-[10px] font-bold transition-all">ETH</button>
+            <button @click="currency='USD'" :class="currency === 'USD' ? 'bg-black text-emerald-400 shadow-sm' : 'text-secondary'" class="px-3 py-1 rounded-md text-[10px] font-bold transition-all">USD</button>
+          </div>
+          <div class="flex items-center gap-4"><div class="flex flex-col items-center"><span class="text-[8px] text-secondary uppercase font-black">24H Net</span><span class="text-xs font-mono font-medium text-emerald-500">{{ currency === 'ETH' ? '14.770 ETH' : `$${(14.77 * 2450).toFixed(2)}` }}</span></div><div class="h-6 w-px bg-ash"></div><div class="flex flex-col items-center"><span class="text-[8px] text-secondary uppercase font-black">Bribe Efficiency</span><span class="text-xs font-mono font-medium text-cyan-500">96.5%</span></div></div>
+        </div>
+        <div class="flex items-center gap-6"><div class="flex items-center gap-2"><div class="relative"><div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div></div><span class="text-[10px] font-bold text-secondary uppercase">Live Nodes: 4</span></div><div class="px-3 py-1 rounded bg-black border border-ash text-[10px] font-mono text-secondary">0x742...f44e</div></div>
+      </header>
+
+      <main class="flex-1 overflow-auto p-6">
+        <!-- DASHBOARD -->
+        <div v-if="currentPage === 'dashboard'" class="space-y-6 fade-in-up">
+          <div class="card-ash p-6 flex justify-between items-center"><div><h2 class="text-2xl font-black uppercase tracking-tighter text-white">Global Efficiency</h2><p class="text-[10px] text-secondary font-bold mt-1 uppercase tracking-[0.3em]">Last Heartbeat: {{ new Date().toLocaleTimeString() }}</p></div><div class="bg-data-black px-6 py-3 rounded-xl text-6xl font-black text-emerald-500 font-mono tabular-nums">{{ gesScore.toFixed(1) }}%</div></div>
+          <div class="grid lg:grid-cols-3 gap-6"><div class="lg:col-span-2 card-ash p-6"><div class="flex justify-between mb-4"><span class="text-[10px] font-bold text-secondary uppercase tracking-widest">Real-time Alpha Capture</span><span class="text-[10px] font-bold text-emerald-500">LIVE FEED</span></div><div class="chart-container"><canvas id="alphaChart" height="180"></canvas></div></div>
+          <div class="space-y-6"><div class="card-ash p-6"><div class="flex gap-3 mb-4"><i class="fas fa-chart-line text-cyan-500"></i><span class="text-[10px] font-bold uppercase tracking-widest text-secondary">24H Net Yield</span></div><div class="bg-data-black inline-block px-4 py-2 rounded-lg text-2xl font-black text-white font-mono">$1,247.82</div><div class="text-[10px] text-emerald-500 mt-3">+12.4% vs Baseline</div></div><div class="card-ash p-6"><div class="flex gap-3 mb-4"><i class="fas fa-shield-alt text-emerald-500"></i><span class="text-[10px] font-bold uppercase tracking-widest text-secondary">Risk Mitigation</span></div><div class="bg-data-black inline-block px-4 py-2 rounded-lg text-2xl font-black text-white">Nominal</div><div class="text-[10px] text-secondary mt-3 uppercase">BSS-31 Guard Armed</div></div></div></div>
+          <div class="grid grid-cols-4 gap-4"><div class="card-ash p-4"><div class="text-[10px] uppercase text-secondary">Learning Episodes</div><div class="bg-data-black mt-1 p-2 rounded text-2xl font-mono font-bold text-white">{{ aiEpisodes }}</div></div><div class="card-ash p-4"><div class="text-[10px] uppercase text-secondary">Success EMA</div><div class="bg-data-black mt-1 p-2 rounded text-2xl font-mono font-bold text-white">{{ (aiEma * 100).toFixed(1) }}%</div></div><div class="card-ash p-4"><div class="text-[10px] uppercase text-secondary">Profit Momentum</div><div class="bg-data-black mt-1 p-2 rounded text-2xl font-mono font-bold text-white">{{ aiMomentum.toFixed(4) }}</div></div><div class="card-ash p-4"><div class="text-[10px] uppercase text-secondary">Hardened Mode</div><div class="bg-data-black mt-1 p-2 rounded text-2xl font-mono font-bold text-white">{{ hardenedActive ? 'ACTIVE' : 'STANDBY' }}</div></div></div>
+        </div>
+
+        <!-- TELEMETRY (fixed table) -->
+        <div v-if="currentPage === 'telemetry'" class="space-y-6 fade-in-up">
+          <div class="card-ash p-6 flex justify-between items-center"><div><h1 class="text-2xl font-black uppercase tracking-widest text-white">Global Efficiency Score</h1><p class="text-xs text-secondary">Last Update: realtime</p></div><div class="bg-data-black px-6 py-3 rounded-xl text-4xl font-black text-emerald-400 font-mono">{{ gesScore.toFixed(1) }}%</div></div>
+          <div class="card-ash overflow-hidden"><div class="px-6 py-3 border-b border-ash font-bold text-sm uppercase tracking-wider text-secondary">36 KPI Telemetry Matrix</div><div class="overflow-x-auto"><table class="w-full text-left text-xs"><thead><tr><th class="px-4 py-3">Category</th><th class="px-4 py-3">Observed</th><th class="px-4 py-3">Target</th><th class="px-4 py-3">Status</th></tr></thead><tbody><tr v-for="cat in telemetryCategories" :key="cat.name" class="border-b border-ash"><td class="px-4 py-3 font-bold text-white">{{ cat.name }}</td><td class="px-4 py-3 bg-data-black font-mono text-emerald-400">{{ cat.value }}</td><td class="px-4 py-3 bg-data-black">{{ cat.target }}</td><td class="px-4 py-3"><span :class="cat.statusClass" class="px-2 py-0.5 rounded text-[9px] font-black uppercase">{{ cat.status }}</span></td></tr></tbody></table></div></div>
+        </div>
+
+        <!-- LIVE EVENTS -->
+        <div v-if="currentPage === 'events'" class="space-y-6 fade-in-up"><div class="flex justify-between items-center"><h2 class="text-2xl font-black italic uppercase text-white">Live Blockchain Events</h2><div class="flex gap-3"><input type="text" v-model="eventSearch" placeholder="Search pair/hash" class="bg-data-black border border-ash rounded px-3 py-1 text-xs"><select v-model="eventStatusFilter" class="bg-data-black border border-ash rounded text-xs px-2"><option>ALL</option><option>SUCCESS</option><option>REVERTED</option></select></div></div>
+        <div class="card-ash overflow-x-auto"><table class="w-full text-left text-xs"><thead><tr><th class="px-4 py-3">TIME</th><th>PAIR</th><th class="text-right">PROFIT</th><th>STATUS</th><th>TX HASH</th></tr></thead><tbody><tr v-for="trade in filteredEvents" :key="trade.id" class="border-b border-ash"><td class="px-4 py-3 font-mono text-secondary">{{ trade.time }}</td><td class="font-bold text-white">{{ trade.pair }}</td><td class="px-4 py-3 bg-data-black text-right text-emerald-400 font-mono">{{ trade.profit }}</td><td><span :class="trade.status === 'SUCCESS' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-400'" class="px-2 py-0.5 rounded text-[9px] font-black uppercase">{{ trade.status }}</span></td><td class="px-4 py-3 font-mono text-secondary">{{ trade.hash.slice(0,6) }}...</td></tr></tbody></table></div></div>
+
+        <!-- WALLET -->
+        <div v-if="currentPage === 'wallet'" class="space-y-6 fade-in-up"><div class="flex justify-between"><h2 class="text-2xl font-black italic uppercase text-white">Wallet Management</h2><div class="card-ash px-4 py-2 rounded-lg"><span class="text-[10px] uppercase text-secondary">Total Liquidity</span><div class="bg-data-black inline-block px-3 py-1 rounded text-xl font-black text-emerald-500 ml-2">{{ totalWalletBalance.toFixed(4) }} ETH</div></div></div>
+        <div class="grid lg:grid-cols-3 gap-6"><div class="lg:col-span-2 card-ash overflow-hidden"><div class="px-6 py-4 border-b border-ash flex justify-between"><span><i class="fas fa-wallet text-cyan-500 mr-2"></i>Authorized Signers</span><button @click="addMockWallet" class="text-cyan-500 text-xs uppercase font-bold">+ Add Signer</button></div><table class="w-full text-xs"><thead><tr><th class="px-4 py-3">ADDRESS</th><th class="text-right">BALANCE</th><th class="text-center">STATUS</th><th></th></tr></thead><tbody><tr v-for="wallet in wallets" :key="wallet.id" class="border-b border-ash"><td class="px-4 py-3 font-mono text-white">{{ wallet.address.slice(0,6) }}...{{ wallet.address.slice(-4) }}</td><td class="px-4 py-3 bg-data-black text-right font-mono text-emerald-400 font-bold">{{ wallet.balance }} ETH</td><td class="text-center"><span class="bg-[#32323e] text-secondary px-2 py-0.5 rounded text-[9px]">ACTIVE</span></td><td class="text-right"><button @click="removeWallet(wallet.id)" class="text-red-500/70 text-[9px] uppercase"><i class="fas fa-trash-alt"></i></button></td></tr></tbody></table></div>
+        <div class="space-y-4"><div class="card-ash p-5"><div class="flex justify-between"><span class="text-xs font-bold uppercase text-secondary">Auto-Sweep</span><button @click="autoWithdraw = !autoWithdraw" :class="autoWithdraw ? 'bg-emerald-600' : 'bg-[#3a3a48]'" class="w-8 h-4 rounded-full relative transition-all"><span class="absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-all" :class="autoWithdraw ? 'translate-x-4' : ''"></span></button></div><p class="text-[10px] text-secondary mt-3">Profits exceeding 1.0 ETH auto-swept.</p></div><div class="card-ash p-5"><span class="text-xs font-bold uppercase block mb-3 text-secondary">Capital Extraction</span><input type="number" v-model="withdrawAmount" placeholder="0.0000 ETH" class="w-full bg-data-black border border-ash rounded p-2 text-sm mb-3"><button @click="mockWithdraw" class="w-full bg-cyan-600 hover:bg-cyan-500 text-black font-bold py-2 rounded text-xs uppercase">Authorize Withdrawal</button></div></div></div></div>
+
+        <!-- AI OPTIMIZER -->
+        <div v-if="currentPage === 'optimizer'" class="space-y-6 fade-in-up"><h2 class="text-3xl font-black italic uppercase text-white">AI Auto-Optimizer</h2><div class="grid grid-cols-4 gap-4"><div class="card-ash p-4"><div class="text-[10px] uppercase text-secondary">Episodes</div><div class="bg-data-black mt-1 p-2 rounded text-2xl font-bold text-white">{{ aiEpisodes }}</div></div><div class="card-ash p-4"><div class="text-[10px] uppercase text-secondary">Success EMA</div><div class="bg-data-black mt-1 p-2 rounded text-2xl font-bold text-white">{{ (aiEma * 100).toFixed(2) }}%</div></div><div class="card-ash p-4"><div class="text-[10px] uppercase text-secondary">Profit Momentum</div><div class="bg-data-black mt-1 p-2 rounded text-2xl font-bold text-white">{{ aiMomentum.toFixed(5) }}</div></div><div class="card-ash p-4"><div class="text-[10px] uppercase text-secondary">Hardened Config</div><div class="bg-data-black mt-1 p-2 rounded text-2xl font-bold text-white">{{ hardenedActive ? 'LOCKED' : 'STANDBY' }}</div></div></div><div class="card-ash p-6"><i class="fas fa-lock mr-2 text-cyan-400"></i> BSS-56 Elite lock: <span class="bg-data-black px-2 py-1 rounded text-sm">{{ hardenedActive ? 'ACTIVE (Gold Standard)' : 'Pending GES > 82.5%' }}</span></div></div>
+
+        <!-- STRATEGIES -->
+        <div v-if="currentPage === 'strategies'" class="space-y-6 fade-in-up"><h2 class="text-2xl font-black uppercase text-white">Strategy Configurator</h2><div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5"><div v-for="strat in strategiesList" :key="strat.id" class="strategy-card rounded-xl p-5 transition-all" :class="strat.active ? 'strategy-active' : 'opacity-80'"><div class="flex justify-between"><div class="flex gap-2"><i :class="strat.icon" class="text-cyan-500"></i><h3 class="font-bold text-sm uppercase text-white">{{ strat.title }}</h3></div><button @click="toggleStrategy(strat.id)" class="text-[9px] uppercase font-bold px-2 py-1 rounded" :class="strat.active ? 'bg-cyan-500/20 text-cyan-400' : 'bg-[#32323e] text-secondary'">{{ strat.active ? 'ACTIVE' : 'INACTIVE' }}</button></div><p class="text-[10px] text-secondary mt-3">{{ strat.desc }}</p><div v-if="strat.active" class="mt-2 text-[9px] text-emerald-500"><i class="fas fa-check-circle"></i> Strategy online</div></div></div></div>
+
+        <!-- COPILOT -->
+        <div v-if="currentPage === 'copilot'" class="flex flex-col h-[80vh] card-ash rounded-xl overflow-hidden fade-in-up"><div class="px-6 py-4 border-b border-ash bg-ash flex justify-between"><div><i class="fas fa-robot text-cyan-400 mr-2"></i><span class="font-bold uppercase text-white">Alpha-Copilot</span></div><span class="text-[9px] text-secondary">allbright DeFi</span></div><div class="flex-1 overflow-y-auto p-6 space-y-4"><div v-for="msg in copilotMessages" :key="msg.id" class="flex gap-3" :class="msg.role === 'user' ? 'flex-row-reverse' : ''"><div class="w-8 h-8 rounded-full bg-ash flex items-center justify-center"><i :class="msg.role === 'user' ? 'fas fa-user' : 'fas fa-brain'" class="text-[12px] text-secondary"></i></div><div class="max-w-[70%] px-4 py-2 rounded-2xl text-sm message-bubble" :class="msg.role === 'user' ? 'bg-data-black text-white rounded-tr-none' : 'bg-data-black border border-ash rounded-tl-none text-secondary'">{{ msg.content }}</div></div></div><div class="p-5 border-t border-ash bg-ash"><div class="flex gap-3"><input v-model="copilotInput" @keyup.enter="sendCopilotMessage" class="flex-1 bg-data-black border border-ash rounded-xl px-4 py-3 text-sm" placeholder="Ask about arbitrage..."><button @click="sendCopilotMessage" class="bg-cyan-600 px-5 rounded-xl text-black font-bold"><i class="fas fa-paper-plane"></i></button></div></div></div>
+
+        <!-- SETTINGS -->
+        <div v-if="currentPage === 'settings'" class="space-y-6 max-w-4xl fade-in-up"><h2 class="text-3xl font-black italic uppercase text-white">System Settings</h2><div class="card-ash p-6 space-y-5"><div><label class="text-[10px] uppercase font-bold text-secondary">Execution Mode</label><div class="flex gap-2 mt-1"><button v-for="mode in ['SHADOW','LIVE_SIM','LIVE']" @click="engineMode = mode" :class="engineMode === mode ? 'bg-black text-cyan-400 border-cyan-500' : 'bg-[#32323e] text-secondary'" class="px-4 py-1 text-xs rounded border">{{ mode }}</button></div></div><div><label class="text-secondary text-xs">Min Margin (BPS): {{ minMarginBps }}</label><input type="range" v-model.number="minMarginBps" min="100" max="5000" step="50" class="w-full accent-cyan-500 bg-black"></div><div><label class="text-secondary text-xs">Bribe Ratio (BPS): {{ bribeRatioBps }}</label><input type="range" v-model.number="bribeRatioBps" min="100" max="2500" step="10" class="w-full accent-cyan-500"></div></div></div>
+
+        <!-- SETUP WIZARD -->
+        <div v-if="currentPage === 'setup'" class="flex items-center justify-center min-h-[60vh] fade-in-up"><div class="text-center max-w-md"><i class="fas fa-magic text-5xl text-green-500 mb-4"></i><h2 class="text-2xl font-black uppercase text-white">Zero-Config Onboarding</h2><p class="text-secondary text-sm">AlphaCopilot prepares elite environment</p><div class="mt-8 card-ash rounded-xl p-6"><div class="flex justify-between"><span class="text-secondary">Gate 01</span><span class="bg-data-black px-2 py-0.5 rounded text-green-400">Verified</span></div><div class="flex justify-between mt-2"><span class="text-secondary">Gate 02</span><span class="bg-data-black px-2 py-0.5 rounded text-green-400">Verified</span></div><div class="flex justify-between mt-2"><span class="text-secondary">Gate 03</span><span class="bg-data-black px-2 py-0.5 rounded text-yellow-400">Pending</span></div></div></div></div>
+      </main>
+    </div>
+  </div>
+</div>
+
+<script>
+  const { createApp, ref, onMounted, computed } = Vue;
+  createApp({
+    setup() {
+      const currentPage = ref('dashboard');
+      const currency = ref('ETH');
+      const gesScore = ref(85.2);
+      const aiEpisodes = ref(1247);
+      const aiEma = ref(0.952);
+      const aiMomentum = ref(0.001234);
+      const hardenedActive = ref(false);
+      const eventSearch = ref('');
+      const eventStatusFilter = ref('ALL');
+      const autoWithdraw = ref(false);
+      const withdrawAmount = ref('');
+      const engineMode = ref('LIVE_SIM');
+      const minMarginBps = ref(1000);
+      const bribeRatioBps = ref(500);
+      const copilotInput = ref('');
+      const copilotMessages = ref([{ id: 'init', role: 'assistant', content: 'Hello! I am your Alpha-Copilot. How can I assist your arbitrage operations?' }]);
+      const wallets = ref([{ id: 'w1', address: '0x7aBc...12De', balance: 2.45 }, { id: 'w2', address: '0xEf89...9ABc', balance: 4.10 }]);
+      const totalWalletBalance = computed(() => wallets.value.reduce((s,w) => s + w.balance, 0));
+      const addMockWallet = () => { wallets.value.push({ id: Date.now().toString(), address: `0x${Math.random().toString(16).slice(2,10)}...${Math.random().toString(16).slice(0,4)}`, balance: 0.5 }); };
+      const removeWallet = (id) => { wallets.value = wallets.value.filter(w => w.id !== id); };
+      const mockWithdraw = () => { if(parseFloat(withdrawAmount.value) > 0) alert(`Withdrawal of ${withdrawAmount.value} ETH (simulated)`); };
+      const strategiesList = ref([{ id:'arb', title:'Multi-Chain Arbitrage', desc:'8 chain arbitrage', active:true, icon:'fas fa-globe'},{ id:'graph', title:'Graph Solver SPFA', desc:'Negative cycles', active:true, icon:'fas fa-brain'},{ id:'sim', title:'Pre-Exec Simulation', desc:'eth_call', active:true, icon:'fas fa-bolt'},{ id:'risk', title:'Risk Engine', desc:'Profit gates', active:true, icon:'fas fa-shield-alt'}]);
+      const toggleStrategy = (id) => { const s = strategiesList.value.find(s=>s.id===id); if(s) s.active = !s.active; };
+      const telemetryCategories = ref([{ name:'Profitability', value:'96.2%', target:'>90%', status:'GOOD', statusClass:'bg-emerald-500/20 text-emerald-500'},{ name:'Latency (ms)', value:'187ms', target:'<200ms', status:'GOOD', statusClass:'bg-emerald-500/20 text-emerald-500'},{ name:'MEV Guard', value:'Active', target:'Active', status:'NOMINAL', statusClass:'bg-emerald-500/20 text-emerald-500'},{ name:'Bribe Efficiency', value:'96.5%', target:'>95%', status:'EXCELLENT', statusClass:'bg-emerald-500/20 text-emerald-500'}]);
+      const liveTrades = ref([{ id:'1', time:'14:20:01', pair:'WETH/USDC', profit:'+0.42 ETH', status:'SUCCESS', hash:'0xabc123...'},{ id:'2', time:'14:18:45', pair:'WBTC/WETH', profit:'+1.12 ETH', status:'SUCCESS', hash:'0xdef456...'},{ id:'3', time:'14:15:10', pair:'LINK/WETH', profit:'0.00 ETH', status:'REVERTED', hash:'0x789abc...'}]);
+      const filteredEvents = computed(() => { let f = liveTrades.value; if(eventSearch.value) f = f.filter(t=>t.pair.toLowerCase().includes(eventSearch.value.toLowerCase())); if(eventStatusFilter.value !== 'ALL') f = f.filter(t=>t.status === eventStatusFilter.value); return f; });
+      const sendCopilotMessage = () => { if(!copilotInput.value.trim()) return; const userMsg = { id: Date.now().toString(), role:'user', content:copilotInput.value }; copilotMessages.value.push(userMsg); const query = copilotInput.value; copilotInput.value = ''; setTimeout(() => { let reply = 'System nominal. GES target optimal.'; if(query.includes('start')) reply = 'Engine started, scanning mempool.'; else if(query.includes('audit')) reply = 'Audit: 36 gates passed. Profit momentum positive.'; copilotMessages.value.push({ id: Date.now().toString(), role:'assistant', content:reply }); }, 500); };
+      let chartInstance = null;
+      const initChart = () => { const ctx = document.getElementById('alphaChart')?.getContext('2d'); if(ctx && !chartInstance) { chartInstance = new Chart(ctx, { type:'line', data:{ labels:['00:00','04:00','08:00','12:00','16:00','20:00'], datasets:[{ label:'Alpha Vol', data:[0.2,0.5,0.3,0.8,0.7,0.9], borderColor:'#10b981', borderWidth:2, fill:false, tension:0.2 }] }, options:{ responsive:true, maintainAspectRatio:true, plugins:{ legend:{ display:false } }, scales:{ y:{ grid:{ color:'#3a3a48' } }, x:{ grid:{ display:false } } } } }); } };
+      const updateChart = () => { if(chartInstance) { const newData = chartInstance.data.datasets[0].data.map(() => Math.random() * 1.2 + 0.1); chartInstance.data.datasets[0].data = newData; chartInstance.update(); } };
+      let interval;
+      onMounted(() => { initChart(); interval = setInterval(() => { gesScore.value = Math.min(98, gesScore.value + (Math.random() - 0.5) * 0.3); aiEpisodes.value += 1; aiEma.value = Math.min(0.99, aiEma.value + (Math.random() - 0.5) * 0.003); aiMomentum.value = Math.max(0.0005, aiMomentum.value + (Math.random() - 0.5) * 0.0002); if(gesScore.value > 82.5 && !hardenedActive.value) hardenedActive.value = true; updateChart(); }, 3800); });
+      const navItems = [
+        { id:'dashboard', label:'Mission Control', icon:'fas fa-tachometer-alt'},
+        { id:'telemetry', label:'Telemetry', icon:'fas fa-shield-check'},
+        { id:'events', label:'Live Events', icon:'fas fa-broadcast-tower'},
+        { id:'logs', label:'System Logs', icon:'fas fa-terminal'},
+        { id:'trades', label:'Trade History', icon:'fas fa-chart-bar'},
+        { id:'wallet', label:'Vault', icon:'fas fa-wallet'},
+        { id:'copilot', label:'Alpha-Copilot', icon:'fas fa-brain'},
+        { id:'optimizer', label:'AI Optimizer', icon:'fas fa-bolt'},
+        { id:'strategies', label:'Strategies', icon:'fas fa-shield-alt'},
+        { id:'settings', label:'Settings', icon:'fas fa-sliders-h'},
+        { id:'setup', label:'Setup Wizard', icon:'fas fa-wrench'}
+      ];
+      return { currentPage, navItems, currency, gesScore, aiEpisodes, aiEma, aiMomentum, hardenedActive, eventSearch, eventStatusFilter, filteredEvents, wallets, totalWalletBalance, addMockWallet, removeWallet, autoWithdraw, withdrawAmount, mockWithdraw, engineMode, minMarginBps, bribeRatioBps, strategiesList, toggleStrategy, telemetryCategories, copilotMessages, copilotInput, sendCopilotMessage };
+    }
+  }).mount('#app');
+</script>
+</body>
+</html>

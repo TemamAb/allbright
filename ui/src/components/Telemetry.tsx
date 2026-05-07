@@ -4,12 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTelemetry } from '../hooks/useTelemetry';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { THIRTY_SIX_KPIS } from '@/constants/kpi';
+import { FORTY_FOUR_KPIS } from '@/constants/kpi';
 import type { KPI, KPICategory } from '@/types/kpi';
 
-type CategoryType = typeof THIRTY_SIX_KPIS[number];
+type CategoryType = typeof FORTY_FOUR_KPIS[number];
 
-const Telemetry: React.FC = () => {
+const KpiMatrix: React.FC = () => {
   const [refetchInterval, setRefetchInterval] = useState(5000); // Default to 5 seconds
   const { kpis, isLive, refetch } = useTelemetry({ query: { refetchInterval } });
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['profitability']));
@@ -69,7 +69,7 @@ const Telemetry: React.FC = () => {
     return `${prefix}${variance.toFixed(1)}%`;
   };
 
-  const filteredKpis = THIRTY_SIX_KPIS.filter((cat) => cat.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const filteredKpis = FORTY_FOUR_KPIS.filter((cat) => cat.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
     cat.kpis.some(kpi => kpi.name.toLowerCase().includes(searchTerm.toLowerCase())));
 
   const getCategorySummary = (cat: CategoryType) => {
@@ -100,8 +100,16 @@ const Telemetry: React.FC = () => {
       {/* Global Efficiency Score */}
       <div className="bg-[#1a1a1c] border border-zinc-800 rounded-xl p-6 flex flex-col md:flex-row items-center justify-between shadow-2xl shrink-0">
         <div>
-          <h1 className="text-2xl font-black uppercase tracking-widest text-slate-100">Global Efficiency Score</h1>
+          <h1 className="text-2xl font-black uppercase tracking-widest text-slate-100">Kpi-Matrix Efficiency</h1>
           <p className="text-xs text-zinc-500 font-mono tabular-nums mt-1">Last Update: {kpis.timestamp?.toLocaleString() || 'N/A'}</p>
+        </div>
+        <div className="hidden lg:flex items-center gap-6 px-6 border-l border-zinc-800">
+          <div className="text-center">
+            <p className="text-[10px] text-zinc-500 uppercase font-bold tracking-tighter">AI Specialists</p>
+            <p className="text-xl font-black text-white font-mono tabular-nums">
+              {(kpis as any).activeSpecialists || 0}<span className="text-zinc-600">/</span>{(kpis as any).specialists || 9}
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-4 mt-4 md:mt-0">
           <div className={`px-3 py-1 rounded border text-xs font-bold font-mono tracking-widest uppercase ${isLive ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-zinc-800 border-zinc-700 text-zinc-500'}`}>
@@ -142,18 +150,18 @@ const Telemetry: React.FC = () => {
       {/* Telemetry Grid */}
       <div className="flex-1 bg-black border border-zinc-800 rounded-xl overflow-hidden flex flex-col shadow-2xl">
         <div className="px-6 py-4 border-b border-zinc-800">
-          <h2 className="text-sm font-bold text-zinc-300 uppercase tracking-wider font-mono">36 KPI Telemetry Grid</h2>
+          <h2 className="text-sm font-bold text-zinc-300 uppercase tracking-wider font-mono">Institutional KPI Matrix</h2>
         </div>
         <div className="flex-1 bg-black overflow-y-auto p-4">
           <table className="w-full text-left border-collapse">
             <thead className="sticky top-0 bg-black z-10">
               <tr className="border-b border-zinc-800 text-zinc-500">
-                <th className="px-4 py-3 text-[10px] uppercase tracking-widest font-medium w-[250px]">Category / KPI</th>
-                <th className="px-4 py-3 text-[10px] uppercase tracking-widest font-medium font-mono">Observed</th>
-                <th className="px-4 py-3 text-[10px] uppercase tracking-widest font-medium font-mono">Target</th>
-                <th className="px-4 py-3 text-[10px] uppercase tracking-widest font-medium text-center">Count</th>
+                <th className="px-4 py-3 text-[10px] uppercase tracking-widest font-medium w-[200px]">KPI</th>
+                <th className="px-4 py-3 text-[10px] uppercase tracking-widest font-medium font-mono">Benchmark</th>
+                <th className="px-4 py-3 text-[10px] uppercase tracking-widest font-medium font-mono">Allbright</th>
+                <th className="px-4 py-3 text-[10px] uppercase tracking-widest font-medium">Delta</th>
+                <th className="px-4 py-3 text-[10px] uppercase tracking-widest font-medium">Auto Optimization (Action → Impact)</th>
                 <th className="px-4 py-3 text-[10px] uppercase tracking-widest font-medium">Status</th>
-                <th className="px-4 py-3 text-[10px] uppercase tracking-widest font-medium text-right">Action</th>
               </tr>
             </thead>
             <tbody className="text-zinc-300">
@@ -162,6 +170,15 @@ const Telemetry: React.FC = () => {
                 const categorySummaryScore = getCategorySummary(cat);
                 const categoryStatus = getCatStatus(categorySummaryScore);
                 const liveKpis = kpis.categories[cat.id] || [];
+                
+                // BSS-28: Dynamically derive optimization summary from live data
+                // For category level, we can use a representative KPI or aggregate
+                const representativeKpi = liveKpis.find(k => (k as any).lastAction) || liveKpis[0] as any; // Find a KPI with an action
+                const catOpt = {
+                  action: representativeKpi?.lastAction || "Monitoring",
+                  impact: representativeKpi?.impact || "STABLE",
+                  cycles: representativeKpi?.optimizationCycles || kpis.optimizationCycles || 0 // Use specific KPI cycles if available
+                };
 
                 return (
                   <React.Fragment key={cat.id}>
@@ -177,21 +194,21 @@ const Telemetry: React.FC = () => {
                           {cat.label}
                         </div>
                       </td>
-                      <td className="px-4 py-3 font-mono text-sm font-bold tabular-nums">
+                      <td className="px-4 py-3 font-mono text-xs text-zinc-500">BASE</td>
+                      <td className="px-4 py-3 font-mono text-sm font-black tabular-nums">
                         <span className={getStatusClasses(categoryStatus)}>
                           {categorySummaryScore}%
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-center text-xs font-mono text-zinc-500">N/A</td> {/* Target for category is not directly displayed */}
-                      <td className="px-4 py-3 text-center text-xs font-mono text-zinc-500">{cat.kpis.length}</td>
+                      <td className="px-4 py-3 text-xs font-mono text-emerald-400 font-bold">STABLE</td>
+                      <td className="px-4 py-3">
+                        <span className="text-[10px] text-cyan-400 font-mono italic">
+                          {catOpt.action} → {catOpt.impact} over {catOpt.cycles} cycles
+                        </span>
+                      </td>
                       <td className="px-4 py-3 text-center">
                         <span className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded ${getStatusClasses(categoryStatus)}`}>
                           {categoryStatus}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <span className="text-[10px] uppercase font-bold text-zinc-500 hover:text-primary transition-colors">
-                          {isExpanded ? 'Collapse' : 'Expand'}
                         </span>
                       </td>
                     </tr>
@@ -201,26 +218,33 @@ const Telemetry: React.FC = () => {
                       const variance = calculateVariance(liveKpiData);
                       const varianceColor = variance.startsWith('+') ? 'text-emerald-400' : variance.startsWith('-') ? 'text-red-400' : 'text-zinc-400';
 
+                      // KPI level optimization data
+                      const kpiOpt = {
+                        action: (liveKpiData as any).lastAction || "Monitoring",
+                        impact: (liveKpiData as any).impact || "0.0%",
+                        cycles: kpis.optimizationCycles || 0
+                      };
+
                       return (
                       <tr key={`${cat.id}-${idx}`} className="bg-zinc-900/20 border-b border-zinc-900/50">
                         <td className="px-4 py-2 pl-12 text-xs text-zinc-400 font-mono">{liveKpiData.name}</td>
                         <td className="px-4 py-2 text-xs font-mono text-zinc-300 tabular-nums">
-                          {typeof liveKpiData.value === 'number' ? liveKpiData.value.toFixed(2) : liveKpiData.value} <span className="text-zinc-600">{liveKpiData.unit}</span>
-                        </td>
-                        <td className="px-4 py-2 text-xs font-mono text-zinc-300 tabular-nums">
                           {typeof liveKpiData.designTarget === 'number' ? liveKpiData.designTarget.toFixed(2) : liveKpiData.designTarget} <span className="text-zinc-600">{liveKpiData.unit}</span>
                         </td>
-                        <td className="px-4 py-2 text-xs font-mono tabular-nums text-zinc-500">
-                          1 {/* Individual KPI */}
+                        <td className="px-4 py-2 text-xs font-mono text-zinc-100 tabular-nums">
+                          {typeof liveKpiData.value === 'number' ? liveKpiData.value.toFixed(2) : liveKpiData.value} <span className="text-zinc-600">{liveKpiData.unit}</span>
+                        </td>
+                        <td className={`px-4 py-2 text-xs font-mono font-bold ${varianceColor}`}>
+                          {variance}
+                        </td>
+                        <td className="px-4 py-2">
+                          <span className={`text-[10px] font-mono ${kpiOpt.impact.startsWith('+') ? 'text-emerald-500' : 'text-zinc-500'}`}>
+                            {kpiOpt.action} → {kpiOpt.impact} over {kpiOpt.cycles} cycles
+                          </span>
                         </td>
                         <td className="px-4 py-2 text-xs font-mono">
                           <span className={getStatusClasses(kpiStatus)}>
                             {kpiStatus}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2 text-right">
-                          <span className={`text-[9px] uppercase font-bold px-1.5 py-0.5 rounded font-mono tabular-nums ${varianceColor}`}>
-                            {variance}
                           </span>
                         </td>
                       </tr>
@@ -236,4 +260,4 @@ const Telemetry: React.FC = () => {
   );
 };
 
-export default Telemetry;
+export default KpiMatrix;

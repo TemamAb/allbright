@@ -1,8 +1,49 @@
-# allbright Handoff — Directory Restructure & Modularization (Final)
+# allbright Handoff — Directory Restructure & Desktop App Build Fix
 
-**Date:** 2026-04-27 12:45 PST  
-**Engineer:** Kilo AI  
-**Subject:** Phases 1–4 complete: Top-level directory creation, contracts/ modularization, AI/ reorganization, API src/ restructure
+**Date:** 2026-04-27 
+**Engineer:** Kilo AI / Debugging Architect  
+**Subject:** Tauri Desktop App Build Fix — esbuild "Unexpected export" Error Resolved
+
+---
+
+## 🔧 Build Error Fixed (2026-04-27)
+
+### Issue
+```
+[plugin:vite:esbuild] Transform failed with 1 error:
+C:/Users/op/Desktop/allbright/tauri/src/lib/tauri.ts:9:2: ERROR: Unexpected "export"
+```
+
+### Root Cause
+Invalid JavaScript syntax in `tauri/src/lib/tauri.ts` — the code attempted to use `export { ... }` statement inside an `if` block:
+```typescript
+if (isTauri()) {
+  export { startSolver, ... } // ❌ Invalid: export cannot appear inside if statement
+}
+```
+
+### Fix Applied
+Refactored to use a proper factory/delegation pattern:
+```typescript
+const getImplementation = async () => {
+  if (isTauri()) return await import('./tauri-native');
+  else return await import('./tauri-web');
+};
+
+export const startSolver = async (mode: string) => {
+  const impl = await getImplementation();
+  return impl.startSolver(mode);
+};
+```
+
+### Build Status
+- ✅ Frontend Vite build succeeds (~1m 34s)
+- 🔄 Rust backend compilation in progress (long compile times)
+- ⏳等待 .exe generation
+
+---
+
+## Previous Handoff Content (Phases 1–4)
 
 ---
 
@@ -97,7 +138,7 @@
 
 ### Task 0.2 — Benchmark Target Service (BSS-43)
 - **File:** `solver/src/benchmarks.rs` (new)
-- Loads `benchmark-36-kpis.md` (36 KPIs, 6 weighted domains)
+- Loads `benchmark-44-kpis.md` (44 KPIs, 9 weighted domains)
 - Global singleton via `std::sync::OnceLock` (no external crates)
 - `get_benchmarks()` returns `&BenchmarkTargets`
 - Called from `run_watchtower()` before gate check
@@ -126,11 +167,11 @@
 |------|--------|
 | `solver/src/lib.rs` | `GES_WEIGHTS` corrected to `[0.25,0.20,0.15,0.10,0.10,0.10]`; re-export `benchmarks` |
 | `solver/src/main.rs` | Benchmark init; gate moved into `run_watchtower`; retry loop; override stub |
-| `solver/src/benchmarks.rs` | New: 36-KPI loader + targets struct |
+| `solver/src/benchmarks.rs` | New: 44-KPI loader + targets struct |
 | `solver/src/module/bss_43_simulator.rs` | Gate signature accepts `&BenchmarkTargets`; domain scoring helpers added (`compute_domain*`) |
 | `solver/src/bss_36_auto_optimizer.rs` | Already uses `crate::GES_WEIGHTS`; integrates MetaLearner delta |
 | `lib/db/src/schema/gate_attempts.ts` | New: `gate_attempts` table (id, timestamp, ges, passed, retry_num, gaps, override_used, override_user, optimization_applied) |
-| `benchmark-30-kpis.md` → `benchmark-36-kpis.md` | Renamed to align with KPIs_Audit.md 36-KPI weighted matrix |
+| `benchmark-36-kpis.md` → `benchmark-44-kpis.md` | Renamed to align with KPIs_Audit.md 44-KPI weighted matrix |
 
 ---
 
@@ -252,6 +293,37 @@ Reorganized `solver/src/module/` into domain folders:
 - ✅ `lib/` → `lib/ts/` (TypeScript utilities moved), `lib/rust/` (placeholder for future Rust utilities), `lib/python/` (not applicable)
 
 **Recommendation:** Proceed with **Option A** once build issues are resolved, then revisit **Option B** for any remaining cleanup.
+
+---
+
+## 🏦 Phase F: Multi-Chain Liquidity Vaults & Institutional Withdrawal Gatekeeper (COMPLETE ✓)
+
+**Updated:** 2026-05-04  
+**Objective:** Transition to auditable multi-chain asset management with policy-driven withdrawal gates.
+
+### ✅ Completed (Vault Foundations)
+
+**1. Institutional Withdrawal Gatekeeper**
+- **Service:** `api/src/services/withdrawalGatekeeper.ts` - Policy evaluation (P1-P4)
+- **Policies:** Daily limits, Minimum thresholds, Cooldowns, Role-based approval
+- **Audit Ledger:** Logging to `stream_events` table
+
+**2. Multi-Chain Vault UI**
+- **Component:** `ui/src/components/VaultWithdrawalView.tsx`
+- **Features:** Network-specific egress form, pending operations ledger
+
+**3. Multi-Sig Approval**
+- **Service:** `api/src/services/multiSigApproval.ts`
+- **Threshold:** 50 ETH (configurable via `withdrawalPolicy.multiSigThresholdEth`)
+- **Signers Required:** 2 signatures for high-value withdrawals
+
+**4. State Fields Added**
+- `multiChainBalances: {}`
+- `withdrawalPolicy: { dailyLimitEth, multiSigThresholdEth, minApprovalRole, cooldownHours }`
+- `pendingWithdrawals: []`
+- `marketPulse: { leaderNrp, timestamp, source }`
+
+**Status:** ✅ Phase F COMPLETE - All vault security layers active
 
 ---
 

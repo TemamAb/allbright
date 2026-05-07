@@ -11,7 +11,7 @@ import { getEthPriceUsd } from "../services/priceOracle";
 import { getBlockStats } from "../services/blockTracker";
 import { sharedEngineState } from "../services/engineState";
 import { allbrightBribeEngine } from "../services/bribeEngine";
-import { alphaCopilot } from "../services/alphaCopilot";
+import { copilot } from "../services/alphaCopilot";
 
 const router = Router();
 
@@ -215,9 +215,9 @@ router.get("/telemetry", async (req, res) => {
 router.post("/debug/dispatch", async (req, res) => {
   try {
     // Enhanced with KPI orchestration
-    const dispatchResult = await alphaCopilot.handleRouteDispatch(req.body);
+    const dispatchResult = await copilot.handleRouteDispatch(req.body);
     if (req.body.kpiCategory) {
-      const kpiTune = await alphaCopilot.orchestrateSpecialists(req.body.kpiCategory, req.body.kpiData || {});
+      const kpiTune = await copilot.orchestrateSpecialists(req.body.kpiCategory, req.body.kpiData || {});
       res.json({ dispatch: dispatchResult, kpiTune });
     } else {
       res.json(dispatchResult);

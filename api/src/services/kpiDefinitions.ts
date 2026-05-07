@@ -1,14 +1,13 @@
 /**
- * Canonical 39-KPI Matrix Definitions
- * Aligns with ui/src/types/kpi.ts THIRTY_NINE_KPIS and AlphaCopilot domains.
+ * KPI-Matrix (Institutional Standard - 44 KPIs)
+ * Aligns with 9 weighted domains in Rust lib.rs and AlphaCopilot specialists.
  */
-export const THIRTY_NINE_KPIS_CANONICAL = {
+export const FORTY_FOUR_KPIS_CANONICAL = {
   Profitability: {
-    weight: 0.30,
+    weight: 0.25,
     kpis: [
       { id: 'nrp', name: 'Net Realized Profit (NRP)', target: 22.5, unit: 'ETH/day', higherIsBetter: true },
       { id: 'avg_profit_per_trade', name: 'Avg Profit per Trade', target: 0.05, unit: 'ETH', higherIsBetter: true },
-      { id: 'execution_success_rate', name: 'Execution Success Rate', target: 98.8, unit: '%', higherIsBetter: true },
       { id: 'slippage_capture_bps', name: 'Slippage Capture', target: 12, unit: 'bps', higherIsBetter: false },
       { id: 'spread_capture_pct', name: 'Spread Capture', target: 0.25, unit: '%', higherIsBetter: true },
       { id: 'risk_adjusted_return', name: 'Risk-Adjusted Return', target: 2.65, unit: 'ratio', higherIsBetter: true }
@@ -20,7 +19,6 @@ export const THIRTY_NINE_KPIS_CANONICAL = {
       { id: 'inclusion_latency_ms', name: 'Inclusion Latency (Total)', target: 65, unit: 'ms', higherIsBetter: false },
       { id: 'solver_latency_ms', name: 'Solver Latency (p99)', target: 12, unit: 'ms', higherIsBetter: false },
       { id: 'alpha_decay_ms', name: 'Alpha Decay Rate', target: 90, unit: 'ms', higherIsBetter: false },
-      { id: 'execution_latency_ms', name: 'Execution Latency', target: 80, unit: 'ms', higherIsBetter: false },
       { id: 'rpc_sync_lag_ms', name: 'RPC Sync Lag', target: 1.5, unit: 'ms', higherIsBetter: false },
       { id: 'p99_latency_ms', name: 'p99 Latency', target: 100, unit: 'ms', higherIsBetter: false },
       { id: 'signal_throughput', name: 'Signal Throughput', target: 1200, unit: 'msg/s', higherIsBetter: true }
@@ -33,7 +31,7 @@ export const THIRTY_NINE_KPIS_CANONICAL = {
       { id: 'revert_cost_impact_pct', name: 'Revert Cost Impact', target: 0.05, unit: '%', higherIsBetter: false },
       { id: 'mev_deflection_pct', name: 'MEV Deflection Rate', target: 99.9, unit: '%', higherIsBetter: true },
       { id: 'daily_drawdown_eth', name: 'Daily Drawdown Limit', target: 0.4, unit: 'ETH', higherIsBetter: false },
-      { id: 'pnl_volatility_pct', name: 'P&L Volatility', target: 1.0, unit: '%', higherIsBetter: false }
+      { id: 'max_consecutive_losses', name: 'Max Consecutive Losses', target: 3, unit: 'count', higherIsBetter: false }
     ]
   },
   Efficiency: {
@@ -43,7 +41,7 @@ export const THIRTY_NINE_KPIS_CANONICAL = {
       { id: 'capital_efficiency_pct', name: 'Capital Efficiency', target: 90, unit: '%', higherIsBetter: true },
       { id: 'liquidity_hit_rate_pct', name: 'Liquidity Hit Rate', target: 97.5, unit: '%', higherIsBetter: true },
       { id: 'gas_efficiency_ratio_pct', name: 'Gas Efficiency Ratio', target: 96.5, unit: '%', higherIsBetter: true },
-      { id: 'mev_capture_rate_pct', name: 'MEV Capture Rate', target: 95, unit: '%', higherIsBetter: true }
+      { id: 'mev_capture_rate_pct', name: 'MEV Capture Rate', target: 95, unit: '%', higherIsBetter: true },
     ]
   },
   'System Health': {
@@ -57,12 +55,12 @@ export const THIRTY_NINE_KPIS_CANONICAL = {
     ]
   },
   'Auto-Optimization': {
-    weight: 0.10,
+    weight: 0.05,
     kpis: [
       { id: 'opt_delta_improvement_pct', name: 'Opt Delta Improvement', target: 25, unit: '%', higherIsBetter: true },
       { id: 'perf_gap_throughput_pct', name: 'Perf Gap Throughput', target: 5, unit: '%', higherIsBetter: false },
-      { id: 'wallet_eth_balance', name: 'Wallet ETH Balance', target: 50, unit: 'ETH', higherIsBetter: true },
-      { id: 'opportunities_found', name: 'Opportunities Found', target: 5000, unit: 'count', higherIsBetter: true }
+      { id: 'opportunities_found', name: 'Opportunities Found', target: 5000, unit: 'count', higherIsBetter: true },
+      { id: 'learning_episodes', name: 'Learning Episodes', target: 1000, unit: 'count', higherIsBetter: true }
     ]
   },
   'Bribe-Optimization': {
@@ -79,13 +77,25 @@ export const THIRTY_NINE_KPIS_CANONICAL = {
     kpis: [
       { id: 'is_configuration_hardened', name: 'Config Hardened', target: 1, unit: 'bool', higherIsBetter: true }, // 1 for true
       { id: 'config_drift_detected', name: 'Config Drift Detected', target: 1, unit: 'bool', higherIsBetter: true }, // 1 for false (no drift)
-      { id: 'last_cloud_sync_age_min', name: 'Last Cloud Sync Age', target: 15, unit: 'min', higherIsBetter: false }
+      { id: 'last_cloud_sync_age_min', name: 'Last Cloud Sync Age', target: 15, unit: 'min', higherIsBetter: false },
+      { id: 'auto_scaling_efficiency', name: 'Auto-Scaling Efficiency', target: 95, unit: '%', higherIsBetter: true }
+    ]
+  },
+  'Vault-Integrity': {
+    weight: 0.05,
+    kpis: [
+      { id: 'wallet_eth_balance', name: 'Execution Balance', target: 50, unit: 'ETH', higherIsBetter: true },
+      { id: 'total_vault_balance_usd', name: 'Total USD Value', target: 125000, unit: 'USD', higherIsBetter: true },
+      { id: 'withdrawal_success_rate', name: 'Withdrawal Success', target: 100, unit: '%', higherIsBetter: true },
+      { id: 'audit_variance_bps', name: 'Audit Variance', target: 0, unit: 'bps', higherIsBetter: false },
+      { id: 'multi_chain_balance_variance', name: 'Multi-Chain Balance Variance', target: 0, unit: 'USD', higherIsBetter: false }, // BSS-F
+      { id: 'withdrawal_policy_violations', name: 'Withdrawal Policy Violations', target: 0, unit: 'count', higherIsBetter: false }, // BSS-F
+      { id: 'pending_withdrawal_requests', name: 'Pending Withdrawal Requests', target: 0, unit: 'count', higherIsBetter: false } // BSS-F
     ]
   }
 } as const;
 
-// Backward-compatible alias
-export const THIRTY_SIX_KPIS_CANONICAL = THIRTY_NINE_KPIS_CANONICAL;
+export const KPI_MATRIX = FORTY_FOUR_KPIS_CANONICAL;
 
-export type CategoryId = keyof typeof THIRTY_NINE_KPIS_CANONICAL;
+export type CategoryId = keyof typeof KPI_MATRIX;
 export type KpiId = string;

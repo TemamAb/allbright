@@ -31,7 +31,7 @@ export default function Dashboard() {
           <h2 className="text-3xl font-black uppercase tracking-tighter text-white">Global Efficiency</h2>
           <p className="text-[10px] text-ash-muted font-bold mt-1 uppercase tracking-[0.3em]">Last Heartbeat: {new Date().toLocaleTimeString()}</p>
         </div>
-        <div className="text-7xl font-black text-emerald-accent font-mono tabular-nums tracking-tighter">
+        <div className="text-6xl font-black text-emerald-accent font-mono tabular-nums tracking-tighter">
           {isGhostMode ? <span className="text-ash-muted">MASKED</span> : `${ges.toFixed(1)}%`}
         </div>
       </div>
@@ -50,8 +50,8 @@ export default function Dashboard() {
           <ResponsiveContainer width="100%" height={240}>
             <LineChart data={sampleData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
-              <XAxis dataKey="time" hide />
-              <YAxis hide domain={['auto', 'auto']} />
+              <XAxis dataKey="time" hide={true} />
+              <YAxis hide={true} domain={['auto', 'auto']} />
               <RechartsTooltip 
                 contentStyle={{ backgroundColor: '#111217', border: '1px solid #27272a', fontSize: '10px' }}
                 itemStyle={{ color: '#10b981' }}

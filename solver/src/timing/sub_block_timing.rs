@@ -71,7 +71,13 @@ impl SubBlockTiming {
         
         // For production, this would ideally use spin-waiting or high-precision timers
         // if running on dedicated hardware.
-        sleep(Duration::from_millis(target_delay)).await;
+        let delay_duration = Duration::from_millis(target_delay);
+        
+        if delay_duration.as_millis() > 0 {
+            sleep(delay_duration).await;
+        }
+        
+        info!("[BSS-13] Offset achieved for slot {}. Resuming execution.", slot);
         
         debug!("Precision wait complete for slot {} in {:?}", slot, start.elapsed());
     }

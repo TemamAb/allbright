@@ -11,6 +11,7 @@ export interface ClientProfile {
   email: string;
   tel: string;
   country: string;
+  multiSigAddresses: string[]; // BSS-F: For withdrawal approvals
   launchedAt: Date;
 }
 
@@ -30,8 +31,10 @@ export interface WalletAccount {
   id: string;
   address: string;
   encryptedPrivateKey: string | 'EXTERNAL_SIGNER';
+  role?: 'USER' | 'ADMIN'; // BSS-F: Role for multi-sig approval
   chainId: number;
   balanceEth: number;
+  balanceUsd: number; // BSS-F: Track USD value for multi-chain vaults
   isActive: boolean;
   isValidated: boolean;
   source: 'WALLET_CONNECT' | 'ONBOARDING' | 'EPHEMERAL';
@@ -72,6 +75,30 @@ export interface SharedEngineState {
   riskIndex: number;
   minMarginRatioBps: number;
   bribeRatioBps: number;
+  // BSS-60: Specialist Operational Registry
+  specialistRegistry: Array<{
+    id: string;
+    name: string;
+    category: string;
+    status: 'ACTIVE' | 'INACTIVE' | 'PENDING';
+    lastTuningMs: number;
+    decisionHistory: number[]; // BSS-60: Rolling window of confidence/activity for sparkline
+    consecutiveMisses: number;
+  }>;
+// BSS-F: Multi-Chain Liquidity Vaults
+  multiChainBalances: Record<number, { // chainId -> balances
+    eth: number;
+    usd: number;
+    lastUpdated: number;
+  }>;
+  // BSS-F: Institutional Withdrawal Gatekeeper Policy
+  withdrawalPolicy: {
+    dailyLimitEth: number;
+    multiSigThresholdEth: number;
+    minApprovalRole: 'USER' | 'ADMIN';
+    cooldownHours: number;
+  };
+  pendingWithdrawals: any[];
   nextOptimizationCycle: number | null;
   totalWeightedScore: number;
   scannerActive: boolean;
@@ -101,11 +128,13 @@ export interface SharedEngineState {
   stateVersion?: number;
   stateChecksum?: string;
 
-  // --- 39-KPI Extended Metrics (added for full reporting) ---
+  // --- KPI-Matrix (Institutional Grade - 44 KPIs) ---
   avgProfitPerTrade: number;
   slippageCaptureBps: number;
   spreadCapturePct: number;
   riskAdjustedReturn: number;
+  sharpeRatio: number;
+  maxDrawdown: number;
   inclusionLatencyMs: number;
   executionLatencyMs: number;
   rpcSyncLagMs: number;
@@ -129,12 +158,17 @@ export interface SharedEngineState {
   optDeltaImprovementPct: number;
   perfGapThroughputPct: number;
   walletEthBalance: number;
+  totalVaultBalanceUsd: number;
+  multiChainBalanceVarianceUsd: number;
+  withdrawalPolicyViolationsCount: number;
+  pendingWithdrawalRequestsCount: number;
   
   // Market Intelligence Fields
   wallets: WalletAccount[]; // Multi-account support
   autoWithdrawEnabled: boolean;
   withdrawalHistory: any[];
   deploymentHistory: DeploymentRecord[]; // BSS-56 Deployment Registry
+  activeBundlers: number;
 
   marketIntensityIndex: number;
   blockUtilizationPct: number;
@@ -177,6 +211,17 @@ export interface SharedEngineState {
   lastHardeningAudit: Date | null;
   emergencyOverride: boolean;
   usePrivateRelay: boolean;
+
+  // BSS-56: Editable Institutional Benchmarks
+  benchmarks: {
+    sharpe_ratio: number;
+    max_drawdown: number;
+    nrp_24h: number;
+    win_rate: number;
+    p99_latency: number;
+    paymaster_fail_rate: number;
+    bundler_diversity: number;
+  };
 }
 
 // Configuration validation helper
@@ -263,6 +308,7 @@ winRate: 0.988,
   bottleneckReport: null,
   minMarginRatioBps: 1000,
   bribeRatioBps: 500,
+  specialistRegistry: [],
   nextOptimizationCycle: null,
 totalWeightedScore: 850,
   learningEpisodes: 0,
@@ -294,6 +340,7 @@ avgLatencyMs: 8.5,
   autoWithdrawEnabled: true,
   withdrawalHistory: [],
   deploymentHistory: [],
+  activeBundlers: 1,
   appName: 'allbright', // Standard default branding
   logoUrl: null,
   ghostMode: false,
@@ -302,8 +349,7 @@ avgLatencyMs: 8.5,
   integrityThreshold: 70, // Default 70% of benchmark
   currentUserRole: 'USER', // Default to User for commercial safety
 
-  onboardingComplete: false,
-  APP_INITIAL_SETUP: process.env.APP_INITIAL_SETUP === 'true', // Reflects env var for clarity
+onboardingComplete: false,
   cloudDeploymentId: null,
   lastCloudSync: null,
 
@@ -312,16 +358,29 @@ avgLatencyMs: 8.5,
 lastHardeningAudit: null,
   emergencyOverride: false,
   usePrivateRelay: true,
+
+  // Institutional Benchmarks - Default Values
+  benchmarks: {
+    sharpe_ratio: 2.0,
+    max_drawdown: 0.15, // 15%
+    nrp_24h: 20, // 20 ETH
+    win_rate: 0.95, // 95%
+    p99_latency: 1500, // 1500ms
+    paymaster_fail_rate: 0.01, // 1%
+    bundler_diversity: 3,
+  },
   
   // Elite Benchmarks (BSS-43 Targets) - stored separately for comparison
   domainScoreAutoOpt: 800,
   targetGes: 825, // Elite Grade Deployment Floor (82.5%)
   
-  // --- 36-KPI Extended Metrics ---
+  // --- KPI-Matrix ---
   avgProfitPerTrade: 0.05,
   slippageCaptureBps: 10,
   spreadCapturePct: 0.28,
   riskAdjustedReturn: 2.8,
+  sharpeRatio: 2.45, // Elite Performance metric
+  maxDrawdown: 0.12, // Current performance metric
   inclusionLatencyMs: 55,
   executionLatencyMs: 75,
   rpcSyncLagMs: 1.0,
@@ -345,8 +404,33 @@ lastHardeningAudit: null,
   optDeltaImprovementPct: 28,
   perfGapThroughputPct: 3,
   walletEthBalance: 55,
-  marketIntensityIndex: 1.0, // Assuming a stable market intensity for initial setup
+  totalVaultBalanceUsd: 125000,
+  multiChainBalanceVarianceUsd: 0,
+  withdrawalPolicyViolationsCount: 0,
+  pendingWithdrawalRequestsCount: 0,
+marketIntensityIndex: 1.0, // Assuming a stable market intensity for initial setup
   blockUtilizationPct: 0.85, // Set to target benchmark for initial state
+
+  // BSS-F: Multi-Chain Liquidity Vaults
+  multiChainBalances: {},
+  withdrawalPolicy: {
+    dailyLimitEth: 100,
+    multiSigThresholdEth: 50,
+    minApprovalRole: 'ADMIN',
+    cooldownHours: 24,
+  },
+  pendingWithdrawals: [],
+  marketPulse: {
+    leaderNrp: 22.5,
+    leaderWinRate: 0.95,
+    leaderLatencyP99: 1200,
+    leaderGasEfficiency: 0.96,
+    leaderRiskIndex: 0.03,
+    leaderUptime: 99.95,
+    leaderOptDelta: 25,
+    discoveryLastUpdated: new Date(),
+    latestAlphaReasoning: '',
+  },
 };
 
 // Initialize configuration checksum
@@ -356,7 +440,7 @@ sharedEngineState.configChecksum = computeConfigChecksum(sharedEngineState);
 export { validateConfiguration };
 
 /**
- * Transforms the shared engine state into the 39-KPI structure
+ * Transforms the shared engine state into the 44 KPI-Matrix structure
  * required by the frontend Dashboard and Telemetry pages.
  */
 export function getTelemetryKpiPayload() {

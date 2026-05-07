@@ -118,7 +118,7 @@ export const allbrightHeader: React.FC = () => {
         {/* Intelligence Health Badge */}
         <div className="flex items-center gap-2">
           <Activity className={`w-3 h-3 ${metrics.intelSource === 'USER_PRIVATE' ? 'text-[#73bf69]' : 'text-[#f2cc0c]'}`} />
-          <span className="text-[10px] font-bold text-[#8e8e8e] uppercase tracking-tighter">AI Node:</span>
+          <span className="text-[10px] font-bold text-[#8e8e8e] uppercase tracking-tighter">Node:</span>
           <Badge variant="outline" className={`h-5 text-[9px] border-[#404040] ${metrics.intelSource === 'USER_PRIVATE' ? 'text-[#73bf69] bg-[#73bf69]/5' : 'text-[#f2cc0c] bg-[#f2cc0c]/5'}`}>
             {metrics.intelSource === 'USER_PRIVATE' ? 'PRIVATE' : 'BOOTSTRAP'}
           </Badge>

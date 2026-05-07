@@ -15,6 +15,8 @@ import { sql } from "drizzle-orm";
 import fs from "node:fs";
 import * as net from "net";
 import { withBackoff } from "../services/retry.js";
+import { preflightCheck } from "../services/preflightCheck.js";
+import { debuggingSystem } from "../services/debuggingSystem.js";
 
 const router: IRouter = Router();
 
@@ -54,6 +56,9 @@ router.get("/health", async (_req, res) => {
             resolve(false);
           });
         });
+
+    // BSS-55: Latest Pre-Flight Status
+    const preflight = await preflightCheck.runChecks();
 
     // Diagnostics: Check for common typos in the environment
     const envKeys = Object.keys(process.env)
@@ -101,7 +106,8 @@ router.get("/health", async (_req, res) => {
       lastError = err;
     }
 
-    if (!dbConnected && !(process.env.NODE_ENV === 'production' && !isStrict)) {
+    // Institutional Auditor Fix: Database connection is non-negotiable for telemetry and audit trails.
+    if (!dbConnected) {
       return res.status(503).json({
         status: "error",
         db: "connection_failed",
@@ -116,6 +122,7 @@ router.get("/health", async (_req, res) => {
         preflight_strict: isStrict,
         uptime: Math.floor(process.uptime()),
         timestamp: new Date().toISOString(),
+        preflight_summary: preflight
       });
     }
     res.json({
@@ -126,6 +133,7 @@ router.get("/health", async (_req, res) => {
       preflight_strict: isStrict,
       uptime: Math.floor(process.uptime()),
       timestamp: new Date().toISOString(),
+      preflight_summary: preflight
     });
   } catch (err) {
     res.status(503).json({
@@ -135,6 +143,16 @@ router.get("/health", async (_req, res) => {
       timestamp: new Date().toISOString(),
     });
   }
+});
+
+/**
+ * BSS-55: Deep-Dive Diagnostic Endpoint
+ * Triggers the full D1-D29+ institutional debugging suite.
+ */
+router.get("/health/diagnostic", async (_req, res) => {
+  logger.info("[HEALTH] Manual diagnostic trigger requested.");
+  const report = await debuggingSystem.runFullDiagnostic();
+  res.json({ success: true, report });
 });
 
 // Legacy alias kept for backward compatibility

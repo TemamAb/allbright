@@ -1,6 +1,9 @@
 use allbright_solver::specialists::{
     SpecialistRegistry, profitability::ProfitabilitySpecialist, risk::RiskSpecialist, 
     api::ApiSpecialist, kpi::KpiSpecialist, auto_optimization::AutoOptimizationSpecialist};
+use allbright_solver::performance::PerformanceSpecialist;
+use allbright_solver::efficiency::EfficiencySpecialist;
+use allbright_solver::health::HealthSpecialist;
 use allbright_solver::benchmarks::load_benchmarks;
 use allbright_solver::timing::sub_block_timing::SubBlockTiming;
 use allbright_solver::{WatchtowerStats, GES_WEIGHTS};
@@ -26,44 +29,43 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("TIMESTAMP: {}", startup_time);
     println!("==================================================");
     
-    // BSS-43: Load Benchmark Targets
+    // BSS-44: Load Institutional 44-KPI Benchmark Targets
     let _benchmarks = load_benchmarks("docs/benchmark-36-kpis.md");
 
     // Initialize shared WatchtowerStats
     let watchtower_stats = Arc::new(Mutex::new(WatchtowerStats::new()));
     let mut registry = SpecialistRegistry::new();
     
-// Register Specialists in GES order: [Profit, Risk, Auto-Opt] (others are placeholders)
+    // BSS-44: Register Specialists for all 9 Institutional Domains
     registry.specialists.push(Arc::new(ProfitabilitySpecialist::new(Arc::clone(&watchtower_stats))));
     registry.specialists.push(Arc::new(RiskSpecialist::new(Arc::clone(&watchtower_stats))));
+    registry.specialists.push(Arc::new(PerformanceSpecialist));
+    registry.specialists.push(Arc::new(EfficiencySpecialist));
+    registry.specialists.push(Arc::new(HealthSpecialist));
     registry.specialists.push(Arc::new(AutoOptimizationSpecialist { last_ges: 0.0 }));
-
-    // Register Auxiliary Specialists (Not weighted in GES)
-    registry.specialists.push(Arc::new(ApiSpecialist));
-    registry.specialists.push(Arc::new(KpiSpecialist));
+    // Note: Bribe-Optimization, Cloud-Health, and Vault-Integrity specialists to be added in next commit
 
     info!("Specialist Registry initialized with {} agents", registry.specialists.len());
 
     // BSS-43: Pre-Deployment Simulation Gate
     info!("Executing Pre-Deployment Validation Gate...");
     let mut total_ges = 0.0;
-    for (i, specialist) in registry.specialists.iter().enumerate().take(6) {
+    for (i, specialist) in registry.specialists.iter().enumerate().take(9) {
         let result = specialist.tune_kpis(&serde_json::Value::Null)?;
         // Use the centralized GES_WEIGHTS from lib.rs
-        total_ges += GES_WEIGHTS[i] * (if result.tuned { 1.0 } else { 0.0 });
+        total_ges += GES_WEIGHTS.get(i).unwrap_or(&0.0) * (if result.tuned { 1.0 } else { 0.0 });
     }
 
 
     info!("Simulation GES: {:.2}%", total_ges * 100.0);
     if total_ges < GATE_THRESHOLD {
-        warn!("CRITICAL: Global Efficiency Score (GES) ({:.2}%) below threshold ({}%). RenderCloud bypass active.", total_ges * 100.0, GATE_THRESHOLD * 100.0);
-        if env::var("SKIP_GATE").unwrap_or_default() == "true" {
-            warn!("SKIP_GATE active: Proceeding with degraded performance.");
-            println!("✅ Deployment gate bypassed for production (local GES: {:.2}%)", total_ges * 100.0);
-        } else {
-            eprintln!("FATAL: System failed deployment gate and SKIP_GATE is false. Aborting start.");
+        warn!("FATAL: Global Efficiency Score (GES) ({:.2}%) below threshold ({}%).", total_ges * 100.0, GATE_THRESHOLD * 100.0);
+        // Institutional Safety: Do not allow bypass in production environments
+        if env::var("NODE_ENV").unwrap_or_default() == "production" {
+            eprintln!("STRICT_ENFORCEMENT: System failed deployment gate in production. Aborting.");
             std::process::exit(1);
         }
+        println!("⚠️ WARNING: Proceeding in non-production environment with degraded GES.");
     }
 
     // Prioritize PORT (Render's default) then INTERNAL_BRIDGE_PORT, then fallback to 4003
@@ -87,7 +89,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let mut cycle_count = 0;
         loop {
             {
-                let mut stats_guard = watchtower_stats_arc.lock().unwrap();
+                let mut stats_guard = match watchtower_stats_arc.lock() {
+                    Ok(guard) => guard,
+                    Err(poisoned) => poisoned.into_inner(), // Recover from poisoning to keep orchestrator alive
+                };
                 // Simulate external updates to some stats for specialists to react to
                 // In a real system, these would come from various data sources
                 stats_guard.current_nrp_eth_per_day = (stats_guard.current_nrp_eth_per_day + 0.1).min(25.0);

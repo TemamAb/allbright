@@ -5,11 +5,12 @@ import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "@aave/core-v3/contracts/interfaces/IPool.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 /// @title BrightSky FlashExecutor
 /// @notice Gasless arbitrage executor using Pimlico paymaster + ERC-4337
 /// @dev Designed for account abstraction - zero balance required
-contract FlashExecutor {
+contract FlashExecutor is ReentrancyGuard {
     address public immutable owner;
     IPool public immutable aavePool;
     ISwapRouter public immutable uniswapRouter;
@@ -49,7 +50,7 @@ contract FlashExecutor {
     /// @dev Called by Pimlico bundler via ERC-4337 UserOperation
     function executeFlashArbitrage(
         ArbitrageParams calldata params
-    ) external returns (uint256 profit) {
+    ) external nonReentrant returns (uint256 profit) {
         require(params.amountIn > 0, "Invalid amount");
 
         // Record initial balance for profit calculation
@@ -90,7 +91,7 @@ contract FlashExecutor {
         uint256 premium,
         address initiator,
         bytes calldata params
-    ) external returns (bool) {
+    ) external nonReentrant returns (bool) {
         require(msg.sender == address(aavePool), "Only Aave pool");
         require(initiator == address(this), "Invalid initiator");
 
@@ -137,6 +138,8 @@ contract FlashExecutor {
                     currentAmount,
                     params.swapData[i]
                 );
+            } else {
+                revert("Unsupported or invalid protocol");
             }
         }
 

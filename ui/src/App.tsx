@@ -14,6 +14,8 @@ import SetupWizard from './components/SetupWizard';
 import Trades from './components/Trades';
 import StrategiesPage from './components/StrategiesPage';
 import NotFound from './components/NotFound';
+import MissionControl from './components/MissionControl';
+import DeploymentReadiness from './components/DeploymentReadiness';
 import { Toaster } from "sonner";
 
 /**
@@ -43,9 +45,11 @@ const App: React.FC = () => {
           <Route path="/logs" component={Stream} />
           <Route path="/wallet" component={WalletPage} />
           <Route path="/copilot" component={Copilot} />
-          <Route path="/optimizer" component={AiOptimizer} />
+<Route path="/optimizer" component={AiOptimizer} />
           <Route path="/strategies" component={StrategiesPage} />
           <Route path="/trades" component={Trades} />
+<Route path="/mission" component={MissionControl} />
+          <Route path="/readiness" component={DeploymentReadiness} />
           <Route path="/settings" component={SystemSettings} />
           <Route path="/setup" component={SetupWizard} />
           <Route component={NotFound} />

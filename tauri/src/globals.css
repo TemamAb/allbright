@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ash-bg: #111217;
+  --color-ash-lighter: #1a1c20;
+  --color-ash-border: #27272a;
+  --color-black-data: #000000;
+  --color-text-primary: #f0f0f8;
+  --color-text-secondary: #b4b4c2;
+}
+
+:root {
+  --ash-bg: #111217;
+  --ash-lighter: #1a1c20;
+  --ash-border: #27272a;
+  --black-data: #000000;
+  --text-primary: #f0f0f8;
+  --text-secondary: #b4b4c2;
+}
+
+body {
+  background-color: var(--ash-bg);
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--text-primary);
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+.bg-ash { background-color: var(--ash-bg) !important; }
+.bg-data-black { background-color: var(--black-data) !important; }
+.border-ash { border-color: var(--ash-border) !important; }
+.text-secondary { color: var(--text-secondary); }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--ash-bg); }
+::-webkit-scrollbar-thumb { background: #4a4a58; border-radius: 8px; }
+
+.card-ash { background-color: var(--ash-bg); border: 1px solid var(--ash-border); border-radius: 1rem; }
+.sidebar-ash { background-color: var(--ash-bg); border-right: 1px solid var(--ash-border); }
+.topbar-ash { background-color: rgba(36,36,44,0.96); backdrop-filter: blur(4px); border-bottom: 1px solid var(--ash-border); }
+
+table th { background-color: var(--ash-lighter); color: #cacad6; font-weight: 600; }
+table td { background-color: var(--black-data); border-bottom: 1px solid #33333f; }
+
+.chart-container { background-color: var(--black-data); border-radius: 0.75rem; padding: 1rem; }
+canvas { background-color: var(--black-data); }
+
+.message-bubble { background-color: var(--black-data) !important; }
+
+.strategy-card { background-color: var(--ash-bg); border: 1px solid var(--ash-border); }
+.strategy-active { border-color: #06b6d4; background-color: rgba(6,182,212,0.08); }
+
+.fade-in-up { animation: fadeSlide 0.2s ease-out; }
+@keyframes fadeSlide { 0% { opacity:0; transform:translateY(4px);} 100% { opacity:1; transform:translateY(0);} }

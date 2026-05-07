@@ -24,7 +24,13 @@ export default defineConfig({
   build: {
     outDir: "dist",
     emptyOutDir: true,
+    sourcemap: false,
     rollupOptions: {
+      external: [
+        '@tauri-apps/api',
+        '@tauri-apps/api/tauri',
+        '@tauri-apps/api/event'
+      ],
       output: {
         manualChunks: {
           vendor: ["react", "react-dom", "@tanstack/react-query"],
@@ -33,7 +39,6 @@ export default defineConfig({
         }
       }
     },
-    sourcemap: false
   },
   server: {
     port,

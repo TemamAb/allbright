@@ -55,7 +55,7 @@ export const SettingsPage: React.FC = () => {
   useEffect(() => {
     const demoLogs = [
       "BSS-01: Connectivity established to Rust backbone",
-      "BSS-28: Alpha-Copilot meta-learner initialized",
+      "BSS-28: Copilot meta-learner initialized",
       "BSS-43: Deployment readiness gate synchronized"
     ];
     demoLogs.forEach((l, i) => setTimeout(() => addLog(l), i * 500));
@@ -99,7 +99,7 @@ export const SettingsPage: React.FC = () => {
       });
       const data = await response.json();
       if (data.success) {
-        toast.success("Redeploy command dispatched to Alpha-Copilot.");
+        toast.success("Redeploy command dispatched to Copilot.");
         addLog("SYSTEM: Manual redeploy command executed", "WARN");
         fetchSettings(); // Refresh registry immediately to show 'UPGRADE' record
       } else {
@@ -390,7 +390,7 @@ export const SettingsPage: React.FC = () => {
           <div className="flex justify-between items-center">
             <CardTitle className="text-xs uppercase tracking-[0.2em] text-[#8e8e8e] flex items-center gap-2">
               <Terminal className="w-3.5 h-3.5 text-[#73bf69]" />
-              Live System Telemetry Stream
+              Live KPI Matrix Stream
             </CardTitle>
             <div className="flex items-center gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-[#73bf69] animate-pulse" />

@@ -23,6 +23,13 @@ export class allbrightBribeEngine {
     COMPETITIVE_FACTOR: 1.0,
   };
 
+  // BSS-28: State to track the last optimization action and its impact
+  private static lastOptimizationAction: {
+    action: string;
+    impact: string; // e.g., "+5% inclusion rate"
+    cycles: number; // optimization cycles
+  } | null = null;
+
   /**
    * BSS-20 Integration: Allows the autonomous feedback loop to tweak
    * performance parameters 24/7 based on real-world success rates.
@@ -48,6 +55,13 @@ export class allbrightBribeEngine {
       this.AUCTION_PARAMS.BRIBE_ELASTICITY *= (1 - alpha); // Penalize ineffective bidding
     }
     console.log(`[BAYESIAN_TUNE] New Bribe Elasticity: ${this.AUCTION_PARAMS.BRIBE_ELASTICITY.toFixed(4)}`);
+
+    // Store the last action for reporting to the UI
+    this.lastOptimizationAction = {
+      action: `Adjusted bribe elasticity to ${this.AUCTION_PARAMS.BRIBE_ELASTICITY.toFixed(4)}`,
+      impact: `${success ? '+' : '-'}${(alpha * 100).toFixed(1)}% elasticity`, // Simplified impact for now
+      cycles: sharedEngineState.optimizationCycles || 0 // Use current optimization cycle count
+    };
   }
 
   /**
@@ -73,6 +87,10 @@ export class allbrightBribeEngine {
       this.AUCTION_PARAMS.COMPETITIVE_FACTOR = Math.max(0.1, competitiveFactor);
     }
     console.log("[AUCTION_TUNE] Auction parameters updated:", this.AUCTION_PARAMS);
+  }
+
+  static getLastOptimizationAction() {
+    return this.lastOptimizationAction;
   }
 
   static getAuctionParams() {
@@ -114,7 +132,7 @@ export class allbrightBribeEngine {
       mempoolData
     );
 
-    // Use the optimal bribe ratio instead of the static one
+    // BSS-28: Use the dynamically tuned optimal bribe ratio
     dynamicBribeRatio = optimalBribeRatio;
 
     // Apply competitive escalation based on mempool conditions

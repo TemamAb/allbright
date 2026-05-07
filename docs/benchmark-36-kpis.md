@@ -1,6 +1,6 @@
-# Merged allbright KPIs - Benchmark + Run Task KOIs
+# allbright Institutional 44-KPI Matrix - Benchmark Targets
 
-This document combines the 20 benchmark KPIs from benchmark-KPIs.md with the Key Operating Indicators (KOIs) from the run task system and additional metrics from audit outputs.
+This document defines the 44 elite-grade KPIs across 9 weighted domains required for institutional arbitrage deployment.
 
 ## Benchmark KPIs (from benchmark-KPIs.md)
 

@@ -116,6 +116,12 @@ router.put("/", checkAdmin, async (req, res) => {
   if (data) {
     if (data.ghostMode !== undefined) sharedEngineState.ghostMode = data.ghostMode;
     if (data.integrityThreshold !== undefined) sharedEngineState.integrityThreshold = data.integrityThreshold;
+    
+    // BSS-56: Update Institutional Benchmarks
+    if (data.benchmarks) {
+      sharedEngineState.benchmarks = { ...sharedEngineState.benchmarks, ...data.benchmarks };
+      logger.info("[SETTINGS] Institutional benchmarks updated by admin");
+    }
     logger.info({ data }, "[SETTINGS] System state updated");
   }
 

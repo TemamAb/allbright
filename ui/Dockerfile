@@ -2,15 +2,23 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install dependencies
-RUN npm install -g pnpm serve
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install
+# Install pnpm globally
+RUN npm install -g pnpm
 
-# Copy source code and build
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
+
+# Install dependencies
+RUN pnpm install --frozen-lockfile
+
+# Copy source code
 COPY . .
-# Render injects VITE_API_URL during the build phase
+
+# Build the React app
 RUN pnpm build
 
-# Serve the static files on Render's dynamic PORT
-CMD serve -s dist -l tcp://0.0.0.0:$PORT
+# Expose the port (default 4173 for vite preview)
+EXPOSE 4173
+
+# Serve the static files
+CMD ["pnpm", "run", "preview", "--host", "0.0.0.0"]

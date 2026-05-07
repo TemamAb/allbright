@@ -19,7 +19,7 @@ const SetupWizard: React.FC = () => {
             <Wand2 className="h-8 w-8 text-green-500" />
           </div>
           <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter">Zero-Config Onboarding</h2>
-          <p className="text-zinc-500">AlphaCopilot is preparing your elite environment.</p>
+          <p className="text-zinc-500">Copilot is preparing your elite environment.</p>
         </div>
 
         <div className="flex justify-between px-4 relative">
@@ -50,7 +50,7 @@ const SetupWizard: React.FC = () => {
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-zinc-600 uppercase">App Name</label>
                   <input type="text" placeholder="e.g. Allbright Prime" className="w-full bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-white focus:outline-none focus:ring-1 focus:ring-green-500" />
-                  <p className="text-[10px] text-zinc-500 italic leading-relaxed">AI Setup Advisor: Names with 'Prime' or 'Quantum' suffixes are trending in institutional DeFi.</p>
+                  <p className="text-[10px] text-zinc-500 italic leading-relaxed">Setup Advisor: Names with 'Prime' or 'Quantum' suffixes are trending in institutional DeFi.</p>
                 </div>
               )}
               {step === 2 && (

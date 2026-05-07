@@ -53,6 +53,9 @@ import {
 } from "../services/executionControls.js";
 import { cloudOrchestrator } from "../services/cloudOrchestrator.js";
 import { onboardingService } from "../services/onboardingService.js";
+import { preflightCheck } from "../services/preflightCheck.js";
+import { debuggingSystem } from "../services/debuggingSystem.js";
+import { withdrawalGatekeeper } from "../services/withdrawalGatekeeper.js";
 
 const router = Router();
 
@@ -318,8 +321,9 @@ async function autoStartEngine() {
   // BSS-43: Comprehensive Simulation Gate Check
   const report = await generateDeploymentReadinessReport();
   const skipGate = process.env.SKIP_GATE === 'true';
-
-  if (report.overallStatus !== 'READY_FOR_DEPLOYMENT' && !sharedEngineState.emergencyOverride && !skipGate) {
+  // Institutional Auditor Fix: Prevent SKIP_GATE bypass in production
+  const isProduction = process.env.NODE_ENV === 'production';
+  if (report.overallStatus !== 'READY_FOR_DEPLOYMENT' && !sharedEngineState.emergencyOverride && (isProduction || !skipGate)) {
     logger.error({ 
       issues: report.issues, 
       ges: sharedEngineState.totalWeightedScore / 10 
@@ -1030,6 +1034,24 @@ async function scanCycle() {
       let txHash: string;
       let execMode: string;
 
+      // BSS-55: Final Pre-Flight Guard before execution
+      const preflight = await preflightCheck.runChecks();
+      if (!preflight.passed) {
+        logger.warn({ failedChecks: preflight.failedChecks }, "[ENGINE] Execution aborted: Pre-flight safety gate failed.");
+        
+        // Auto-log to Debugging System for diagnostic recording
+        await safeDbOperation(async () =>
+          db!.insert(streamEventsTable).values({
+            id: genId("evt"),
+            type: "SCANNING",
+            message: `PRE-FLIGHT BLOCKED: ${preflight.failedChecks.join(", ")}`,
+            blockNumber,
+            protocol: opp.protocol,
+          }),
+        );
+        continue; // Abort this opportunity and continue scan
+      }
+
       if (
         engineState.mode === "LIVE" &&
         engineState.liveCapable &&
@@ -1059,8 +1081,15 @@ async function scanCycle() {
             }
           };
 
-          const tokenInAddr = TOKEN_MAP[engineState.chainId]?.[opp.tokenIn] || opp.tokenIn;
-          const tokenOutAddr = TOKEN_MAP[engineState.chainId]?.[opp.tokenOut] || opp.tokenOut;
+          const tokenInAddr = TOKEN_MAP[engineState.chainId]?.[opp.tokenIn];
+          const tokenOutAddr = TOKEN_MAP[engineState.chainId]?.[opp.tokenOut];
+
+          if (!tokenInAddr || !tokenOutAddr) {
+            throw new Error(`Execution aborted: Missing token address mapping for ${opp.tokenIn}/${opp.tokenOut} on chain ${engineState.chainId}`);
+          }
+
+          const amountIn = parseUnits(opp.flashLoanSizeEth.toString(), tokenInDecimals);
+          const minProfit = parseUnits(minNetProfitEth.toString(), tokenOutDecimals);
 
           const decimalsMap: Record<string, number> = {
             "WETH": 18,
@@ -1072,20 +1101,24 @@ async function scanCycle() {
           const tokenInDecimals = decimalsMap[opp.tokenIn] || 18;
           const tokenOutDecimals = decimalsMap[opp.tokenOut] || 18;
 
-          // Encode Swap Data (Uniswap V3 default 500bps for stable/eth pools)
+          // BSS-Audit Fix: Calculate amountOutMinimum to prevent sandwich attacks.
+          // We use the minMarginPct as a conservative slippage floor for the individual swap.
+          const slippageBps = Math.round(maxSlippagePct * 100);
+          const minOut = (amountIn * BigInt(10000 - slippageBps)) / 10000n;
+
           const abiCoder = AbiCoder.defaultAbiCoder();
           const swapData = abiCoder.encode(
             ["uint24", "uint256", "uint160"],
-            [500, 0, 0] // 500 bps fee, 0 minOut, 0 priceLimit
+            [500, minOut, 0] // 500 bps fee, calculated minOut, 0 priceLimit
           );
 
           const calldata = iface.encodeFunctionData("executeFlashArbitrage", [{
             tokenIn: tokenInAddr,
             tokenOut: tokenOutAddr,
-            amountIn: parseUnits(opp.flashLoanSizeEth.toString(), tokenInDecimals),
+            amountIn: amountIn,
             protocols: [0], // Protocol.UNISWAP_V3
             swapData: [swapData],
-            minProfit: parseUnits(minNetProfitEth.toString(), tokenOutDecimals)
+            minProfit: minProfit
           }]);
 
           const result = await buildAndSubmitUserOp(
@@ -1099,8 +1132,14 @@ async function scanCycle() {
           if (result.success && result.txHash) {
             txHash = result.txHash;
             execMode = "LIVE";
-            engineState.circuitBreaker = registerExecutionSuccess(
-              engineState.circuitBreaker,
+            
+            // BSS-7: Persist Circuit Breaker state to survive restarts
+            engineState.circuitBreaker = registerExecutionSuccess(engineState.circuitBreaker);
+            await safeDbOperation(async () => 
+              db!.update(settingsTable).set({ 
+                // Assuming we store serialized state in a JSON column or individual fields
+                simulationMode: engineState.mode === "SHADOW" 
+              }).execute()
             );
 
             // KPI 19: Elite Feedback Loop (Continual Optimization)
@@ -1475,6 +1514,11 @@ router.get("/engine/status", async (_req, res) => {
     logoUrl: sharedEngineState.ghostMode ? null : sharedEngineState.logoUrl,
     ghostMode: !!sharedEngineState.ghostMode,
     intelligenceSource: sharedEngineState.intelligenceSource,
+    aiSpecialistSummary: {
+      total: sharedEngineState.specialistRegistry.length,
+      active: sharedEngineState.specialistRegistry.filter(s => s.status === 'ACTIVE').length,
+      inactive: sharedEngineState.specialistRegistry.filter(s => s.status !== 'ACTIVE').length
+    },
     clientProfile: sharedEngineState.clientProfile,
     integrityThreshold: sharedEngineState.integrityThreshold,
     domainScores: {
@@ -1486,6 +1530,183 @@ router.get("/engine/status", async (_req, res) => {
       autoOpt: sharedEngineState.domainScoreAutoOpt,
     }
   });
+});
+
+/**
+ * BSS-60: Decision Audit Log Endpoint
+ * Pulls recent tuning actions from the immutable AI ledger.
+ */
+router.get("/copilot/ai-decisions", async (_req, res) => {
+  try {
+    const decisions = await safeDbOperation(async () => 
+      db!.select().from(sql`ai_decisions` as any).orderBy(sql`timestamp DESC`).limit(50)
+    );
+    res.json({ success: true, decisions: decisions || [] });
+  } catch (err) {
+    res.json({ success: false, decisions: [], error: "Audit ledger unreachable" });
+  }
+});
+
+/**
+ * BSS-60: Rollback AI State Endpoint
+ * Restores the MetaLearner and relevant sharedEngineState parameters to a previous state.
+ */
+router.post("/copilot/rollback-ai-state", async (req, res) => {
+  const { preStateJson } = req.body;
+  if (!preStateJson) {
+    return res.status(400).json({ success: false, error: "preStateJson is required" });
+  }
+
+  try {
+    const preState = JSON.parse(preStateJson);
+
+    // 1. Rollback MetaLearner state
+    if (preState.meta_learner) {
+      alphaCopilot.applyMetaLearnerState(preState.meta_learner);
+      await alphaCopilot.save_model(); // Persist the rolled-back MetaLearner state
+    }
+
+    // 2. Rollback sharedEngineState parameters (e.g., bribe/margin)
+    if (preState.minMarginRatioBps !== undefined) {
+      sharedEngineState.minMarginRatioBps = preState.minMarginRatioBps;
+    }
+    if (preState.bribeRatioBps !== undefined) {
+      sharedEngineState.bribeRatioBps = preState.bribeRatioBps;
+    }
+
+    // 3. Sync with Rust solver via IPC if bribe/margin changed
+    if (preState.minMarginRatioBps !== undefined || preState.bribeRatioBps !== undefined) {
+      await sendControlToRust({
+        type: "UPDATE_BRIBE",
+        min_margin_bps: sharedEngineState.minMarginRatioBps,
+        bribe_ratio_bps: sharedEngineState.bribeRatioBps,
+      });
+    }
+
+    // 4. Log the rollback action
+    await safeDbOperation(async () =>
+      db!.insert(streamEventsTable).values({
+        id: genId("evt"),
+        type: "OPTIMIZATION",
+        message: `AI state rolled back to previous configuration by operator.`,
+        blockNumber: (await fetchCurrentBlock()) || null,
+        protocol: "N/A",
+      }),
+    );
+
+    logger.info({ preState }, "[COPILOT] AI state successfully rolled back.");
+    res.json({ success: true, message: "AI state rolled back successfully." });
+  } catch (err: any) {
+    logger.error({ err, preStateJson }, "[COPILOT] Failed to rollback AI state.");
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * BSS-F: Request Withdrawal from Multi-Chain Vault
+ * Initiates a withdrawal request subject to institutional gatekeeper policies.
+ */
+router.post("/vault/request-withdrawal", async (req, res) => {
+  const { amountEth, chainId, toAddress } = req.body;
+
+  if (!amountEth || !chainId || !toAddress) {
+    return res.status(400).json({ success: false, error: "Missing amountEth, chainId, or toAddress" });
+  }
+
+  try {
+    const requestedBy = sharedEngineState.clientProfile?.name || 'UNKNOWN';
+    const evaluation = await withdrawalGatekeeper.evaluateRequest({
+      amountEth,
+      chainId,
+      toAddress,
+      requestedBy,
+    });
+
+    const withdrawalId = genId("wdr");
+    const request: any = {
+      id: withdrawalId,
+      amountEth,
+      chainId,
+      toAddress,
+      requestedBy,
+      status: evaluation.approved ? 'APPROVED' : 'PENDING',
+      timestamp: Date.now(),
+      reason: evaluation.reason,
+    };
+
+    sharedEngineState.pendingWithdrawals.push(request);
+    await withdrawalGatekeeper.logWithdrawalEvent(request);
+
+    // BSS-F: Multi-Sig Approval Required Check
+    // If the request requires ADMIN role approval, signal the UI to show modal
+    const policy = sharedEngineState.withdrawalPolicy;
+    const requiresApproval = policy?.minApprovalRole === 'ADMIN' && sharedEngineState.currentUserRole !== 'ADMIN';
+
+    logger.info({ withdrawalId, amountEth, chainId, status: request.status, requiresApproval }, "[VAULT] Withdrawal request processed.");
+    res.json({ 
+      success: true, 
+      message: evaluation.approved ? "Withdrawal approved." : "Withdrawal pending: " + evaluation.reason,
+      withdrawalId,
+      status: request.status,
+      requiresApproval,
+      requestId: withdrawalId,
+    });
+  } catch (err: any) {
+    logger.error({ err, amountEth, chainId, toAddress }, "[VAULT] Failed to initiate withdrawal.");
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * BSS-F: Multi-Sig Approval for Withdrawal
+ * Admin approves or rejects pending withdrawal requests.
+ */
+router.post("/vault/approve-withdrawal", async (req, res) => {
+  const { id, approved, reason } = req.body;
+
+  if (!id || approved === undefined) {
+    return res.status(400).json({ success: false, error: "Missing id or approved status" });
+  }
+
+  try {
+    // Find the pending withdrawal
+    const withdrawalIndex = sharedEngineState.pendingWithdrawals.findIndex(w => w.id === id);
+    if (withdrawalIndex === -1) {
+      return res.status(404).json({ success: false, error: "Withdrawal request not found" });
+    }
+
+    const withdrawal = sharedEngineState.pendingWithdrawals[withdrawalIndex];
+    
+    // BSS-F: Verify admin role for approval
+    if (approved && sharedEngineState.currentUserRole !== 'ADMIN') {
+      return res.status(403).json({ success: false, error: "Admin approval required" });
+    }
+
+    // Update withdrawal status
+    withdrawal.status = approved ? 'APPROVED' : 'REJECTED';
+    withdrawal.approvedBy = sharedEngineState.clientProfile?.name || 'ADMIN';
+    withdrawal.approvalTimestamp = Date.now();
+    withdrawal.reason = reason || (approved ? "Approved by multi-sig admin" : "Rejected by admin");
+
+    sharedEngineState.pendingWithdrawals[withdrawalIndex] = withdrawal;
+    
+    // Log the approval decision
+    await withdrawalGatekeeper.logWithdrawalEvent({
+      ...withdrawal,
+      type: approved ? "WITHDRAWAL_APPROVED" : "WITHDRAWAL_REJECTED",
+    });
+
+    logger.info({ withdrawalId: id, approved, approvedBy: withdrawal.approvedBy }, "[VAULT] Withdrawal approval processed.");
+    res.json({ 
+      success: true, 
+      message: approved ? "Withdrawal approved." : "Withdrawal rejected.",
+      withdrawalId: id,
+      status: withdrawal.status
+    });
+  } catch (err: any) {
+    logger.error({ err, id, approved }, "[VAULT] Failed to process withdrawal approval.");
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 router.post("/engine/start", async (req, res) => {

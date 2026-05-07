@@ -6,6 +6,7 @@ import { Brain, Cpu, Lock, TrendingUp, AlertTriangle } from 'lucide-react';
 const AiOptimizer: React.FC = () => {
   const [aiState, setAiState] = useState({
     episodes: 0,
+    optimizationCycles: 0,
     ema: 0.95,
     momentum: 0,
     intensity: 0,
@@ -21,6 +22,7 @@ const AiOptimizer: React.FC = () => {
         setAiState(prev => ({
           ...prev,
           episodes: event.data.episodes,
+          optimizationCycles: event.data.optimizationCycles || 0,
           ema: event.data.ema,
           momentum: event.data.momentum
         }));
@@ -36,11 +38,12 @@ const AiOptimizer: React.FC = () => {
     <div className="p-8 space-y-8">
       <div>
         <h2 className="text-3xl font-black text-white tracking-tight italic uppercase">AI Auto-Optimizer</h2>
-        <p className="text-zinc-500 font-medium mt-1">AlphaCopilot meta-learner persistence and status.</p>
+        <p className="text-zinc-500 font-medium mt-1">Copilot meta-learner persistence and status.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard title="Learning Episodes" value={aiState.episodes.toString()} icon={<Cpu className="text-blue-500" />} />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <MetricCard title="Trades Observed" value={aiState.episodes.toString()} icon={<Cpu className="text-blue-500" />} />
+        <MetricCard title="Optimization Cycles" value={aiState.optimizationCycles.toString()} icon={<TrendingUp className="text-cyan-500" />} />
         <MetricCard title="Success EMA" value={`${(aiState.ema * 100).toFixed(2)}%`} icon={<Brain className="text-purple-500" />} />
         <MetricCard title="Profit Momentum" value={aiState.momentum.toFixed(6)} icon={<TrendingUp className="text-green-500" />} />
         <MetricCard title="Adversarial Load" value={aiState.intensity.toString()} icon={<AlertTriangle className="text-red-500" />} />
@@ -56,7 +59,7 @@ const AiOptimizer: React.FC = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-xs text-zinc-500 leading-relaxed">
-              BSS-56: Once the system achieves elite performance (GES &gt; 82.5%), the AlphaCopilot locks the "Gold Standard" configuration to prevent API drift.
+              BSS-56: Once the system achieves elite performance (GES &gt; 82.5%), the Copilot locks the "Gold Standard" configuration to prevent API drift.
             </p>
             <div className={`p-3 rounded-lg border ${aiState.hardened ? 'border-green-500/20 bg-green-500/5' : 'border-zinc-800 bg-zinc-900/50'}`}>
               <div className="flex justify-between items-center">
