@@ -20,10 +20,9 @@ COPY lib/ts/package.json ./lib/ts/
 RUN pnpm install --no-frozen-lockfile
 COPY . .
 
-# Build the API and the UI
+# Build the UI
 ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
-RUN pnpm --filter @workspace/api-server build
 RUN pnpm --filter @allbright/ui build
 
 # Production stage
@@ -34,10 +33,13 @@ WORKDIR /app
 COPY --from=builder /app/package.json /app/pnpm-workspace.yaml ./
 COPY --from=builder /app/node_modules ./node_modules
 
-# Copy API artifacts
+# Copy API source/runtime
 COPY --from=builder /app/api/package.json ./api/
-COPY --from=builder /app/api/dist ./api/dist
+COPY --from=builder /app/api/tsconfig.json ./api/
+COPY --from=builder /app/api/src ./api/src
 COPY --from=builder /app/api/node_modules ./api/node_modules
+COPY --from=builder /app/lib ./lib
+COPY --from=builder /app/tsconfig.base.json ./tsconfig.base.json
 
 # Copy UI artifacts (for the API to serve)
 COPY --from=builder /app/ui/dist ./ui/dist
@@ -49,4 +51,5 @@ EXPOSE 10000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:${PORT}/api/health || exit 1
 
-CMD ["node", "api/dist/index.mjs"]
+WORKDIR /app/api
+CMD ["node", "--import", "tsx", "src/index.ts"]

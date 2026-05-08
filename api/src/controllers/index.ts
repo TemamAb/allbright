@@ -17,12 +17,10 @@ const __dirname = path.dirname(__filename);
 
 const router: IRouter = Router();
 
-// BSS-ARCH: Unified Path Resolution
-// In production (Docker), we serve from /app/ui/dist. 
-// In development, we traverse up from /api/src/controllers to the workspace root.
-const uiDistPath = process.env.NODE_ENV === 'production' 
-  ? path.resolve(process.cwd(), "ui/dist") 
-  : path.resolve(__dirname, "../../../ui/dist");
+// Resolve from the workspace root instead of process.cwd() so Docker can run
+// with `/app/api` as the working directory without breaking static asset paths.
+const workspaceRoot = path.resolve(__dirname, "../../..");
+const uiDistPath = path.resolve(workspaceRoot, "ui/dist");
 
 router.use(healthRouter);
 router.use(engineRouter);
