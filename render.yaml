@@ -44,8 +44,10 @@ services:
     env: docker
     plan: starter
     rootDir: .
-    dockerfilePath: Dockerfile
+    dockerfilePath: api/Dockerfile
     healthCheckPath: /api/health
+    healthCheckTimeout: 30
+    startPeriod: 60s
     database: allbright-db
     envVars:
       - key: NODE_ENV
