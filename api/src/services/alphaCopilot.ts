@@ -3,14 +3,14 @@ import { desc, sql } from "drizzle-orm";
 import { logger } from "./logger";
 import { exec } from "child_process";
 import { promisify } from "util";
-import { sharedEngineState } from "./engineState";
-import { gateKeeper } from "./gateKeeper";
-import { allbrightBribeEngine } from "./bribeEngine";
-import { MempoolIntelligenceService } from './mempoolIntelligence';
+import { sharedEngineState } from "./engineState.js";
+import { gateKeeper } from "./gateKeeper.js";
+import { allbrightBribeEngine } from "./bribeEngine.js";
+import { MempoolIntelligenceService } from './mempoolIntelligence.js';
 import * as net from "net";
 import * as crypto from "crypto";
 import type { AtomicU64, i64, Mutex, VecDeque } from "../lib/types";
-import { KPI_MATRIX } from "./kpiDefinitions";
+import { KPI_MATRIX } from "./kpiDefinitions.js";
 import cron from 'node-cron';
 import nodemailer from 'nodemailer';
 import PDFDocument from 'pdfkit';
@@ -1033,4 +1033,4 @@ export function broadcastCopilotEvent(type: string, data: any) {
     }
   }
 
-export const alphaCopilot = new AlphaCopilot();
+export const copilot = new AlphaCopilot();

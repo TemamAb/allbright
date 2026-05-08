@@ -7,11 +7,11 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { tradesTable } from "@workspace/db";
 import { desc } from "drizzle-orm";
-import { getEthPriceUsd } from "../services/priceOracle";
-import { getBlockStats } from "../services/blockTracker";
-import { sharedEngineState } from "../services/engineState";
-import { allbrightBribeEngine } from "../services/bribeEngine";
-import { copilot } from "../services/alphaCopilot";
+import { getEthPriceUsd } from "../services/priceOracle.js";
+import { getBlockStats } from "../services/blockTracker.js";
+import { sharedEngineState } from "../services/engineState.js";
+import { allbrightBribeEngine } from "../services/bribeEngine.js";
+import { copilot } from "../services/alphaCopilot.js";
 
 const router = Router();
 
