@@ -31,6 +31,3 @@ webview2_installer.exe
 
 # System bundler
 system-bundler/
-
-# Cargo lock files (not needed for docker)
-Cargo.lock

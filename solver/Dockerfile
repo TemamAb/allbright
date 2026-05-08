@@ -13,7 +13,7 @@ RUN cargo build --release || true
 # 2. Now copy the actual source code
 COPY . .
 # Touch main.rs to ensure cargo knows it needs to rebuild the binary
-RUN touch src/main.rs && cargo build --release --bin brightsky
+RUN touch src/main.rs && cargo build --release --bin allbright
 
 # Production stage: slim runtime
 FROM debian:bookworm-slim
@@ -22,11 +22,11 @@ RUN apt-get update && apt-get install -y libssl3 && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY --from=builder /app/target/release/brightsky .
+COPY --from=builder /app/target/release/allbright .
 
 EXPOSE 4003
 
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-  CMD bash -c "echo > /dev/tcp/localhost/4003" || exit 1
+  CMD bash -c "echo > /dev/tcp/localhost/${PORT:-4003}" || exit 1
 
-CMD ["./brightsky"]
+CMD ["./allbright"]
