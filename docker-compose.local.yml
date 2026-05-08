@@ -28,7 +28,7 @@ services:
 
   solver:
     build:
-      context: .
+      context: ./solver
       dockerfile: Dockerfile
     container_name: allbright-solver-local
     environment:
