@@ -14,3 +14,23 @@ logs
 electron-builder.json
 build-desktop.bat
 main.js
+
+# Tauri Desktop App - Not part of docker deployment
+tauri/
+src-tauri/
+AI-AGENT-TAURI-DESKTOP.MD
+AI-AGENT-DESKTOP-mission-APP
+tauri-structure-user-guide.md
+Tauri-App.md
+setup-tauri-app.sh
+setup-tauri-app.bat
+build-desktop-app.bat
+test-webview-config.ps1
+install-allbright-desktop.ps1
+webview2_installer.exe
+
+# System bundler
+system-bundler/
+
+# Cargo lock files (not needed for docker)
+Cargo.lock
