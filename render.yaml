@@ -107,7 +107,7 @@ services:
     name: allbright-dashboard
     env: static
     rootDir: .
-    buildCommand: pnpm install --frozen-lockfile && pnpm --filter ui build
+    buildCommand: corepack enable && pnpm install --no-frozen-lockfile && pnpm --filter @allbright/ui build
     publishDirectory: ui/dist
     envVars:
       - key: VITE_API_BASE_URL

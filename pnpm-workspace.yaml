@@ -1,0 +1,12 @@
+packages:
+  - 'api'
+  - 'ui'
+  - 'solver'
+  - 'lib/*'
+
+catalog:
+  '@tanstack/react-query': ^5.59.15
+  '@types/node': ^22.7.4
+  drizzle-orm: ^0.44.5
+  openai: 4.52.7
+  zod: ^3.25.76

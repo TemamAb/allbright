@@ -8,7 +8,7 @@ WORKDIR /app
 RUN npm install -g pnpm@9.12.2
 
 # Copy pnpm configuration and all package.json files for dependency resolution
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-workspace.yaml ./
 COPY api/package.json ./api/
 COPY ui/package.json ./ui/
 COPY lib/api-client-react/package.json ./lib/api-client-react/
@@ -17,21 +17,21 @@ COPY lib/db/package.json ./lib/db/
 COPY lib/ts/package.json ./lib/ts/
 
 # Install dependencies for all workspaces
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 COPY . .
 
 # Build the API and the UI
 ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
-RUN pnpm --filter @workspace/api build
-RUN pnpm --filter ui build
+RUN pnpm --filter @workspace/api-server build
+RUN pnpm --filter @allbright/ui build
 
 # Production stage
 FROM node:20-alpine
 WORKDIR /app
 
 # Copy workspace config and dependencies
-COPY --from=builder /app/package.json /app/pnpm-lock.yaml /app/pnpm-workspace.yaml ./
+COPY --from=builder /app/package.json /app/pnpm-workspace.yaml ./
 COPY --from=builder /app/node_modules ./node_modules
 
 # Copy API artifacts
