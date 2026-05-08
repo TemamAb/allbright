@@ -14,7 +14,7 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 export default function Stream() {
-  const { data: streamRes } = useGetTradeStream({ 
+  const { data: streamRes, isLoading, error } = useGetTradeStream({ 
     query: { refetchInterval: 1000 } 
   });
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -43,7 +43,9 @@ export default function Stream() {
           <span className="text-[9px] font-black text-zinc-600 uppercase tracking-widest">System Ticks</span>
         </div>
         <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-1 font-mono text-[11px] leading-relaxed">
-          {events.length === 0 && <div className="text-zinc-800 text-center mt-20 uppercase font-black tracking-tighter">Waiting for engine tick...</div>}
+          {isLoading && <div className="text-zinc-700 text-center mt-20 uppercase font-black tracking-tighter">Connecting to activity stream...</div>}
+          {!isLoading && error && <div className="text-red-400 text-center mt-20 uppercase font-black tracking-tighter">Stream unavailable</div>}
+          {!isLoading && !error && events.length === 0 && <div className="text-zinc-800 text-center mt-20 uppercase font-black tracking-tighter">Waiting for engine tick...</div>}
           {events.map((event: any, i: number) => (
             <div key={event.id || i} className="flex gap-4 items-start py-1 border-b border-zinc-900/30 hover:bg-zinc-900/20 transition-all">
               <span className="text-zinc-600 shrink-0 select-none font-mono tabular-nums">

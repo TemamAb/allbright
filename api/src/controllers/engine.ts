@@ -1486,6 +1486,7 @@ router.get("/engine/status", async (_req, res) => {
   res.json({
     running: engineState.running,
     mode: engineState.mode,
+    totalWeightedScore: sharedEngineState.totalWeightedScore,
     uptime,
     walletAddress: engineState.walletAddress,
     totalWalletBalance, // Metric for the right side of the heading

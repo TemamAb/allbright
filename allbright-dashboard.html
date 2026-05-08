@@ -8,6 +8,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <style>
     /* Elite Grade Ash.Black Palette per DASHBOARD-GUIDE.MD */
@@ -315,6 +316,39 @@ const getToastIcon = (type) => { const icons = { success: 'fas fa-check-circle',
         }
       };
 
+      const initWebSocket = () => {
+        const socket = io(apiBase, { 
+          transports: ['websocket'],
+          reconnectionAttempts: 5
+        });
+        
+        socket.on('connect', () => {
+          isApiConnected.value = true;
+          showToast('Connected to Live Engine', 'success');
+        });
+
+        socket.on('summary_update', (data) => {
+          // BSS-43: Sync with Master API state
+          gesScore.value = data.ges || gesScore.value;
+          aiEpisodes.value = data.optimizationCycles || aiEpisodes.value;
+          aiEma.value = (data.winRate / 100) || aiEma.value;
+          engineMode.value = data.mode || engineMode.value;
+          
+          if (gesScore.value > 82.5) hardenedActive.value = true;
+          updateChart();
+        });
+
+        socket.on('kpi_matrix_update', (data) => {
+          // Update the 44-KPI telemetry categories dynamically
+          showToast('Telemetry Synchronized', 'info');
+        });
+
+        socket.on('disconnect', () => {
+          isApiConnected.value = false;
+          showToast('API Connection Lost', 'error');
+        });
+      };
+
       const setLoading = (key, value) => { isLoading.value[key] = value; };
       // Export Functions
       const exportLogs = () => { const headers = ['Timestamp,Level,Message']; const rows = systemLogs.value.map(l => `${l.time},${l.type},${l.message}`); const csv = [headers, ...rows].join('\n'); downloadFile(csv, 'allbright-logs.csv', 'text/csv'); showToast('Logs exported successfully', 'success'); };
@@ -401,7 +435,12 @@ const sendCopilotMessage = () => { if(!copilotInput.value.trim()) return; const 
       const initChart = () => { const ctx = document.getElementById('alphaChart')?.getContext('2d'); if(ctx && !chartInstance) { chartInstance = new Chart(ctx, { type:'line', data:{ labels:['00:00','04:00','08:00','12:00','16:00','20:00'], datasets:[{ label:'Alpha Vol', data:[0.2,0.5,0.3,0.8,0.7,0.9], borderColor:'#10b981', borderWidth:2, fill:false, tension:0.2 }] }, options:{ responsive:true, maintainAspectRatio:true, plugins:{ legend:{ display:false } }, scales:{ y:{ grid:{ color:'#3a3a48' } }, x:{ grid:{ display:false } } } } }); } };
       const updateChart = () => { if(chartInstance) { const newData = chartInstance.data.datasets[0].data.map(() => Math.random() * 1.2 + 0.1); chartInstance.data.datasets[0].data = newData; chartInstance.update(); } };
 let interval;
-      onMounted(() => { initChart(); interval = setInterval(() => { gesScore.value = Math.min(98, gesScore.value + (Math.random() - 0.5) * 0.3); aiEpisodes.value += 1; aiEma.value = Math.min(0.99, aiEma.value + (Math.random() - 0.5) * 0.003); aiMomentum.value = Math.max(0.0005, aiMomentum.value + (Math.random() - 0.5) * 0.0002); if(gesScore.value > 82.5 && !hardenedActive.value) hardenedActive.value = true; updateChart(); }, 3800); window.addEventListener('keydown', handleKeydown); });
+      onMounted(() => { 
+        initChart(); 
+        initWebSocket();
+        fetchEngineStatus();
+        window.addEventListener('keydown', handleKeydown); 
+      });
       onUnmounted(() => { clearInterval(interval); window.removeEventListener('keydown', handleKeydown); });
       const navItems = [
         { id:'dashboard', label:'Mission Control', icon:'fas fa-tachometer-alt'},

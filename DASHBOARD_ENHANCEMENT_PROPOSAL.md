@@ -1,296 +1,258 @@
 # Allbright Dashboard Enhancement Proposal
-## Comprehensive Architecture Improvements
+## React Ash.Black Architecture Baseline
 
 ---
 
 ## Executive Summary
 
-This document provides a comprehensive enhancement proposal for the Allbright Dashboard based on analysis of the current implementation (`allbright-dashboard.html`) and the existing React/Vite architecture.
+This document updates the dashboard enhancement plan to reflect the actual current UI architecture in the repository.
 
-**Analysis Scope:**
-- Single HTML file: `allbright-dashboard.html` (~650 lines)
-- React components: `ui/src/components/*`
-- Telemetry hooks: `ui/src/hooks/useTelemetry.ts`
-- KPI constants: `ui/src/constants/kpi.ts`
+The current production-oriented dashboard is the React Ash.Black application under [`ui/src`](</c:/Users/op/Desktop/allbright/ui/src>). The file [`allbright-dashboard.html`](</c:/Users/op/Desktop/allbright/allbright-dashboard.html>) is a legacy dashboard reference and should not be treated as the primary implementation target.
+
+**Current source of truth**
+- App shell and routing: [`ui/src/App.tsx`](</c:/Users/op/Desktop/allbright/ui/src/App.tsx>)
+- Layout shell: [`ui/src/components/Layout.tsx`](</c:/Users/op/Desktop/allbright/ui/src/components/Layout.tsx>)
+- Sidebar navigation: [`ui/src/components/Sidebar.tsx`](</c:/Users/op/Desktop/allbright/ui/src/components/Sidebar.tsx>)
+- Dashboard landing page: [`ui/src/components/Dashboard.tsx`](</c:/Users/op/Desktop/allbright/ui/src/components/Dashboard.tsx>)
+
+**Legacy reference only**
+- [`allbright-dashboard.html`](</c:/Users/op/Desktop/allbright/allbright-dashboard.html>)
 
 ---
 
 ## Part 1: Current State Analysis
 
-### 1.1 Strengths of current allbright-dashboard.html
+### 1.1 Current Architecture
+
+The active dashboard is a routed React application composed of multiple Ash.Black pages rather than a single monolithic file.
+
+| Area | Current React File | Role |
+|---|---|---|
+| App entry | `ui/src/App.tsx` | Route registry and app composition |
+| Layout | `ui/src/components/Layout.tsx` | Main shell, header, sidebar, content frame |
+| Navigation | `ui/src/components/Sidebar.tsx` | Ash.Black navigation model |
+| Dashboard | `ui/src/components/Dashboard.tsx` | Global Efficiency, alpha capture, quick stats |
+| KPI Matrix | `ui/src/components/Telemetry.tsx` | Institutional KPI matrix |
+| Live Events | `ui/src/components/LiveEvents.tsx` | Event stream view |
+| Logs | `ui/src/components/Stream.tsx` | Protocol/system activity stream |
+| Trades | `ui/src/components/Trades.tsx` | Execution ledger |
+| Wallet | `ui/src/components/WalletPage.tsx` | Vault and signer controls |
+| Copilot | `ui/src/components/Copilot.tsx` | Command center and AI panel |
+| Strategies | `ui/src/components/StrategiesPage.tsx` | Strategy management |
+| Settings | `ui/src/components/SystemSettings.tsx` | Runtime and operator settings |
+| Setup | `ui/src/components/SetupWizard.tsx` | Onboarding and setup |
+
+### 1.2 Legacy-to-React Equivalence
+
+The old HTML dashboard maps into the React app as follows:
+
+| Legacy Section | React Equivalent |
+|---|---|
+| Dashboard / Global Efficiency | `ui/src/components/Dashboard.tsx` |
+| 44 KPI Telemetry Matrix | `ui/src/components/Telemetry.tsx` |
+| Live Blockchain Events | `ui/src/components/LiveEvents.tsx` |
+| Wallet Management | `ui/src/components/WalletPage.tsx` |
+| Alpha-Copilot | `ui/src/components/Copilot.tsx` |
+| AI Optimizer | `ui/src/components/AiOptimizer.tsx` and dashboard quick stats |
+| Strategy Configurator | `ui/src/components/StrategiesPage.tsx` |
+| System Logs | `ui/src/components/Stream.tsx` |
+| Trade History | `ui/src/components/Trades.tsx` |
+| System Settings | `ui/src/components/SystemSettings.tsx` |
+| Setup Wizard | `ui/src/components/SetupWizard.tsx` |
+
+### 1.3 Strengths of the Current React Dashboard
 
 | # | Strength | Description |
-|---|----------|-------------|
-| 1 | Self-contained | Single HTML file with CDN dependencies - easy to deploy |
-| 2 | Vue 3 Composition API | Modern Vue patterns with createApp, ref, computed |
-| 3 | Real-time Simulation | Live data updates with setInterval for GES score, AI metrics |
-| 4 | Comprehensive UI Sections | 11 mission segments (Dashboard, Telemetry, Events, etc.) |
-| 5 | Good Visual Design | Ash.black theme with cyan/emerald accents |
-| 6 | Responsive Grid | Tailwind responsive utilities |
-| 7 | Interactive Elements | Currency toggle, strategy toggles, wallet management |
+|---|---|---|
+| 1 | Modular architecture | Replaces the legacy monolith with route-based components |
+| 2 | Consistent Ash.Black shell | Shared layout and sidebar |
+| 3 | Stronger UI composition | Distinct dashboard, telemetry, logs, trades, wallet, and copilot pages |
+| 4 | Better deploy target | Fits the Vite build and Render deployment path |
+| 5 | React state/store layer | Existing engine store and hooks already exist |
+| 6 | API integration path | Hooks and API utilities already connect to backend routes |
 
-### 1.2 Identified Areas for Improvement
+### 1.4 Current Gaps
 
-#### Architecture Issues
-1. **Duplicate code blocks** - Logs/Trades sections appear twice (~lines 450-530 and ~532-590)
-2. **Single-file limitation** - Not maintainable for a real codebase
-3. **No proper modularity** - All code in one file
+The React dashboard is the right baseline, but it is still incomplete in several areas.
 
-#### Technical Debt
-1. **CDN dependencies** - No proper package management
-2. **No TypeScript** - JavaScript only
-3. **No state management** - Vuex/Pinia
-4. **No real API integration** - All mocked data
+#### Architecture Gaps
+- Duplicate or overlapping dashboard concepts still exist in a few components.
+- Some pages are more mature than others.
+- There is still drift between desktop/Tauri assumptions and Render/web deployment assumptions.
 
-#### Missing Features
-1. **No real-time WebSocket** - Uses setInterval polling
-2. **No error handling** - Silent failures
-3. **No loading states** - No skeleton/spinner
-4. **No notification system** - No toast messages
-5. **No dark/light mode toggle**
+#### Data Gaps
+- Some pages still use mocked or fallback values.
+- Live telemetry is not yet unified into one canonical dashboard state model across all pages.
+- Real-time transport is inconsistent across components.
 
-#### Code Quality Issues
-1. **Inline styles mixed with Tailwind**
-2. **No unit tests**
-3. **No linting**
+#### UX Gaps
+- Loading, error, and empty states are not uniformly implemented.
+- Export workflows are inconsistent.
+- Some pages are architecturally present but not fully production-hardened.
+
+#### Code Quality Gaps
+- Some files contain formatting and consistency issues.
+- A few components still need cleanup to match the production deployment model.
+- The legacy HTML file still creates confusion in planning documents.
 
 ---
 
 ## Part 2: Enhancement Proposal
 
-### 2.1 Architecture Enhancements
+### 2.1 Architectural Direction
 
-#### Phase A: Module Extraction (Priority: HIGH)
+The enhancement strategy should build on the React Ash.Black dashboard, not migrate away from the legacy HTML file.
 
-| Current (Vue HTML) | Target (React + Vite) | Benefit |
-|-------------------|----------------------|---------|
-| Single HTML file | Modular React components | Maintainability |
-| CDN imports | npm/pnpm packages | Version control |
-| Inline JavaScript | TypeScript | Type safety |
-| Global state in Vue | Pinia state management | Scalability |
+#### Target principle
+- React Ash.Black app remains the only active dashboard implementation.
+- `allbright-dashboard.html` remains reference-only until explicitly archived.
+- Shared telemetry, engine state, and deployment-safe UI behavior become the unifying focus.
 
-#### Phase B: Data Layer Enhancement (Priority: HIGH)
+### 2.2 Enhancement Priorities
 
-| Current | Enhanced | Implementation |
-|---------|----------|----------------|
-| setInterval mocking | WebSocket real-time | `useLiveTelemetry.ts` hook |
-| Static KPI matrix | Live 44-KPI matrix | `useTelemetry.ts` hook |
-| Hardcoded values | API-backed config | Tauri IPC commands |
+#### Priority A: Single Source of Truth for Dashboard State
 
-### 2.2 UI/UX Enhancements
+Consolidate live system state behind the existing React state layer.
 
-#### Component Enhancements
+Primary candidates:
+- [`ui/src/stores/engine.ts`](</c:/Users/op/Desktop/allbright/ui/src/stores/engine.ts>)
+- [`ui/src/services/useLiveTelemetry.ts`](</c:/Users/op/Desktop/allbright/ui/src/services/useLiveTelemetry.ts>)
+- [`ui/src/hooks/useTelemetry.ts`](</c:/Users/op/Desktop/allbright/ui/src/hooks/useTelemetry.ts>)
 
-| Component | Current State | Enhancement |
-|----------|--------------|-------------|
-| Dashboard | Chart.js only | Add Recharts with multiple viz types |
-| Telemetry | Static table | Expandable categories, real-time updates |
-| Logs | Simple list | Searchable, filterable, exportable |
-| Wallet | Basic CRUD | Multi-sig integration |
-| Copilot | Mock responses | AI-powered with context |
+Goals:
+- unify GES, KPI matrix, wallet, engine, and event-stream status
+- remove duplicated polling logic
+- ensure all dashboard pages consume the same canonical state
 
-#### New Features to Implement
+#### Priority B: Replace Mocked Visuals with Real Backend Data
 
-1. **Data Export**
-   - CSV export for Logs, Trades, Telemetry
-   - JSON export for audit trails
+Focus first on the pages users treat as operational dashboards:
+- `Dashboard.tsx`
+- `Telemetry.tsx`
+- `Stream.tsx`
+- `Trades.tsx`
+- `WalletPage.tsx`
+- `Copilot.tsx`
 
-2. **Loading States**
-   - Skeleton loaders for all data components
-   - Spinner for async operations
+Goals:
+- remove placeholder stats where backend fields already exist
+- standardize loading states
+- standardize empty/error fallback behavior
 
-3. **Notification System**
-   - Toast notifications for success/error/info
-   - Notification center for history
+#### Priority C: Deployment Alignment
 
-4. **Keyboard Navigation**
-   - Focus indicators
-   - Keyboard shortcuts (?, Ctrl+K for search)
+The React dashboard must stay aligned with Render and API-serving behavior.
 
-5. **Accessibility**
-   - ARIA labels
-   - Screen reader support
+Goals:
+- keep the Vite entrypoint and API static serving contract stable
+- ensure `ui/dist/index.html` remains the deployment entry
+- avoid legacy HTML assumptions in new work
 
-### 2.3 Integration Enhancements
+#### Priority D: UX Hardening
 
-#### Current Hook Analysis
-
-**useLiveTelemetry.ts** (Tauri-backed):
-```typescript
-// Provides: SharedEngineState from Tauri invoke
-// - running: boolean
-// - totalWeightedScore: number
-// - currentDailyProfit: number
-// - avgLatencyMs: number
-// - specialistRegistry: array
-```
-
-**useTelemetry.ts** (KPI matrix):
-```typescript
-// Provides: FullKPIState with 36-KPIs
-// - categories: KPI[]
-// - ges: number
-// - timestamp: Date
-```
-
-#### Enhancement: Unify hooks to use single source of truth:
-- Use `useLiveTelemetry` as primary for engine state
-- Merge KPI updates from `useTelemetry` into the same hook
-- Eliminate redundant polling
-
-### 2.4 Theme & Design System
-
-#### Current CSS Variables (allbright-dashboard.html)
-```css
-:root {
-  --ash-bg: #111217;
-  --ash-lighter: #1a1c20;
-  --ash-border: #27272a;
-  --black-data: #000000;
-  --text-primary: #f0f0f8;
-  --text-secondary: #b4b4c2;
-}
-```
-
-#### Tailwind Config (ui/tailwind.config.js)
-```javascript
-colors: {
-  'ash-black': '#111217',
-  'ash-dark': '#1a1c20',
-  'ash-border': '#27272a',
-  'cyan-accent': '#06b6d4',
-  'emerald-accent': '#10b981',
-}
-```
-
-#### Enhancement: Add dark/light mode toggle
-- Preserve Ash.Black as default "dark" mode
-- Add Light mode variant with inverted palette
-- Persist preference in localStorage
+Add the operational polish expected of a lead dashboard:
+- toast notifications
+- export affordances
+- accessibility cleanup
+- keyboard navigation
+- consistent filters/search behavior
 
 ---
 
 ## Part 3: Implementation Roadmap
 
-### Phase 1: Foundation (Week 1-2)
+### Phase 1: Baseline Cleanup
 
-| Task | Status | Files |
-|------|--------|-------|
-| Extract Vue logic to React | PENDING | New components |
-| Implement TypeScript | PENDING | tsconfig, types |
-| Set up Pinia store | PENDING | stores/engine.ts |
-| WebSocket integration | PENDING | services/websocket.ts |
+| Task | Status | Notes |
+|---|---|---|
+| Mark legacy HTML as reference-only in docs | REQUIRED | Prevent wrong implementation target |
+| Standardize React dashboard as source of truth | REQUIRED | All planning should point to `ui/src` |
+| Audit route/component ownership | REQUIRED | Remove overlap and ambiguity |
 
-### Phase 2: UI Enhancement (Week 2-3)
+### Phase 2: Data Unification
 
-| Task | Status | Files |
-|------|--------|-------|
-| Dashboard charts upgrade | PENDING | Dashboard.tsx |
-| Loading states | PENDING | UI components |
-| Notification system | PENDING | Toast.tsx |
-| Export functionality | PENDING | Export buttons |
+| Task | Status | Notes |
+|---|---|---|
+| Consolidate telemetry state | PENDING | Merge store/hook responsibilities |
+| Replace dashboard mock values | PENDING | Use backend and engine values consistently |
+| Normalize live updates | PENDING | Reduce inconsistent polling patterns |
 
-### Phase 3: Integration (Week 3-4)
+### Phase 3: UX Hardening
 
-| Task | Status | Files |
-|------|--------|-------|
-| Tauri IPC alignment | PENDING | api/ commands |
-| Real API integration | PENDING | services/*.ts |
-| Error boundaries | PENDING | App.tsx |
-| Keyboard navigation | PENDING | UI components |
+| Task | Status | Notes |
+|---|---|---|
+| Add consistent loading states | PENDING | Dashboard, logs, wallet, trades, telemetry |
+| Add consistent error states | PENDING | Visible, not silent |
+| Add export and operator utilities | PENDING | Logs, trades, telemetry |
 
----
+### Phase 4: Deployment-Safe Finalization
 
-## Part 4: Technical Specifications
-
-### 4.1 KPI Matrix (44 Institutional KPIs)
-
-Organized into 6 categories per `ui/src/constants/kpi.ts`:
-
-| Category | Weight | KPIs |
-|----------|--------|------|
-| Efficiency | 0.20 | 7 (Gas, Execution, Slippage, etc.) |
-| Performance | 0.25 | 6 (Blocks, Opportunities, Profit, etc.) |
-| Health | 0.15 | 6 (Error Rate, CPU, Memory, etc.) |
-| Risk | 0.20 | 6 (Sharpe, Drawdown, VaR, etc.) |
-| Auto-Optimization | 0.10 | 6 (Optimizations, Impact, etc.) |
-| Cloud | 0.10 | 6 (API Latency, Cost, etc.) |
-
-### 4.2 GES Calculation
-
-```typescript
-// Global Efficiency Score formula
-GES = Σ(category_weight × category_score)
-
-Where:
-- category_weight = defined in KPI constant
-- category_score = normalized 0-100 based on KPI targets
-```
-
-### 4.3 Workflow Stages
-
-From work-flow-guide.md:
-```
-DEV → SIMULATION → PAPER TRADING → SHADOW MODE → LIVE SIMULATION → CANARY RELEASE → FULL LIVE MODE
-```
+| Task | Status | Notes |
+|---|---|---|
+| Validate Render-safe build behavior | PENDING | UI entrypoint, static assets, API fallback |
+| Remove dashboard drift between desktop and web assumptions | PENDING | Avoid hidden runtime branches |
+| Archive or isolate legacy HTML | PENDING | Keep only as reference if still needed |
 
 ---
 
-## Part 5: Risk Mitigation
+## Part 4: File-Level Focus
 
-| Risk | Mitigation |
-|------|-------------|
-| Breaking changes | Incremental migration |
-| Data loss | Backup before deletion |
-| Runtime errors | Staged rollout |
-| Performance degradation | Monitor GES during migration |
+### Primary files to improve
+
+- [`ui/src/App.tsx`](</c:/Users/op/Desktop/allbright/ui/src/App.tsx>)
+- [`ui/src/components/Dashboard.tsx`](</c:/Users/op/Desktop/allbright/ui/src/components/Dashboard.tsx>)
+- [`ui/src/components/Telemetry.tsx`](</c:/Users/op/Desktop/allbright/ui/src/components/Telemetry.tsx>)
+- [`ui/src/components/Stream.tsx`](</c:/Users/op/Desktop/allbright/ui/src/components/Stream.tsx>)
+- [`ui/src/components/Trades.tsx`](</c:/Users/op/Desktop/allbright/ui/src/components/Trades.tsx>)
+- [`ui/src/components/WalletPage.tsx`](</c:/Users/op/Desktop/allbright/ui/src/components/WalletPage.tsx>)
+- [`ui/src/components/Copilot.tsx`](</c:/Users/op/Desktop/allbright/ui/src/components/Copilot.tsx>)
+- [`ui/src/stores/engine.ts`](</c:/Users/op/Desktop/allbright/ui/src/stores/engine.ts>)
+- [`ui/src/services/useLiveTelemetry.ts`](</c:/Users/op/Desktop/allbright/ui/src/services/useLiveTelemetry.ts>)
+- [`ui/src/hooks/useTelemetry.ts`](</c:/Users/op/Desktop/allbright/ui/src/hooks/useTelemetry.ts>)
+
+### Secondary files
+
+- [`ui/src/components/Layout.tsx`](</c:/Users/op/Desktop/allbright/ui/src/components/Layout.tsx>)
+- [`ui/src/components/Sidebar.tsx`](</c:/Users/op/Desktop/allbright/ui/src/components/Sidebar.tsx>)
+- [`ui/src/components/SystemSettings.tsx`](</c:/Users/op/Desktop/allbright/ui/src/components/SystemSettings.tsx>)
+- [`ui/src/components/SetupWizard.tsx`](</c:/Users/op/Desktop/allbright/ui/src/components/SetupWizard.tsx>)
+
+### Legacy reference only
+
+- [`allbright-dashboard.html`](</c:/Users/op/Desktop/allbright/allbright-dashboard.html>)
 
 ---
 
-## Part 6: Acceptance Criteria
+## Part 5: Acceptance Criteria
 
-- [ ] Single unified Layout component (Layout.tsx)
-- [ ] Consistent ash.black theme across all pages
-- [ ] No duplicate components
-- [ ] 44-KPI telemetry matrix functional
-- [ ] Working route structure with fallback
-- [ ] WebSocket real-time updates
-- [ ] Loading states implemented
-- [ ] Export functionality added
-- [ ] Dark/Light mode toggle
-- [ ] TypeScript throughout
+- [ ] All planning documents refer to the React Ash.Black dashboard as current
+- [ ] `allbright-dashboard.html` is clearly marked legacy/reference-only
+- [ ] Dashboard landing page uses real state wherever backend data is available
+- [ ] KPI matrix is driven by live canonical telemetry state
+- [ ] Logs, trades, wallet, and copilot pages use consistent loading/error patterns
+- [ ] Render/web deployment path remains stable with the React dashboard as entrypoint
+- [ ] UI shell remains visually consistent across all routes
 
 ---
 
-## Part 7: File Changes Required
+## Part 6: Summary Directive
 
-### Files to CREATE
-- `ui/src/stores/engine.ts` (Pinia store)
-- `ui/src/services/websocket.ts` (real-time)
-- `ui/src/components/Toast.tsx` (notifications)
+The dashboard program should no longer be framed as “migrating from the HTML dashboard.” That migration has already happened structurally.
 
-### Files to MODIFY
-- `ui/src/App.tsx` (routes, error boundaries)
-- `ui/src/components/Dashboard.tsx` (enhanced charts)
-- `ui/src/services/useLiveTelemetry.ts` (unified hook)
-
-### Files to DELETE (After Migration)
-- `allbright-dashboard.html` (reference only)
+The real task now is:
+- harden the React Ash.Black dashboard
+- unify live state
+- remove mock and legacy drift
+- align the routed UI with deployment and operator expectations
 
 ---
 
 ## Session Progress
 
-**Analysis Completed:**
-- ✅ Read and analyzed allbright-dashboard.html
-- ✅ Examined React components (Dashboard.tsx, Telemetry.tsx, etc.)
-- ✅ Reviewed hooks (useTelemetry.ts, useLiveTelemetry.ts)
-- ✅ Reviewed KPI constants (kpi.ts with 36 and 44 KPI definitions)
-- ✅ Reviewed existing rebuild proposal (DASHBOARD_REBUILD_PROPOSAL.md)
+**Confirmed during this review**
+- React Ash.Black dashboard located under `ui/src`
+- Legacy HTML file confirmed as reference-only
+- Route and component equivalence mapped
+- Proposal corrected to reflect the actual codebase state
 
-**Status:** Analysis complete. Enhancement proposal documented.
-
----
-
-*Proposal created: ${new Date().toLocaleDateString()}*
-*Lead Architect: BLACKBOXAI*
+**Status:** Proposal updated to current architecture baseline.

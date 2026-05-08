@@ -1,9 +1,20 @@
 import React from 'react';
-import { Zap, Radio, Globe, ShieldCheck, ChevronDown } from 'lucide-react';
+import { Radio, Globe, ShieldCheck, ChevronDown } from 'lucide-react';
 import { useEngine } from '@/stores/engine';
 
 export default function Header() {
-  const { engine, isLive } = useEngine();
+  const { engine, telemetryFeed, isLive } = useEngine();
+  const walletLabel = engine?.walletAddress
+    ? `${engine.walletAddress.slice(0, 5)}...${engine.walletAddress.slice(-4)}`
+    : "Not linked";
+  const latencyLabel =
+    typeof telemetryFeed?.avgLatencyMs === "number"
+      ? `${telemetryFeed.avgLatencyMs.toFixed(0)}ms`
+      : "--";
+  const throughputLabel =
+    typeof telemetryFeed?.tradesPerHour === "number"
+      ? `${telemetryFeed.tradesPerHour}/h`
+      : "--";
 
   return (
     <header className="h-20 flex items-center justify-between px-10 bg-ash-black/80 backdrop-blur-md border-b border-ash-border sticky top-0 z-40">
@@ -39,11 +50,11 @@ export default function Header() {
         <div className="hidden md:flex items-center gap-6 pr-6 border-r border-ash-border/50">
           <div className="text-right">
             <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest mb-0.5">Mempool Latency</p>
-            <p className="text-[10px] font-black text-cyan-accent font-mono">14ms</p>
+            <p className="text-[10px] font-black text-cyan-accent font-mono">{latencyLabel}</p>
           </div>
           <div className="text-right">
-            <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest mb-0.5">Gas Base</p>
-            <p className="text-[10px] font-black text-amber-500 font-mono">18.4 Gwei</p>
+            <p className="text-[8px] font-black text-zinc-600 uppercase tracking-widest mb-0.5">Throughput</p>
+            <p className="text-[10px] font-black text-amber-500 font-mono">{throughputLabel}</p>
           </div>
         </div>
 
@@ -54,7 +65,7 @@ export default function Header() {
               <ShieldCheck size={14} className="text-emerald-accent" />
               <span className="text-[10px] font-black text-white uppercase tracking-widest">Master Signer</span>
             </div>
-            <span className="text-[9px] font-mono text-zinc-500 mt-0.5">0x742...f44e</span>
+            <span className="text-[9px] font-mono text-zinc-500 mt-0.5">{walletLabel}</span>
           </div>
           
           <button className="w-10 h-10 rounded-xl bg-ash-dark border border-ash-border flex items-center justify-center hover:border-zinc-700 transition-all group">

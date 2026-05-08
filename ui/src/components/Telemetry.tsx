@@ -3,12 +3,11 @@ import { ChevronDown, ChevronUp, Search, RefreshCw, ShieldCheck } from 'lucide-r
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useEngine } from '@/stores/engine';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FORTY_FOUR_KPIS } from '@/constants/kpi';
-import type { KPI, KPICategory } from '@/types/kpi';
+import type { KPI } from '@/types/kpi';
 
 const KpiMatrix: React.FC = () => {
-  const { telemetry, isLive, refresh, lastUpdate } = useEngine();
+  const { telemetry, isLive, isLoading, error, refresh, lastUpdate } = useEngine();
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['efficiency', 'performance']));
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -119,6 +118,12 @@ const KpiMatrix: React.FC = () => {
         </Button>
       </div>
 
+      {error && (
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-xs font-bold text-amber-400 uppercase tracking-widest">
+          KPI matrix is operating with partial telemetry
+        </div>
+      )}
+
       {/* Main Matrix */}
       <div className="flex-1 bg-ash-black border border-ash-border rounded-xl overflow-hidden flex flex-col shadow-2xl">
         <div className="flex-1 overflow-y-auto custom-scrollbar">
@@ -133,7 +138,13 @@ const KpiMatrix: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredCategories.map((cat) => {
+              {isLoading ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-20 text-center text-zinc-600 text-[10px] font-black uppercase tracking-widest">
+                    Synchronizing institutional matrix...
+                  </td>
+                </tr>
+              ) : filteredCategories.map((cat) => {
                 const isExpanded = expandedCategories.has(cat.id);
                 const liveKpis = telemetry.categories[cat.id] || cat.kpis;
                 
