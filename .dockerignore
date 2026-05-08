@@ -1,8 +1,15 @@
 node_modules
+**/node_modules
 dist
+**/dist
 dist-electron
+**/dist-electron
+.pnpm-store
+target
+logs
 .git
 .env
+**/.env
 *.log
 electron-builder.json
 build-desktop.bat
