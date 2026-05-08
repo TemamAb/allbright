@@ -18,6 +18,8 @@ import MissionControl from './components/MissionControl';
 import DeploymentReadiness from './components/DeploymentReadiness';
 import { Toaster } from "sonner";
 
+import { EngineProvider } from './stores/engine';
+
 /**
  * Allbright Elite Dashboard - Unified Architecture
  * 
@@ -37,7 +39,8 @@ const App: React.FC = () => {
       themes={["light", "dark", "black"]}
       enableSystem={false}
     >
-      <Layout>
+      <EngineProvider>
+        <Layout>
         <Switch>
           <Route path="/" component={Dashboard} />
           <Route path="/telemetry" component={Telemetry} />
@@ -55,9 +58,10 @@ const App: React.FC = () => {
           <Route component={NotFound} />
         </Switch>
       </Layout>
-      <Toaster richColors position="top-right" theme="dark" />
-    </ThemeProvider>
-  );
+    </EngineProvider>
+    <Toaster richColors position="top-right" theme="dark" />
+  </ThemeProvider>
+);
 };
 
 export default App;

@@ -16,7 +16,8 @@ export default defineConfig({
     alias: {
       "@": path.resolve(import.meta.dirname, "src"),
       "@assets": path.resolve(import.meta.dirname, "./src/assets"),
-      "@workspace/api-client-react": path.resolve(import.meta.dirname, "../lib/api-client-react/src/index.ts"),
+      // Hardened alias for Monorepo resolution during Render builds
+      "@workspace/api-client-react": path.resolve(import.meta.dirname, "../../lib/api-client-react/src/index.ts"),
     },
     dedupe: ["react", "react-dom"],
   },
@@ -27,6 +28,7 @@ export default defineConfig({
     sourcemap: false,
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
+      input: path.resolve(__dirname, 'allbright-dashboard.html'),
       external: [
         '@tauri-apps/api',
         '@tauri-apps/api/tauri',

@@ -1,10 +1,10 @@
 
 Task Completed
-Allbright Tauri Desktop Application - Status Review
+Allbright-Desktop Tauri Application - Status Review
 Project Overview
 Name: r2-t2
 
-Version: 0.2.5
+Version: 0.2.6
 
 Tauri Version: 2.6.0
 
@@ -14,7 +14,7 @@ Product Name: Allbright-Desktop
 
 Architecture
 Frontend Stack
-React 19.2.0 with TypeScript
+React 18.3.1 with TypeScript
 Vite 6.4.2 build system
 Mantine UI v8.3.4 component library
 i18next for internationalization (en, fr)

@@ -1,0 +1,75 @@
+name: Release MSI Hash Update
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  update-msi-hash:
+    runs-on: windows-latest # Use Windows runner to build MSI
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for git push
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          target: x86_64-pc-windows-msvc
+          override: true
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies (root)
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Tauri application
+        working-directory: ./tauri
+        run: pnpm tauri build --release
+
+      - name: Locate MSI installer
+        id: locate_msi
+        run: |
+          $msi_path = Get-ChildItem -Path ".\src-tauri\target\release\bundle\msi\Allbright-Desktop_0.2.6_x64_en-US.msi" -ErrorAction SilentlyContinue
+          if ($msi_path) {
+            echo "MSI_PATH=$($msi_path.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          } else {
+            Write-Error "MSI installer not found!"
+            exit 1
+          }
+        shell: pwsh
+
+      - name: Calculate SHA-256 checksum
+        id: calculate_hash
+        run: |
+          $hash = (Get-FileHash -Path "${{ steps.locate_msi.outputs.MSI_PATH }}" -Algorithm SHA256).Hash
+          echo "SHA256_HASH=$hash" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+        shell: pwsh
+
+      - name: Update Distribution Manifest
+        run: |
+          $manifest_file = "DISTRIBUTION_MANIFEST_v0.2.6.md"
+          $content = Get-Content $manifest_file
+          $new_content = $content -replace "\[PLACEHOLDER_SHA256_HASH_OF_MSI\]", "${{ steps.calculate_hash.outputs.SHA256_HASH }}"
+          $new_content | Set-Content $manifest_file
+        shell: pwsh
+
+      - name: Commit and push changes
+        uses: EndBug/add-and-commit@v9
+        with:
+          author_name: GitHub Actions
+          author_email: actions@github.com
+          message: "docs: Update MSI SHA-256 hash for v0.2.6 release"
+          add: 'DISTRIBUTION_MANIFEST_v0.2.6.md'
+          # Use GITHUB_TOKEN for pushing changes
+          token: ${{ secrets.GITHUB_TOKEN }}

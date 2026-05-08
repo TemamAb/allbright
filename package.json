@@ -1,11 +1,12 @@
 {
   "name": "allbright-workspace",
+  "version": "0.2.6",
   "private": true,
   "main": "main.js",
   "scripts": {
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
     "typecheck:libs": "tsc --build",
-    "dev": "pnpm --parallel --filter ... dev",
+    "dev": "vite",
     "build": "pnpm -r build",
     "readiness": "npx tsx api/specs/checkReadiness.ts",
     "electron:dev": "concurrently \"pnpm dev\" \"wait-on http://localhost:5173 && electron .\"",

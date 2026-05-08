@@ -26,7 +26,7 @@ pub enum TrayState {
 // https://v2.tauri.app/start/migrate/from-tauri-1/#migrate-to-menu-module
 pub fn create_tray_menu<R: Runtime>(
   app: &tauri::AppHandle<R>,
-  lang: String,
+  _lang: String,
 ) -> Result<Menu<R>, tauri::Error> {
   // TODO: tray internationalization https://docs.rs/rust-i18n/latest/rust_i18n/
   // untested, not sure if the macro accepts dynamic languages

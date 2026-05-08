@@ -25,7 +25,7 @@
       "bin/allbright"
     ],
     "category": "Finance",
-    "shortDescription": "Allbright AI-Agent Desktop Trading Terminal",
+    "shortDescription": "Allbright-Desktop Trading Terminal",
     "longDescription": "Production-grade desktop trading terminal with AI-agent arbitrage solver, deployment readiness checks, and multi-stage workflow management.",
     "macOS": {
       "frameworks": [],
@@ -41,31 +41,23 @@
     },
     "createUpdaterArtifacts": false
   },
-    "build": {
-      "beforeDevCommand": "pnpm start",
-      "beforeBuildCommand": "pnpm build",
-      "frontendDist": "../build",
-      "devUrl": "http://localhost:1420"
-    },
-  "productName": "Allbright Desktop",
+  "build": {
+    "beforeDevCommand": "pnpm start",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../build",
+    "devUrl": "http://localhost:1420"
+  },
+  "productName": "Allbright-Desktop",
   "mainBinaryName": "allbright-desktop",
   "version": "0.2.6",
   "identifier": "com.allbright.desktop",
-   "plugins": {
-     "updater": {
-       "endpoints": [
-         "https://releases.allbright.ai/desktop/{{target}}/{{arch}}"
-       ],
-       "pubkey": ""
-     }
-   },
   "app": {
     "security": {
       "csp": "default-src blob: data: filesystem: ws: wss: http: https: tauri: 'unsafe-eval' 'unsafe-inline' 'self' img-src: 'self'; connect-src ipc: http://ipc.localhost"
     },
     "windows": [
       {
-        "title": "Allbright AI-Agent Desktop",
+        "title": "Allbright-Desktop",
         "label": "main",
         "minWidth": 1000,
         "minHeight": 600,

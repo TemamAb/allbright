@@ -2,6 +2,5 @@
 
 pub mod process_manager;
 
-pub use process_manager::{
-    AppState, GuruDefaults, UserRole, WorkflowStage, require_admin, require_wizard_completed,
-};
+// Re-exports for external use
+pub use process_manager::{AppState, UserRole, WorkflowStage, require_admin};

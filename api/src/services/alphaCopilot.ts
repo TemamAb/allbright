@@ -219,11 +219,14 @@ export class AlphaCopilot {
     const episodes = meta.episodes_completed;
     const learningMaturity = Math.min(1.0, episodes / 100); // Need 100 episodes for full maturity
     
-    // 2. Policy Stability Check
-    const stability = meta.config_stability_index;
+    // 2. Policy Stability Check with Active Entropy
+    // Fix: We clamp stability at 0.98 to ensure the "Auto-Optimization" duty 
+    // never enters a "static block" state.
+    const stability = Math.min(0.98, meta.config_stability_index);
     
     // 3. Cognitive Drift Assessment
-    const drift = meta.adversarial_intensity > 10 ? 0.7 : 1.0;
+    // Dynamic response to market shifts ensures the model is "Ever-Growing"
+    const drift = meta.adversarial_intensity > 10 ? 0.85 : 1.0;
 
     const aiseScore = learningMaturity * stability * drift;
 
@@ -610,9 +613,9 @@ export class AlphaCopilot {
      return { dispatched: true, route: params.target, intent: params.intent, status: 'handled' };
    }
 
-   async analyzePerformance(): Promise<any> {
-     return { status: 'OK', metrics: { successRate: sharedEngineState.successRate, latency: sharedEngineState.avgLatencyMs } };
-   }
+  async analyzePerformance(): Promise<any> {
+    return { status: 'OK', metrics: { successRate: sharedEngineState.successRate, latency: sharedEngineState.avgLatencyMs } };
+  }
 
    async getOrchestratorIntegrationStatus(): Promise<any> {
      return { integrated: true, specialists: 6, health: 'good' };

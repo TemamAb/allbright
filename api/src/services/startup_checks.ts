@@ -14,9 +14,23 @@ let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
  */
 export async function runStartupChecks(): Promise<boolean> {
   console.log('[STRATEGIC] Initializing unified startup sequence...');
+  
+  // Verify critical production environment variables
+  const criticalVars = ['DATABASE_URL', 'RPC_ENDPOINT', 'PIMLICO_API_KEY'];
+  for (const v of criticalVars) {
+    if (!process.env[v]) {
+      console.error(`[CRITICAL] Missing required environment variable: ${v}`);
+      return false;
+    }
+  }
+
   const { generateDeploymentReadinessReport } = await import('./deploy_gatekeeper.js');
   const report = await generateDeploymentReadinessReport();
-  const ready = report.overallStatus === 'READY_FOR_DEPLOYMENT';
+  
+  // Institutional Grade: Ensure 44-KPI Matrix is initialized
+  console.log(`[KPI] System audit complete. KPI status: ${report.kpiScore}%`);
+
+  const ready = report.overallStatus === 'READY_FOR_DEPLOYMENT' && report.kpiScore >= 82.5;
 
   if (ready) {
     systemReady = true;

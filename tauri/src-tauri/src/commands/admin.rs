@@ -2,7 +2,7 @@
 //! Provides admin/user mode separation and wizard completion tracking
 
 use tauri::State;
-use crate::core::process_manager::{AppState, UserRole, require_admin, require_wizard_completed, WorkflowStage};
+use crate::core::process_manager::{AppState, UserRole, require_admin, WorkflowStage};
 
 /// Set user role (admin or user)
 /// Requires current admin privileges

@@ -1,7 +1,7 @@
 # Force rebuild v2
 [package]
 name = "allbright-solver"
-version = "0.1.0"
+version = "0.2.6"
 edition = "2021"
 
 [lib]
@@ -35,6 +35,7 @@ sha2 = "0.10"
 async-trait = "0.1"
 dashmap = "5.5"
 fastrand = "2.0"
+tauri = "2.11.0"
 # notify removed - desktop notifications not needed on headless server
 
 [profile.release]
@@ -50,4 +51,3 @@ criterion = "0.5"
 [[bench]]
 name = "path_cache"
 harness = false
-

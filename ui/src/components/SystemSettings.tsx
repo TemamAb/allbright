@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Settings, Server, Key, Sliders, Save } from 'lucide-react';
+import { Settings, Server, Key, Sliders, Save, RefreshCcw, ShieldCheck, Database, Globe } from 'lucide-react';
+import { Button } from './ui/button';
+import { Badge } from './ui/badge';
 
 const SystemSettings: React.FC = () => {
   const [config, setConfig] = useState({
@@ -12,85 +13,168 @@ const SystemSettings: React.FC = () => {
   });
 
   return (
-    <div className="p-8 space-y-8 max-w-4xl">
-      <div className="flex justify-between items-end">
+    <div className="p-8 space-y-12 max-w-5xl animate-in fade-in slide-in-from-bottom-2 duration-500">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-          <h2 className="text-3xl font-black text-white tracking-tight italic uppercase">System Settings</h2>
-          <p className="text-zinc-500 font-medium mt-1">Engine configuration and high-authority parameters.</p>
+          <h2 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">System Settings</h2>
+          <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.3em] mt-3">High-Authority Engine Parameters</p>
         </div>
-        <button className="flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded-lg font-bold text-sm transition-all shadow-lg shadow-green-900/20">
-          <Save className="h-4 w-4" /> Save All Changes
-        </button>
+        
+        <Button className="h-12 px-8 rounded-xl bg-emerald-accent text-black hover:bg-emerald-accent/80 font-black uppercase tracking-widest shadow-xl shadow-emerald-accent/10 flex items-center gap-3">
+          <Save size={18} />
+          Commit Configuration
+        </Button>
       </div>
 
-      <div className="grid gap-6">
-        <Card className="bg-zinc-950 border-zinc-800">
-          <CardHeader className="border-b border-zinc-900">
-            <CardTitle className="text-sm font-bold text-white flex items-center gap-2 uppercase">
-              <Server className="h-4 w-4 text-blue-500" /> Infrastructure
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6 space-y-6">
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-zinc-500 uppercase">Execution Mode</label>
-              <div className="flex gap-2">
-                {['SHADOW', 'LIVE_SIM', 'LIVE'].map(m => (
-                  <button 
-                    key={m}
-                    onClick={() => setConfig(prev => ({ ...prev, mode: m }))}
-                    className={`flex-1 py-2 text-xs font-bold rounded border transition-all ${config.mode === m ? 'bg-zinc-100 text-black border-white' : 'bg-zinc-900 text-zinc-500 border-zinc-800 hover:border-zinc-700'}`}
-                  >
-                    {m}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-zinc-500 uppercase flex items-center gap-1">
-                  <RefreshCcw className="h-3 w-3" /> RPC Backbone URL
-                </label>
-                <input 
-                  type="password" 
-                  value={config.rpcEndpoint}
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:border-blue-500" 
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-zinc-500 uppercase flex items-center gap-1">
-                  <Key className="h-3 w-3" /> Pimlico API Key
-                </label>
-                <input 
-                  type="password" 
-                  value={config.pimlicoKey}
-                  className="w-full bg-zinc-900 border border-zinc-800 rounded px-3 py-2 text-sm text-zinc-300 focus:outline-none focus:border-blue-500" 
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Left Column - Infrastructure */}
+        <div className="lg:col-span-7 space-y-8">
+          <div className="bg-ash-black border border-ash-border rounded-2xl p-8 shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-cyan-accent/30" />
+            <h3 className="text-[10px] font-black text-white uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
+              <Server size={14} className="text-cyan-accent" /> Network Infrastructure
+            </h3>
 
-        <Card className="bg-zinc-950 border-zinc-800">
-          <CardHeader className="border-b border-zinc-900">
-            <CardTitle className="text-sm font-bold text-white flex items-center gap-2 uppercase">
-              <Sliders className="h-4 w-4 text-green-500" /> Threshold Tuning
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6 grid grid-cols-2 gap-8">
-            <div className="space-y-4">
-              <label className="text-[10px] font-black text-zinc-500 uppercase">Min Margin Ratio (BPS): {config.minMarginBps}</label>
-              <input type="range" min="100" max="5000" step="50" value={config.minMarginBps} onChange={(e) => setConfig(prev => ({ ...prev, minMarginBps: parseInt(e.target.value) }))} className="w-full accent-green-500" />
+            <div className="space-y-8">
+              <div className="space-y-4">
+                <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block">Primary Execution Mode</label>
+                <div className="grid grid-cols-3 gap-3">
+                  {['SHADOW', 'LIVE_SIM', 'LIVE'].map(m => (
+                    <button 
+                      key={m}
+                      onClick={() => setConfig(prev => ({ ...prev, mode: m }))}
+                      className={`h-11 text-[10px] font-black uppercase tracking-widest rounded-xl border transition-all ${
+                        config.mode === m 
+                          ? 'bg-cyan-accent/10 border-cyan-accent/40 text-cyan-accent' 
+                          : 'bg-black/40 text-zinc-600 border-ash-border hover:text-zinc-400'
+                      }`}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                    <Database size={12} className="text-zinc-700" /> RPC Backbone URL
+                  </label>
+                  <div className="relative">
+                    <input 
+                      type="password" 
+                      value={config.rpcEndpoint}
+                      className="w-full bg-black/40 border border-ash-border rounded-xl px-4 py-3 text-xs font-mono text-zinc-400 focus:outline-none focus:border-cyan-accent/50 transition-all" 
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <RefreshCcw size={14} className="text-zinc-700 hover:text-zinc-500 cursor-pointer" />
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                    <Key size={12} className="text-zinc-700" /> Account Abstraction Key
+                  </label>
+                  <input 
+                    type="password" 
+                    value={config.pimlicoKey}
+                    className="w-full bg-black/40 border border-ash-border rounded-xl px-4 py-3 text-xs font-mono text-zinc-400 focus:outline-none focus:border-cyan-accent/50 transition-all" 
+                  />
+                </div>
+              </div>
             </div>
-            <div className="space-y-4">
-              <label className="text-[10px] font-black text-zinc-500 uppercase">Bribe Ratio (BPS): {config.bribeRatioBps}</label>
-              <input type="range" min="100" max="2500" step="10" value={config.bribeRatioBps} onChange={(e) => setConfig(prev => ({ ...prev, bribeRatioBps: parseInt(e.target.value) }))} className="w-full accent-blue-500" />
+          </div>
+
+          <div className="bg-ash-black border border-ash-border rounded-2xl p-8 shadow-xl relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-emerald-accent/30" />
+            <h3 className="text-[10px] font-black text-white uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
+              <Sliders size={14} className="text-emerald-accent" /> Profit & Risk Thresholds
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              <div className="space-y-6">
+                <div className="flex justify-between items-baseline">
+                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Min Margin Yield</label>
+                  <span className="text-xs font-black text-emerald-accent font-mono">{config.minMarginBps} BPS</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="100" max="5000" step="50" 
+                  value={config.minMarginBps} 
+                  onChange={(e) => setConfig(prev => ({ ...prev, minMarginBps: parseInt(e.target.value) }))} 
+                  className="w-full h-1.5 bg-black rounded-lg appearance-none cursor-pointer accent-emerald-accent" 
+                />
+                <div className="flex justify-between text-[8px] font-black text-zinc-700 uppercase">
+                  <span>Conservative</span>
+                  <span>Aggressive</span>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div className="flex justify-between items-baseline">
+                  <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Bribe Allocation</label>
+                  <span className="text-xs font-black text-cyan-accent font-mono">{config.bribeRatioBps} BPS</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="100" max="2500" step="10" 
+                  value={config.bribeRatioBps} 
+                  onChange={(e) => setConfig(prev => ({ ...prev, bribeRatioBps: parseInt(e.target.value) }))} 
+                  className="w-full h-1.5 bg-black rounded-lg appearance-none cursor-pointer accent-cyan-accent" 
+                />
+                <div className="flex justify-between text-[8px] font-black text-zinc-700 uppercase">
+                  <span>Standard</span>
+                  <span>Flash-Priority</span>
+                </div>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+
+        {/* Right Column - Status & Security */}
+        <div className="lg:col-span-5 space-y-8">
+          <div className="bg-ash-black border border-ash-border rounded-2xl p-8 shadow-xl h-full flex flex-col">
+            <h3 className="text-[10px] font-black text-white uppercase tracking-[0.2em] mb-8 flex items-center gap-3">
+              <ShieldCheck size={14} className="text-zinc-500" /> Security State
+            </h3>
+            
+            <div className="space-y-6 flex-grow">
+              <StatusRow label="Encrypted Storage" status="NOMINAL" good={true} />
+              <StatusRow label="Hardware Root" status="VERIFIED" good={true} />
+              <StatusRow label="Relay Connectivity" status="SECURE" good={true} />
+              <StatusRow label="Anti-Hijack Buffer" status="ACTIVE" good={true} />
+            </div>
+
+            <div className="mt-8 pt-8 border-t border-ash-border/50">
+              <div className="bg-ash-dark rounded-2xl p-6 border border-ash-border/30 group hover:border-white/10 transition-all cursor-pointer">
+                <div className="flex items-center gap-4 mb-4">
+                  <Globe size={24} className="text-zinc-700" />
+                  <div>
+                    <h4 className="text-[10px] font-black text-white uppercase tracking-widest">Region Enforcement</h4>
+                    <p className="text-[9px] text-zinc-600 font-bold uppercase mt-1">Institutional Compliance</p>
+                  </div>
+                </div>
+                <Badge className="bg-zinc-800 text-zinc-400 text-[8px] font-black uppercase px-2 py-0.5 rounded tracking-widest">
+                  GLOBAL RESTRICTED
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
-export default SystemSettings;
-import { RefreshCcw } from 'lucide-react';
+const StatusRow = ({ label, status, good }: { label: string, status: string, good?: boolean }) => (
+  <div className="flex items-center justify-between py-4 border-b border-ash-border/30 last:border-0">
+    <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">{label}</span>
+    <div className="flex items-center gap-3">
+      <span className={`text-[10px] font-black ${good ? 'text-emerald-accent' : 'text-zinc-400'}`}>{status}</span>
+      <div className={`w-1.5 h-1.5 rounded-full ${good ? 'bg-emerald-accent animate-pulse' : 'bg-zinc-800'}`} />
+    </div>
+  </div>
+);
+
+export default SystemSettings;

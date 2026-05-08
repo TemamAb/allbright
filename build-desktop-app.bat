@@ -6,9 +6,21 @@ setlocal EnableDelayedExpansion
 ::  Builds the Tauri desktop app (Windows installer / NSIS)
 :: ============================================================
 
+:: Extract APP_VERSION from tauri.conf.json using PowerShell
+for /f "tokens=*" %%a in ('powershell -NoProfile -ExecutionPolicy Bypass -Command "(Get-Content -Raw '%~dp0tauri\src-tauri\tauri.conf.json' | ConvertFrom-Json).version"') do set APP_VERSION=%%a
+
+if "%APP_VERSION%"=="" (
+    echo.
+    echo  [ERROR] Failed to extract version from tauri.conf.json.
+    echo  Check if the file exists and contains a "version" field.
+    echo.
+    pause
+    exit /b 1
+)
+
 echo.
 echo ===================================================
-echo   Allbright Desktop App - Build System
+echo   Allbright-Desktop Build System (v%APP_VERSION%)
 echo ===================================================
 echo.
 
@@ -62,6 +74,21 @@ for /f "tokens=*" %%v in ('cargo --version') do set CARGO_VER=%%v
 echo        Cargo found: %CARGO_VER%
 
 :: -------------------------------------------------------
+:: 3.4 Cleanup Redundant Assets (SSOT Enforcement)
+:: -------------------------------------------------------
+echo [3.4/5] Purging legacy dashboards and installer artifacts...
+
+:: Wipe the bundle directory to prevent version mixing (msi/nsis)
+echo        Cleaning bundle, WiX cache, and frontend build...
+if exist "%~dp0tauri\src-tauri\target\release\bundle" rd /s /q "%~dp0tauri\src-tauri\target\release\bundle"
+if exist "%~dp0tauri\target\release\bundle" rd /s /q "%~dp0tauri\target\release\bundle"
+:: Force WiX to reload branding bitmaps
+if exist "%~dp0tauri\src-tauri\target\release\wix" rd /s /q "%~dp0tauri\src-tauri\target\release\wix"
+:: Also remove old space-named installers if they exist in the root
+if exist "%~dp0Allbright Desktop_*.msi" del /f /q "%~dp0Allbright Desktop_*.msi"
+echo        Stale artifacts cleared.
+
+:: -------------------------------------------------------
 :: 3.5 Check WebView2 (Required for Windows)
 :: -------------------------------------------------------
 echo [3.5/5] Checking WebView2 Runtime...
@@ -82,17 +109,73 @@ if %ERRORLEVEL% NEQ 0 (
 echo [3.6/5] Verifying webviewInstallMode in tauri.conf.json...
 set CONF_PATH=%~dp0tauri\src-tauri\tauri.conf.json
 if exist "%CONF_PATH%" (
-    findstr /C:"\"type\": \"downloadBootstrapper\"" "%CONF_PATH%" >nul 2>&1
-    if %ERRORLEVEL% NEQ 0 (
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "$j = Get-Content -Raw '%CONF_PATH%' -Encoding UTF8 | ConvertFrom-Json; if ($null -eq $j.bundle.windows.webviewInstallMode) { exit 1 }" >nul 2>&1
+    if !ERRORLEVEL! NEQ 0 (
         echo.
-        echo  [WARNING] "downloadBootstrapper" not found in tauri.conf.json.
-        echo  If your build hangs or MSI fails to launch, ensure you've applied Phase 2:
-        echo  "webviewInstallMode": { "type": "downloadBootstrapper" }
+        echo  [CRITICAL] webviewInstallMode configuration missing in tauri.conf.json.
+        echo  This is required for stable MSI distribution.
+        echo.
+        pause
+        exit /b 1
+    )
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "$j = Get-Content -Raw '%CONF_PATH%' -Encoding UTF8 | ConvertFrom-Json; if ($j.bundle.windows.webviewInstallMode.type -ne 'downloadBootstrapper') { exit 1 }" >nul 2>&1
+    if !ERRORLEVEL! NEQ 0 (
+        echo        [WARNING] webviewInstallMode is set, but not to 'downloadBootstrapper'.
         echo.
     ) else (
         echo        Configuration verified: using downloadBootstrapper mode.
     )
+) else (
+    echo  [ERROR] tauri.conf.json not found at: %CONF_PATH%
+    pause
+    exit /b 1
 )
+
+:: -------------------------------------------------------
+:: 3.7 Generate Institutional Icons
+:: -------------------------------------------------------
+echo [3.7/5] Injecting unique Allbright brand assets...
+pushd "%~dp0tauri"
+call pnpm tauri icon ../ui/src/assets/allbright_logo.svg
+if %ERRORLEVEL% NEQ 0 (
+    echo.
+    echo  [WARNING] Icon generation failed. Ensure "tauri-cli" is installed.
+)
+popd
+
+:: -------------------------------------------------------
+:: 3.8 Verify Branding Bitmaps (Blue Theme)
+:: -------------------------------------------------------
+echo [3.8/5] Verifying branding bitmaps for blue theme...
+set BRANDING_DIR=%~dp0tauri\src-tauri\branding
+set BANNER_FILE=%BRANDING_DIR%\msi-banner.bmp
+set DIALOG_FILE=%BRANDING_DIR%\msi-dialog.bmp
+
+if not exist "%BANNER_FILE%" (
+    echo.
+    echo  [ERROR] MSI Banner bitmap missing: %BANNER_FILE%
+    echo  Required for blue theme customization.
+    echo.
+    pause
+    exit /b 1
+)
+
+if not exist "%DIALOG_FILE%" (
+    echo.
+    echo  [ERROR] MSI Dialog bitmap missing: %DIALOG_FILE%
+    echo  Required for blue theme customization.
+    echo.
+    pause
+    exit /b 1
+)
+
+:: Verify dimensions using PowerShell script
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\verify-bitmap-dimensions.ps1" -BitmapPath "%BANNER_FILE%" -ExpectedWidth 493 -ExpectedHeight 58
+if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\verify-bitmap-dimensions.ps1" -BitmapPath "%DIALOG_FILE%" -ExpectedWidth 493 -ExpectedHeight 312
+if %ERRORLEVEL% NEQ 0 exit /b %ERRORLEVEL%
+
+echo        Branding bitmaps verified.
 
 :: -------------------------------------------------------
 :: 4. Install / refresh JS dependencies
@@ -113,8 +196,35 @@ if %ERRORLEVEL% NEQ 0 (
     pause
     exit /b 1
 )
-echo.
+echo        Dependencies installed.
+
+echo [4.1/5] Building React Frontend (Single Source of Truth)...
+pushd "%~dp0ui"
+call pnpm build
+popd
+
 echo        Dependencies installed successfully.
+
+:: -------------------------------------------------------
+:: 4.5 Verify React Build Integrity (tauri/build)
+:: -------------------------------------------------------
+echo [4.5/5] Verifying React build folder in tauri/build...
+if not exist "%~dp0tauri\build\allbright-dashboard.html" (
+    echo [RECOVERY] Copying fresh UI dist to tauri build...
+    xcopy /E /I /Y "%~dp0ui\dist\*" "%~dp0tauri\build\"
+)
+if not exist "%~dp0tauri\build\allbright-dashboard.html" (
+    echo.
+    echo  [ERROR] React build artifacts not found in: %~dp0tauri\build
+    echo  This folder must be populated by the Vite build (ui/dist) before bundling.
+    echo.
+    pause
+    exit /b 1
+)
+echo        React build artifacts verified in tauri/build.
+:: Rename allbright-dashboard.html to index.html for Tauri entry point
+if exist "%~dp0tauri\build\allbright-dashboard.html" move "%~dp0tauri\build\allbright-dashboard.html" "%~dp0tauri\build\index.html"
+echo        Entry point renamed to index.html.
 
 :: -------------------------------------------------------
 :: 5. Build the Tauri app
@@ -123,7 +233,9 @@ echo [5/5] Building Tauri desktop app (pnpm tauri build)...
 echo        This compiles the Rust backend + React frontend.
 echo        First-time builds can take 10-20 minutes.
 echo.
-call pnpm tauri build
+pushd "%~dp0tauri"
+call pnpm tauri build --release
+
 if %ERRORLEVEL% NEQ 0 (
     echo.
     echo  =========================================================
@@ -151,7 +263,6 @@ if %ERRORLEVEL% NEQ 0 (
     pause
     exit /b 1
 )
-
 popd
 
 echo.
@@ -163,7 +274,52 @@ echo  Installer location:
 echo    tauri\src-tauri\target\release\bundle\
 echo.
 echo  Look for:
-echo    - nsis\Allbright-Desktop_0.2.5_x64-setup.exe
-echo    - msi\Allbright-Desktop_0.2.5_x64_en-US.msi
+echo    - nsis\Allbright-Desktop_0.2.6_x64-setup.exe
+echo    - msi\Allbright-Desktop_0.2.6_x64_en-US.msi
+echo    - nsis\Allbright-Desktop_%APP_VERSION%_x64-setup.exe
+echo    - msi\Allbright-Desktop_%APP_VERSION%_x64_en-US.msi
+echo.
+
+:: Search for artifacts in both local and workspace root target folders
+set MSI_NAME=Allbright-Desktop_%APP_VERSION%_x64_en-US.msi
+set NSIS_NAME=Allbright-Desktop_%APP_VERSION%_x64-setup.exe
+
+set MSI_PATH=
+set NSIS_PATH=
+
+if exist "%~dp0tauri\src-tauri\target\release\bundle\msi\%MSI_NAME%" set "MSI_PATH=%~dp0tauri\src-tauri\target\release\bundle\msi\%MSI_NAME%"
+if exist "%~dp0target\release\bundle\msi\%MSI_NAME%" set "MSI_PATH=%~dp0target\release\bundle\msi\%MSI_NAME%"
+
+if exist "%~dp0tauri\src-tauri\target\release\bundle\nsis\%NSIS_NAME%" set "NSIS_PATH=%~dp0tauri\src-tauri\target\release\bundle\nsis\%NSIS_NAME%"
+if exist "%~dp0target\release\bundle\nsis\%NSIS_NAME%" set "NSIS_PATH=%~dp0target\release\bundle\nsis\%NSIS_NAME%"
+
+set BUILD_STABLE=1
+
+if defined MSI_PATH (
+    echo [SUCCESS] MSI Installer verified at: %MSI_PATH%
+    echo [Final Gate] Running deep integrity check on MSI metadata...
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\verify-msi-icon.ps1" -MsiPath "%MSI_PATH%" -ExpectedVersion "%APP_VERSION%"
+    if errorlevel 1 (
+        echo [CRITICAL] MSI Metadata verification failed!
+        set BUILD_STABLE=0
+    )
+) else (
+    echo [ERROR] MSI Installer (%MSI_NAME%) not found in any expected target directory.
+    set BUILD_STABLE=0
+)
+
+if defined NSIS_PATH (
+    echo [SUCCESS] NSIS Installer verified at: %NSIS_PATH%
+) else (
+    echo [ERROR] NSIS Installer (%NSIS_NAME%) missing.
+    set BUILD_STABLE=0
+)
+
+if %BUILD_STABLE% NEQ 1 (
+    echo.
+    echo [CRITICAL] Build artifacts are incomplete. Check Rust compilation logs for errors.
+    exit /b 1
+)
+
 echo.
 pause
