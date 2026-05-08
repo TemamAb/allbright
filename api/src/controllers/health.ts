@@ -17,6 +17,7 @@ import * as net from "net";
 import { withBackoff } from "../services/retry.js";
 import { preflightCheck } from "../services/preflightCheck.js";
 import { debuggingSystem } from "../services/debuggingSystem.js";
+import { logger } from "../services/logger.js";
 
 const router: IRouter = Router();
 
