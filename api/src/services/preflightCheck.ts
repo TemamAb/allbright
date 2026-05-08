@@ -1,6 +1,6 @@
 import { logger } from "./logger";
 import { sharedEngineState } from "./engineState";
-import { allbrightBribeEngine } from "../bribe-engine";
+import { allbrightBribeEngine } from "./bribeEngine";
 
 export interface PreflightResult {
   passed: boolean;
