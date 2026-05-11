@@ -4,7 +4,6 @@ use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
 use serde::{Serialize, Deserialize};
 use ethers::providers::{Provider, Http, Middleware};
-use async_trait::async_trait;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RpcConfig {
