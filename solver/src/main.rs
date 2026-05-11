@@ -2,8 +2,10 @@ use allbright_solver::specialists::{
     SpecialistRegistry, profitability::ProfitabilitySpecialist, risk::RiskSpecialist, 
     api::ApiSpecialist, kpi::KpiSpecialist, auto_optimization::AutoOptimizationSpecialist,
     vault_integrity::VaultIntegritySpecialist};
+use allbright_solver::performance::PerformanceSpecialist;
+use allbright_solver::efficiency::EfficiencySpecialist;
+use allbright_solver::health::HealthSpecialist;
 use allbright_solver::benchmarks::load_benchmarks;
-use allbright_solver::rpc::RpcOrchestrator;
 use allbright_solver::timing::sub_block_timing::SubBlockTiming;
 use allbright_solver::{WatchtowerStats, GES_WEIGHTS};
 use std::env;
@@ -38,6 +40,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // BSS-44: Register Specialists for all 9 Institutional Domains
     registry.specialists.push(Arc::new(ProfitabilitySpecialist::new(Arc::clone(&watchtower_stats))));
     registry.specialists.push(Arc::new(RiskSpecialist::new(Arc::clone(&watchtower_stats))));
+    registry.specialists.push(Arc::new(PerformanceSpecialist));
+    registry.specialists.push(Arc::new(EfficiencySpecialist));
+    registry.specialists.push(Arc::new(HealthSpecialist));
     registry.specialists.push(Arc::new(AutoOptimizationSpecialist { last_ges: 0.0 }));
     registry.specialists.push(Arc::new(ApiSpecialist)); // Placeholder for Cloud/Bribe logic
     registry.specialists.push(Arc::new(KpiSpecialist));
@@ -86,51 +91,46 @@ info!("Simulation GES: {:.2}%", total_ges * 100.0);
     let registry_arc = Arc::new(registry); // Wrap registry in Arc for the orchestrator task
     let watchtower_stats_arc = Arc::clone(&watchtower_stats);
     let mut sub_block_timing = SubBlockTiming::new();
-    let mut rpc_orchestrator = RpcOrchestrator::new(Arc::clone(&watchtower_stats));
 
     tokio::spawn(async move {
         info!("allbright Orchestrator started.");
         let mut cycle_count = 0;
         loop {
-            let (should_delay, current_cycle_slot, current_rpc_latency, bribe_multiplier) = {
-                rpc_orchestrator.update_latencies();
-                let mut stats = match watchtower_stats_arc.lock() {
+            {
+                let mut stats_guard = match watchtower_stats_arc.lock() {
                     Ok(guard) => guard,
                     Err(poisoned) => poisoned.into_inner(), // Recover from poisoning to keep orchestrator alive
                 };
                 // Simulate external updates to some stats for specialists to react to
                 // In a real system, these would come from various data sources
-                stats.current_nrp_eth_per_day = (stats.current_nrp_eth_per_day + 0.1).min(110.0);
-                stats.current_competitive_collision_rate = (stats.current_competitive_collision_rate - 0.05).max(0.5);
-                stats.msg_throughput_count += 500;
+                stats_guard.current_nrp_eth_per_day = (stats_guard.current_nrp_eth_per_day + 0.1).min(25.0);
+                stats_guard.current_competitive_collision_rate = (stats_guard.current_competitive_collision_rate - 0.05).max(0.5);
+                stats_guard.msg_throughput_count += 500;
 
 // BSS-13: Integrate Sub-Block Timing for competitive collision prediction
-                let current_rpc_latency = stats.rpc_inclusion_latency_ms as u64;
+                let current_rpc_latency = stats_guard.rpc_inclusion_latency_ms as u64;
                 let current_cycle_slot = cycle_count as u64; // Use cycle_count as a proxy for slot
                 sub_block_timing.record_latency(current_cycle_slot, current_rpc_latency);
                 let bribe_multiplier = sub_block_timing.estimate_bribe_multiplier(current_cycle_slot);
 
-                let should_delay = stats.current_nrp_eth_per_day > 10.0;
+                // BSS-13: Execute sub-block precision delay to deflect adversarial front-runners
+                if stats_guard.current_nrp_eth_per_day > 10.0 {
+                    sub_block_timing.wait_for_optimal_delay(current_cycle_slot, 15).await;
+                }
 
                 // BSS-43: Update internal health stats for IPC visibility
                 if cycle_count % 10 == 0 {
-                    stats.avg_latency_ms = current_rpc_latency as f64;
+                    stats_guard.avg_latency_ms = current_rpc_latency as f64;
                 }
+                
+                info!("[SUB-BLOCK-TIMING] Current RPC Latency: {:.2}ms, Estimated Bribe Multiplier: {:.2}x", current_rpc_latency, bribe_multiplier);
                 
                 // Task 0.3: KPI Snapshot Persistence (every 5 minutes / 30 cycles)
                 if cycle_count % 30 == 0 {
-                    info!("[KPI-SNAPSHOT] NRP: {:.2} ETH/d | Throughput: {} | Bribe: {} bps", 
-                        stats.current_nrp_eth_per_day, stats.msg_throughput_count, stats.min_profit_bps);
+                    info!("[KPI-SNAPSHOT] NRP: {:.2} ETH/d | Collision: {:.2}% | Bribe: {} bps", 
+                        stats_guard.current_nrp_eth_per_day, stats_guard.current_competitive_collision_rate, stats_guard.min_profit_bps);
                 }
-                (should_delay, current_cycle_slot, current_rpc_latency, bribe_multiplier)
-            };
-
-            // BSS-13: Execute sub-block precision delay outside the lock to avoid thread-blocking
-            if should_delay {
-                sub_block_timing.wait_for_optimal_delay(current_cycle_slot, 15).await;
             }
-
-            info!("[SUB-BLOCK-TIMING] Current RPC Latency: {:.2}ms, Estimated Bribe Multiplier: {:.2}x", current_rpc_latency, bribe_multiplier);
 
             for specialist in &registry_arc.specialists {
                 match specialist.tune_kpis(&serde_json::Value::Null) {
@@ -161,22 +161,22 @@ info!("Simulation GES: {:.2}%", total_ges * 100.0);
 
                     // BSS-RENDER: Detect HTTP requests (Render health check sends GET /health HTTP/1.1)
                     if msg.starts_with("GET ") {
-                        let now = std::time::SystemTime::now()
+                        let uptime = std::time::SystemTime::now()
                             .duration_since(std::time::UNIX_EPOCH)
                             .unwrap_or_default()
                             .as_secs();
-                        let uptime_duration = now.saturating_sub(startup_time);
-                        let (nrp, rpc_count) = {
+                        // Extract values from lock guard BEFORE awaiting to fix Send trait issue
+                        let (nrp_eth_per_day, active_rpc_count) = {
                             let stats = watchtower_stats_arc.lock().unwrap_or_else(|p| p.into_inner());
                             (stats.current_nrp_eth_per_day, stats.active_rpc_count)
                         };
                         let body = serde_json::json!({
                             "status": "ok",
                             "service": "allbright-solver",
-                            "version": "0.2.6-apex",
-                            "uptime_secs": uptime_duration,
-                            "nrp_eth_per_day": nrp,
-                            "active_rpc_count": rpc_count,
+                            "version": "0.2.6",
+                            "uptime_secs": uptime,
+                            "nrp_eth_per_day": nrp_eth_per_day,
+                            "active_rpc_count": active_rpc_count,
                             "ges_weights": 9
                         }).to_string();
 
@@ -197,13 +197,13 @@ info!("Simulation GES: {:.2}%", total_ges * 100.0);
                                 Some("UPDATE_BRIBE") | Some("UPDATE_BRIBE_TUNING") => {
                                     let mut stats = watchtower_stats_arc.lock().unwrap();
                                     if let Some(min_margin) = json["min_margin_bps"].as_u64() {
-                                        stats.min_profit_bps = min_margin as u32;
+                                        stats.min_profit_bps = min_margin;
                                     }
                                     if let Some(bribe) = json["bribe_bps"].as_u64() {
                                         stats.bribe_ratio_bps = bribe;
                                     }
                                     info!("[IPC] Bribe tuning updated: margin={} bps, bribe={} bps", 
-                                        stats.min_margin_ratio_bps, stats.bribe_ratio_bps);
+                                        stats.min_profit_bps, stats.bribe_ratio_bps);
                                 },
                                 Some("TRADE_OUTCOME") => {
                                     let mut stats = watchtower_stats_arc.lock().unwrap();

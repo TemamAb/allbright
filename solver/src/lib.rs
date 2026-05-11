@@ -4,6 +4,7 @@ pub mod specialists;
 pub mod performance;
 pub mod efficiency;
 pub mod health;
+pub mod rpc_orchestrator;
 pub mod rpc;
 
 use serde::{Deserialize, Serialize};
