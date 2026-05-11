@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # AllBright Solver Dockerfile - Root Context Build
-FROM rust:1.85-slim AS builder
+FROM rust:1.86-slim AS builder
 
 WORKDIR /app
 
