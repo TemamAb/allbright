@@ -17,7 +17,7 @@
 
 6. **Start Local Services** - Run docker-compose up
 7. **Test Dashboard** - Verify http://localhost:3002
-8. **Push to Render** - Use `render deploy` or git push
+8. [x] **Push to Render** - Use `render deploy` or git push
 
 ---
 
