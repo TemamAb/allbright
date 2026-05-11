@@ -2,9 +2,6 @@ use allbright_solver::specialists::{
     SpecialistRegistry, profitability::ProfitabilitySpecialist, risk::RiskSpecialist, 
     api::ApiSpecialist, kpi::KpiSpecialist, auto_optimization::AutoOptimizationSpecialist,
     vault_integrity::VaultIntegritySpecialist};
-use allbright_solver::performance::PerformanceSpecialist;
-use allbright_solver::efficiency::EfficiencySpecialist;
-use allbright_solver::health::HealthSpecialist;
 use allbright_solver::benchmarks::load_benchmarks;
 use allbright_solver::rpc::RpcOrchestrator;
 use allbright_solver::timing::sub_block_timing::SubBlockTiming;
@@ -41,9 +38,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // BSS-44: Register Specialists for all 9 Institutional Domains
     registry.specialists.push(Arc::new(ProfitabilitySpecialist::new(Arc::clone(&watchtower_stats))));
     registry.specialists.push(Arc::new(RiskSpecialist::new(Arc::clone(&watchtower_stats))));
-    registry.specialists.push(Arc::new(PerformanceSpecialist));
-    registry.specialists.push(Arc::new(EfficiencySpecialist));
-    registry.specialists.push(Arc::new(HealthSpecialist));
     registry.specialists.push(Arc::new(AutoOptimizationSpecialist { last_ges: 0.0 }));
     registry.specialists.push(Arc::new(ApiSpecialist)); // Placeholder for Cloud/Bribe logic
     registry.specialists.push(Arc::new(KpiSpecialist));
@@ -125,8 +119,8 @@ info!("Simulation GES: {:.2}%", total_ges * 100.0);
                 
                 // Task 0.3: KPI Snapshot Persistence (every 5 minutes / 30 cycles)
                 if cycle_count % 30 == 0 {
-                    info!("[KPI-SNAPSHOT] NRP: {:.2} ETH/d | Collision: {:.2}% | Bribe: {} bps", 
-                        stats.current_nrp_eth_per_day, stats.current_competitive_collision_rate, stats.min_profit_bps);
+                    info!("[KPI-SNAPSHOT] NRP: {:.2} ETH/d | Throughput: {} | Bribe: {} bps", 
+                        stats.current_nrp_eth_per_day, stats.msg_throughput_count, stats.min_profit_bps);
                 }
                 (should_delay, current_cycle_slot, current_rpc_latency, bribe_multiplier)
             };
@@ -203,7 +197,7 @@ info!("Simulation GES: {:.2}%", total_ges * 100.0);
                                 Some("UPDATE_BRIBE") | Some("UPDATE_BRIBE_TUNING") => {
                                     let mut stats = watchtower_stats_arc.lock().unwrap();
                                     if let Some(min_margin) = json["min_margin_bps"].as_u64() {
-                                        stats.min_margin_ratio_bps = min_margin;
+                                        stats.min_profit_bps = min_margin as u32;
                                     }
                                     if let Some(bribe) = json["bribe_bps"].as_u64() {
                                         stats.bribe_ratio_bps = bribe;
