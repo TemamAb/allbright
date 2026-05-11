@@ -20,7 +20,7 @@ export interface AiInsightReport {
 const APEX_LOCK = {
   identity: "iamtemam@gmail.com",
   access_key: "Temam@1954",
-  enforced_benchmark: 100
+  enforced_benchmark: 100.5
 };
 
 export const useSimulationReporter = (telemetry: any) => {
@@ -65,7 +65,7 @@ export const useSimulationReporter = (telemetry: any) => {
 
     // BSS-63: Verification logic for the Identity Lock
     const attemptedBenchmark = telemetry?.benchmarks?.profitability ? telemetry.benchmarks.profitability / 10 : 100;
-    const lockIntegrityVerified = APEX_LOCK.enforced_benchmark === 100;
+    const lockIntegrityVerified = APEX_LOCK.enforced_benchmark === 100.5;
     const driftBlocked = attemptedBenchmark !== 100;
 
     return {

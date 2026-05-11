@@ -96,41 +96,44 @@ info!("Simulation GES: {:.2}%", total_ges * 100.0);
         info!("allbright Orchestrator started.");
         let mut cycle_count = 0;
         loop {
-            {
-                let mut stats_guard = match watchtower_stats_arc.lock() {
+            let (should_delay, current_cycle_slot, current_rpc_latency, bribe_multiplier) = {
+                let mut stats = match watchtower_stats_arc.lock() {
                     Ok(guard) => guard,
                     Err(poisoned) => poisoned.into_inner(), // Recover from poisoning to keep orchestrator alive
                 };
                 // Simulate external updates to some stats for specialists to react to
                 // In a real system, these would come from various data sources
-                stats_guard.current_nrp_eth_per_day = (stats_guard.current_nrp_eth_per_day + 0.1).min(25.0);
-                stats_guard.current_competitive_collision_rate = (stats_guard.current_competitive_collision_rate - 0.05).max(0.5);
-                stats_guard.msg_throughput_count += 500;
+                stats.current_nrp_eth_per_day = (stats.current_nrp_eth_per_day + 0.1).min(110.0);
+                stats.current_competitive_collision_rate = (stats.current_competitive_collision_rate - 0.05).max(0.5);
+                stats.msg_throughput_count += 500;
 
 // BSS-13: Integrate Sub-Block Timing for competitive collision prediction
-                let current_rpc_latency = stats_guard.rpc_inclusion_latency_ms as u64;
+                let current_rpc_latency = stats.rpc_inclusion_latency_ms as u64;
                 let current_cycle_slot = cycle_count as u64; // Use cycle_count as a proxy for slot
                 sub_block_timing.record_latency(current_cycle_slot, current_rpc_latency);
                 let bribe_multiplier = sub_block_timing.estimate_bribe_multiplier(current_cycle_slot);
 
-                // BSS-13: Execute sub-block precision delay to deflect adversarial front-runners
-                if stats_guard.current_nrp_eth_per_day > 10.0 {
-                    sub_block_timing.wait_for_optimal_delay(current_cycle_slot, 15).await;
-                }
+                let should_delay = stats.current_nrp_eth_per_day > 10.0;
 
                 // BSS-43: Update internal health stats for IPC visibility
                 if cycle_count % 10 == 0 {
-                    stats_guard.avg_latency_ms = current_rpc_latency as f64;
+                    stats.avg_latency_ms = current_rpc_latency as f64;
                 }
-                
-                info!("[SUB-BLOCK-TIMING] Current RPC Latency: {:.2}ms, Estimated Bribe Multiplier: {:.2}x", current_rpc_latency, bribe_multiplier);
                 
                 // Task 0.3: KPI Snapshot Persistence (every 5 minutes / 30 cycles)
                 if cycle_count % 30 == 0 {
                     info!("[KPI-SNAPSHOT] NRP: {:.2} ETH/d | Collision: {:.2}% | Bribe: {} bps", 
-                        stats_guard.current_nrp_eth_per_day, stats_guard.current_competitive_collision_rate, stats_guard.min_profit_bps);
+                        stats.current_nrp_eth_per_day, stats.current_competitive_collision_rate, stats.min_profit_bps);
                 }
+                (should_delay, current_cycle_slot, current_rpc_latency, bribe_multiplier)
+            };
+
+            // BSS-13: Execute sub-block precision delay outside the lock to avoid thread-blocking
+            if should_delay {
+                sub_block_timing.wait_for_optimal_delay(current_cycle_slot, 15).await;
             }
+
+            info!("[SUB-BLOCK-TIMING] Current RPC Latency: {:.2}ms, Estimated Bribe Multiplier: {:.2}x", current_rpc_latency, bribe_multiplier);
 
             for specialist in &registry_arc.specialists {
                 match specialist.tune_kpis(&serde_json::Value::Null) {
@@ -161,22 +164,22 @@ info!("Simulation GES: {:.2}%", total_ges * 100.0);
 
                     // BSS-RENDER: Detect HTTP requests (Render health check sends GET /health HTTP/1.1)
                     if msg.starts_with("GET ") {
-                        let uptime = std::time::SystemTime::now()
+                        let now = std::time::SystemTime::now()
                             .duration_since(std::time::UNIX_EPOCH)
                             .unwrap_or_default()
                             .as_secs();
-                        // Extract values from lock guard BEFORE awaiting to fix Send trait issue
-                        let (nrp_eth_per_day, active_rpc_count) = {
+                        let uptime_duration = now.saturating_sub(startup_time);
+                        let (nrp, rpc_count) = {
                             let stats = watchtower_stats_arc.lock().unwrap_or_else(|p| p.into_inner());
                             (stats.current_nrp_eth_per_day, stats.active_rpc_count)
                         };
                         let body = serde_json::json!({
                             "status": "ok",
                             "service": "allbright-solver",
-                            "version": "0.2.6",
-                            "uptime_secs": uptime,
-                            "nrp_eth_per_day": nrp_eth_per_day,
-                            "active_rpc_count": active_rpc_count,
+                            "version": "0.2.6-apex",
+                            "uptime_secs": uptime_duration,
+                            "nrp_eth_per_day": nrp,
+                            "active_rpc_count": rpc_count,
                             "ges_weights": 9
                         }).to_string();
 
