@@ -6,6 +6,7 @@ use allbright_solver::performance::PerformanceSpecialist;
 use allbright_solver::efficiency::EfficiencySpecialist;
 use allbright_solver::health::HealthSpecialist;
 use allbright_solver::benchmarks::load_benchmarks;
+use allbright_solver::rpc::RpcOrchestrator;
 use allbright_solver::timing::sub_block_timing::SubBlockTiming;
 use allbright_solver::{WatchtowerStats, GES_WEIGHTS};
 use std::env;
@@ -91,12 +92,14 @@ info!("Simulation GES: {:.2}%", total_ges * 100.0);
     let registry_arc = Arc::new(registry); // Wrap registry in Arc for the orchestrator task
     let watchtower_stats_arc = Arc::clone(&watchtower_stats);
     let mut sub_block_timing = SubBlockTiming::new();
+    let mut rpc_orchestrator = RpcOrchestrator::new(Arc::clone(&watchtower_stats));
 
     tokio::spawn(async move {
         info!("allbright Orchestrator started.");
         let mut cycle_count = 0;
         loop {
             let (should_delay, current_cycle_slot, current_rpc_latency, bribe_multiplier) = {
+                rpc_orchestrator.update_latencies();
                 let mut stats = match watchtower_stats_arc.lock() {
                     Ok(guard) => guard,
                     Err(poisoned) => poisoned.into_inner(), // Recover from poisoning to keep orchestrator alive
