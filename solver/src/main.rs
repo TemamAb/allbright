@@ -29,8 +29,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("TIMESTAMP: {}", startup_time);
     println!("==================================================");
     
-    // BSS-44: Load Institutional 44-KPI Benchmark Targets
-    let _benchmarks = load_benchmarks("docs/benchmark-36-kpis.md");
+     // BSS-44: Load Institutional 44-KPI Benchmark Targets
+     let _benchmarks = load_benchmarks("docs/benchmark-44-kpis.md");
 
     // Initialize shared WatchtowerStats
     let watchtower_stats = Arc::new(Mutex::new(WatchtowerStats::new()));
