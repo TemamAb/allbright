@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Activity, Play, Square, ShieldCheck, Brain, Zap, Terminal, HeartPulse, ScrollText, Radio } from 'lucide-react';
+import { Activity, Play, Square, ShieldCheck, Brain, Zap, Terminal, HeartPulse, ScrollText, Radio, Lock, TrendingUp } from 'lucide-react';
 import { useEngine } from '@/stores/engine';
 import { invoke } from '@tauri-apps/api/core';
 import { SpecialistRegistryView } from './SpecialistRegistryView';
@@ -9,8 +9,8 @@ import { Badge } from './ui/badge';
 
 export const Copilot: React.FC = () => {
   const { engine, telemetry, isLive } = useEngine();
-  const [workflowStage, setWorkflowStage] = useState('SIMULATION');
-  const [activeTab, setActiveTab] = useState<'KPI' | 'REGISTRY' | 'AUDIT'>('KPI');
+  const [workflowStage, setWorkflowStage] = useState('LIVE_SIMULATION');
+  const [activeTab, setActiveTab] = useState<'REGISTRY' | 'AUDIT' | 'SENTINEL'>('REGISTRY');
   const [isTransitioning, setIsTransitioning] = useState(false);
 
   const ges = telemetry.ges || 0;
@@ -22,8 +22,8 @@ export const Copilot: React.FC = () => {
       if (engine.running) {
         await invoke('stop_solver');
       } else {
-        if (['LIVE_SIM', 'CANARY', 'LIVE'].includes(workflowStage)) {
-          const confirmed = window.confirm(`⚠️ CRITICAL: Entering ${workflowStage} mode. Real capital is at risk. Proceed?`);
+        if (workflowStage === 'LIVE_PRODUCTION') {
+          const confirmed = window.confirm(`⚠️ CRITICAL: Engaging LIVE_PRODUCTION. System will immediately detect and authorize the primary Render signing keys. Real capital is at risk. Proceed?`);
           if (!confirmed) return;
         }
         await invoke('start_solver', { mode: workflowStage });
@@ -92,21 +92,27 @@ export const Copilot: React.FC = () => {
             
             <div className="space-y-6">
               <div>
-                <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-3">Target Workflow Stage</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {['SIMULATION', 'PAPER', 'SHADOW', 'LIVE'].map((stage) => (
-                    <button
-                      key={stage}
-                      onClick={() => setWorkflowStage(stage)}
-                      disabled={engine.running}
-                      className={`h-10 rounded-xl text-[9px] font-black uppercase transition-all border ${
-                        workflowStage === stage 
-                          ? 'bg-cyan-accent/10 border-cyan-accent/40 text-cyan-accent' 
-                          : 'bg-black/40 border-ash-border text-zinc-600 hover:text-zinc-400'
-                      } ${engine.running ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                      {stage}
-                    </button>
+                <label className="text-[9px] font-black text-zinc-500 uppercase tracking-widest block mb-3">Target Operating Mode</label>
+                <div className="grid grid-cols-1 gap-3">
+                  {['LIVE_SIMULATION', 'LIVE_PRODUCTION'].map((stage) => (
+                    <div key={stage} className="space-y-1">
+                      <button
+                        onClick={() => setWorkflowStage(stage)}
+                        disabled={engine.running}
+                        className={`w-full h-10 rounded-xl text-[9px] font-black uppercase transition-all border ${
+                          workflowStage === stage 
+                            ? 'bg-cyan-accent/10 border-cyan-accent/40 text-cyan-accent' 
+                            : 'bg-black border-ash-border text-zinc-600 hover:text-zinc-400'
+                        } ${engine.running ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        {stage.replace('_', ' ')}
+                      </button>
+                      <p className="text-[8px] text-zinc-500 font-bold uppercase tracking-tight px-1">
+                        {stage === 'LIVE_SIMULATION' 
+                          ? "Mirror of Production Environment. Private signing keys are strictly inhibited for safety." 
+                          : "Engages Render-preloaded signing keys for immediate execution. Additional signers manageable in Vault."}
+                      </p>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -140,9 +146,9 @@ export const Copilot: React.FC = () => {
         <div className="col-span-12 lg:col-span-8 bg-ash-black border border-ash-border rounded-2xl p-8 flex flex-col shadow-2xl">
           <div className="flex items-center gap-8 mb-8 border-b border-ash-border/50 pb-6 overflow-x-auto custom-scrollbar">
             {[
-              { id: 'KPI', icon: ShieldCheck, label: 'Metric Matrix' },
               { id: 'REGISTRY', icon: HeartPulse, label: 'Specialist Registry' },
-              { id: 'AUDIT', icon: ScrollText, label: 'Neural Audit' }
+              { id: 'AUDIT', icon: ScrollText, label: 'Neural Audit' },
+              { id: 'SENTINEL', icon: Lock, label: 'Sentinel Guard' }
             ].map((tab) => (
               <button 
                 key={tab.id}
@@ -157,17 +163,39 @@ export const Copilot: React.FC = () => {
           </div>
           
           <div className="flex-grow">
-            {activeTab === 'KPI' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-right-4 duration-500">
-                <MetricCard label="Active Episodes" value={engine.aiEpisodes?.toString() || "0"} unit="LE" />
-                <MetricCard label="System Win Rate" value={`${((engine.winRate || 0) * 100).toFixed(1)}%`} good={engine.winRate > 0.75} />
-                <MetricCard label="Net Momentum" value={engine.profitMomentum || "0.00"} unit="ETH/h" />
-                <MetricCard label="Node Latency" value={`${engine.avgLatencyMs || 0}`} unit="ms" good={engine.avgLatencyMs < 50} />
-              </div>
-            )}
-
             {activeTab === 'REGISTRY' && <SpecialistRegistryView registry={engine.specialistRegistry || []} />}
             {activeTab === 'AUDIT' && <AiAuditLogView />}
+            {activeTab === 'SENTINEL' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in slide-in-from-right-4 duration-500">
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center border transition-all ${engine.hardened ? 'bg-emerald-accent/10 border-emerald-accent/30 text-emerald-accent' : 'bg-ash-dark border-ash-border text-zinc-600'}`}>
+                      <Lock size={24} />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-black text-white uppercase tracking-widest">Sentinel Lock</h3>
+                      <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest mt-1">BSS-56 Elite Guard</p>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-zinc-500 leading-relaxed font-medium uppercase tracking-tight">
+                    Once GES exceeds 82.5%, the Copilot freezes neural weights to prevent strategy drift.
+                  </p>
+                  <div className={`p-4 rounded-xl border flex items-center justify-between ${engine.hardened ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-ash-border bg-black'}`}>
+                    <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Lock Status</span>
+                    <Badge className={`${engine.hardened ? 'bg-emerald-500/10 text-emerald-500' : 'bg-zinc-800 text-zinc-500'} text-[8px] font-black uppercase px-2 py-0.5 rounded`}>
+                      {engine.hardened ? 'ENGAGED' : 'STANDBY'}
+                    </Badge>
+                  </div>
+                  <Button className="w-full h-12 rounded-xl text-[9px] font-black uppercase tracking-widest bg-emerald-accent text-black" disabled={engine.hardened}>
+                    Force Manual Freeze
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 gap-4">
+                  <MetricCard label="Optimization Loops" value={(engine.optimizationCycles || 0).toString()} />
+                  <MetricCard label="Profit Momentum" value={engine.profitMomentum || "0.00"} unit="ETH/h" />
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="mt-8 pt-8 border-t border-ash-border/50">

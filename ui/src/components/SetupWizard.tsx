@@ -33,9 +33,9 @@ const SetupWizard: React.FC = () => {
           {steps.map(s => (
             <div key={s.id} className="flex flex-col items-center gap-3 bg-ash-black px-2">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black border transition-all duration-500 ${
-                step >= s.id 
-                  ? 'bg-emerald-accent border-emerald-accent text-black shadow-[0_0_15px_rgba(16,185,129,0.3)]' 
-                  : 'bg-black border-ash-border text-zinc-700'
+                step >= s.id
+                  ? 'bg-emerald-accent border-emerald-accent text-black shadow-[0_0_15px_rgba(16,185,129,0.3)]'
+                  : 'bg-ash-dark border-ash-border text-ash-muted'
               }`}>
                 {step > s.id ? <CheckCircle2 size={16} /> : s.id}
               </div>
@@ -63,11 +63,11 @@ const SetupWizard: React.FC = () => {
               {step === 1 && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-500">
                   <label className="text-[9px] font-black text-zinc-600 uppercase tracking-widest block">Deployment Signature</label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. ALLBRIGHT PRIME" 
-                    className="w-full bg-black/40 border border-ash-border rounded-xl p-4 text-sm font-black text-white uppercase tracking-widest focus:outline-none focus:border-emerald-accent/50 transition-all placeholder:text-zinc-800" 
-                  />
+                   <input
+                     type="text"
+                     placeholder="e.g. ALLBRIGHT PRIME"
+                     className="w-full bg-ash-dark border border-ash-border rounded-xl p-4 text-sm font-black text-ash-text uppercase tracking-widest focus:outline-none focus:border-emerald-accent/50 transition-all placeholder:text-ash-muted"
+                   />
                   <div className="flex items-start gap-3 bg-emerald-500/[0.03] p-4 rounded-xl border border-emerald-500/10">
                     <Sparkles size={14} className="text-emerald-500 mt-0.5 shrink-0" />
                     <p className="text-[10px] text-zinc-500 leading-relaxed font-medium">Setup Advisor: Standardizing on "PRIME" or "QUANTUM" suffixes improves institutional branding recognized by bridge validators.</p>
@@ -90,7 +90,7 @@ const SetupWizard: React.FC = () => {
                     { l: 'Gate 02: Mempool Intelligence Unit', s: 'Verified' },
                     { l: 'Gate 03: Throughput Benchmark', s: 'Pending' },
                   ].map(g => (
-                    <div key={g.l} className="flex justify-between items-center p-4 bg-black/40 rounded-xl border border-ash-border/50 group/row hover:border-zinc-700 transition-colors">
+                     <div key={g.l} className="flex justify-between items-center p-4 bg-ash-dark rounded-xl border border-ash-border group/row hover:border-ash-border/70 transition-colors">
                       <span className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">{g.l}</span>
                       <div className="flex items-center gap-3">
                         <span className={`text-[10px] font-black uppercase tracking-widest ${g.s === 'Verified' ? 'text-emerald-accent' : 'text-amber-500'}`}>{g.s}</span>

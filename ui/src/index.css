@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@config "../tailwind.config.js";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
 
@@ -275,6 +276,231 @@
   }
 }
 
+/* ============================================
+   UNIFIED THEME TOKENS - Production Grade
+   Match between React and HTML Dashboards
+   ============================================ */
+:root {
+  /* Main Accent Colors */
+  --dashboard-accent: #06b6d4;      /* Cyan - matches React Dashboard */
+  --dashboard-success: #10b981;     /* Emerald - matches React Dashboard */
+  --dashboard-warning: #f59e0b;    /* Amber for warnings */
+  --dashboard-danger: #ef4444;        /* Red for errors */
+  --dashboard-blue: #3b82f6;       /* Blue - matches HTML Dashboard */
+
+  /* Backward Compatibility Aliases */
+  --cyan-accent: var(--dashboard-accent);
+  --emerald-accent: var(--dashboard-success);
+
+  /* Typography */
+  --font-mono: 'JetBrains Mono', 'Menlo', 'Monaco', monospace;
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+/* ============================================
+   GLASSMORPHISM EFFECTS
+   ============================================ */
+.glass-panel {
+  background: linear-gradient(135deg, hsl(220 20% 12% / 0.7), hsl(220 20% 10% / 0.5));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid hsl(220 15% 20%);
+  box-shadow: 
+    0 8px 32px 0 rgba(31, 38, 135, 0.37),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+.glass-panel:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 12px 40px 0 rgba(31, 38, 135, 0.45),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  border-color: hsl(220 15% 25%);
+}
+
+/* Glow Effects */
+.glow-success {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+}
+
+.glow-accent {
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.3);
+}
+
+/* ============================================
+   TOAST NOTIFICATION SYSTEM
+   ============================================ */
+.toast-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.toast {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  animation: slideIn 0.3s ease-out;
+}
+
+.toast-success {
+  background: rgba(16, 185, 129, 0.2);
+  border: 1px solid #10b981;
+  color: #10b981;
+}
+
+.toast-error {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid #ef4444;
+  color: #ef4444;
+}
+
+.toast-warning {
+  background: rgba(245, 158, 11, 0.2);
+  border: 1px solid #f59e0b;
+  color: #f59e0b;
+}
+
+.toast-info {
+  background: rgba(6, 182, 212, 0.2);
+  border: 1px solid #06b6d4;
+  color: #06b6d4;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOut {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(100%); opacity: 0; }
+}
+
+/* ============================================
+   SKELETON LOADERS
+   ============================================ */
+.skeleton {
+  background: linear-gradient(90deg, #1a1c20 25%, #27272a 50%, #1a1c20 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 0.25rem;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ============================================
+   CARD HOVER EFFECTS
+   ============================================ */
+.card-elite {
+  @apply bg-ash-black border border-ash-border rounded-xl p-6;
+  transition: all 0.3s ease;
+}
+
+.card-elite:hover {
+  @apply border-cyan-accent/50 shadow-lg;
+  transform: translateY(-2px);
+}
+
+.card-elite::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.05), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.card-elite:hover::before {
+  opacity: 1;
+}
+
+/* ============================================
+   LIVE NODE PULSE INDICATOR
+   ============================================ */
+@keyframes pulse-ring {
+  0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(6, 182, 212, 0); }
+  100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(6, 182, 212, 0); }
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 2s infinite;
+}
+
+.animate-ping-subtle {
+  animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes ping {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+/* ============================================
+   CURRENCY TOGGLE STYLES
+   ============================================ */
+.currency-toggle {
+  @apply flex bg-ash-dark border border-ash-border rounded-lg p-0.5;
+}
+
+.currency-toggle button {
+  @apply px-3 py-1 rounded-md text-[10px] font-bold transition-all;
+}
+
+.currency-toggle button.active {
+  @apply bg-black shadow-sm;
+}
+
+.currency-toggle button.currency-eth.active {
+  @apply text-cyan-accent;
+}
+
+.currency-toggle button.currency-usd.active {
+  @apply text-emerald-accent;
+}
+
+.currency-toggle button.inactive {
+  @apply text-ash-muted;
+}
+
+/* ============================================
+   NETWORK STATUS BADGE
+   ============================================ */
+.status-badge {
+  @apply flex items-center gap-2;
+}
+
+.status-badge .dot {
+  @apply w-2 h-2 rounded-full;
+}
+
+.status-badge .dot.live {
+  @apply bg-emerald-accent animate-pulse;
+}
+
+.status-badge .dot.offline {
+  @apply bg-red-500;
+}
+
+.status-badge .label {
+  @apply text-[10px] font-bold uppercase tracking-widest;
+}
+
+/* Neon Glow Effects */
 .neon-glow-green {
   color: #00FF94;
   text-shadow: 0 0 8px rgba(0, 255, 148, 0.6);

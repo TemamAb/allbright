@@ -1034,3 +1034,4 @@ export function broadcastCopilotEvent(type: string, data: any) {
   }
 
 export const copilot = new AlphaCopilot();
+export const alphaCopilot = copilot;

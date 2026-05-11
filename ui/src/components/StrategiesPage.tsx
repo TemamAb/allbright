@@ -121,7 +121,7 @@ export default function StrategiesPage() {
               {/* Metrics Grid */}
               <div className="grid grid-cols-3 gap-2 mb-8">
                 {strategy.metrics.map((m, i) => (
-                  <div key={i} className="bg-black/40 border border-ash-border/30 rounded-lg p-2">
+                  <div key={i} className="bg-black border border-ash-border/30 rounded-lg p-2">
                     <p className="text-[7px] text-zinc-600 uppercase font-black tracking-widest mb-1">{m.label}</p>
                     <p className="text-[10px] font-black text-zinc-300 uppercase truncate">{m.value}</p>
                   </div>

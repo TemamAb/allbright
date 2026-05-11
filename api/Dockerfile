@@ -8,9 +8,8 @@ ENV PATH=$PNPM_HOME:$PATH
 RUN npm install -g pnpm@9.15.4
 
 # Install system dependencies required for native Node.js modules
-RUN apt-get update && apt-get install -y \
-    python3 make g++ \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 make g++ && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -22,10 +21,11 @@ COPY lib ./lib
 COPY scripts ./scripts
 
 # Run install - prioritize frozen lockfile, fallback to full install
-RUN pnpm install --no-frozen-lockfile
+RUN pnpm install --frozen-lockfile --prefer-offline
 
-RUN pnpm --filter @workspace/api-server run build
+RUN pnpm --filter @allbright/api run build
 
-EXPOSE 10000
+# Render provides the PORT env var; we expose it for documentation
+EXPOSE 10000 
 
-CMD ["sh", "-lc", "pnpm --filter @workspace/db run push && pnpm --filter @workspace/api-server run start"]
+CMD ["sh", "-lc", "pnpm --filter @allbright/db run push && PORT=${PORT:-10000} pnpm --filter @allbright/api run start"]

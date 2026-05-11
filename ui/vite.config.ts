@@ -32,7 +32,10 @@ export default defineConfig({
     sourcemap: false,
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
-      input: path.resolve(currentDir, "index.html"),
+      input: {
+        main: path.resolve(currentDir, "index.html"),
+        dashboard: path.resolve(currentDir, "allbright-dashboard.html"),
+      },
       external: [
         "@tauri-apps/api",
         "@tauri-apps/api/tauri",
@@ -49,6 +52,7 @@ export default defineConfig({
   },
   server: {
     port,
+    strictPort: false,
     host: "0.0.0.0",
     allowedHosts: true,
     fs: {

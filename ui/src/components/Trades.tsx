@@ -1,13 +1,43 @@
 import React from 'react';
 import { useGetTrades, useGetTradesSummary } from "@/lib/api";
-import { ExternalLink, Zap, History, TrendingUp, Clock } from "lucide-react";
+import { ExternalLink, Zap, History, TrendingUp, Clock, Download } from "lucide-react";
 import { format } from "date-fns";
 import { Badge } from "./ui/badge";
+import { useToast } from "@/hooks/useToast";
 
 export default function Trades() {
   const { data: tradesRes, isLoading, error } = useGetTrades({ limit: 50 });
   const { data: summary } = useGetTradesSummary();
   const trades = tradesRes?.trades ?? [];
+  const { addToast } = useToast();
+
+  const handleExportCSV = () => {
+    if (trades.length === 0) {
+      addToast('No trades to export', 'warning');
+      return;
+    }
+
+    const headers = ['Time', 'Status', 'Token In', 'Token Out', 'Profit (ETH)', 'Bribe Paid', 'Latency (ms)', 'Tx Hash'];
+    const rows = trades.map(trade => [
+      trade.timestamp ? format(new Date(trade.timestamp), "yyyy-MM-dd HH:mm:ss") : '',
+      trade.status || '',
+      trade.tokenIn || '',
+      trade.tokenOut || '',
+      trade.profit || '0',
+      trade.bribePaid || '0',
+      trade.latencyMs || '0',
+      trade.txHash || ''
+    ]);
+    const csv = [headers, ...rows].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `allbright-trades-${format(new Date(), 'yyyy-MM-dd-HH-mm-ss')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    addToast('Trades exported successfully', 'success');
+  };
 
   return (
     <div className="h-full space-y-8 p-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
@@ -17,8 +47,18 @@ export default function Trades() {
           <h2 className="text-3xl font-black text-white tracking-tighter uppercase leading-none">Execution Ledger</h2>
           <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-[0.3em] mt-3">Comprehensive Audit Trail</p>
         </div>
-        
-        <div className="flex gap-6 bg-ash-black border border-ash-border p-6 rounded-2xl shadow-xl">
+
+        <div className="flex items-center gap-4">
+          <button
+            onClick={handleExportCSV}
+            className="flex items-center gap-2 px-4 py-2 bg-ash-dark hover:bg-ash-dark/80 border border-ash-border rounded-lg text-sm font-medium text-cyan-accent hover:text-white transition-colors"
+            title="Export trades to CSV"
+          >
+            <Download size={16} />
+            Export CSV
+          </button>
+
+          <div className="flex gap-6 bg-ash-black border border-ash-border p-6 rounded-2xl shadow-xl">
           <div className="text-right border-r border-ash-border/50 pr-6">
             <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">Success Rate</p>
             <div className="text-2xl font-black text-emerald-accent font-mono">
@@ -31,6 +71,7 @@ export default function Trades() {
               {summary?.avgProfitPerTrade ? summary.avgProfitPerTrade.toFixed(4) : "0.0000"}<span className="text-xs text-zinc-600 ml-1">ETH AVG</span>
             </div>
           </div>
+        </div>
         </div>
       </div>
 

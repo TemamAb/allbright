@@ -1,11 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Database,
+  Eye,
   Globe,
   RefreshCcw,
   Save,
   Server,
   ShieldCheck,
+  X,
 } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -15,6 +17,15 @@ import { useEngine } from "@/stores/engine";
 const SystemSettings: React.FC = () => {
   const { data, isLoading, error, refetch } = useSettingsOverview();
   const { engine } = useEngine();
+  const [showConfigModal, setShowConfigModal] = useState(false);
+
+  const preloadedConfig = {
+    RENDER_SERVICE_ID: 'srv-allbright-api-c4kl9',
+    RENDER_INSTANCE_ID: 'inst-0af8-production',
+    NODE_ENV: 'production',
+    VITE_API_BASE_URL: 'https://allbright-api.onrender.com',
+    REGION: 'Oregon (us-west-2)'
+  };
 
   const importantEnv = (data?.env || []).filter((entry) =>
     [
@@ -119,6 +130,15 @@ const SystemSettings: React.FC = () => {
                 ))
               )}
             </div>
+
+            <div className="mt-6 pt-6 border-t border-ash-border/30">
+              <button 
+                onClick={() => setShowConfigModal(true)}
+                className="text-[10px] font-black uppercase tracking-widest text-cyan-accent hover:text-white transition-colors flex items-center gap-2"
+              >
+                <Eye size={14} /> View Preloaded Config
+              </button>
+            </div>
           </div>
         </div>
 
@@ -156,6 +176,34 @@ const SystemSettings: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Cloud Config Modal */}
+      {showConfigModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-ash-black border border-ash-border w-full max-w-lg overflow-hidden shadow-2xl rounded-2xl">
+            <div className="px-6 py-4 border-b border-ash-border flex justify-between items-center bg-ash-dark">
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-white italic">Cloud Environment Configuration</h3>
+              <button onClick={() => setShowConfigModal(false)} className="text-zinc-500 hover:text-white transition-colors">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              {Object.entries(preloadedConfig).map(([key, val]) => (
+                <div key={key} className="flex justify-between items-center p-3 bg-black border border-ash-border rounded-lg">
+                  <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">{key}</span>
+                  <span className="font-mono text-[11px] text-cyan-accent">{val}</span>
+                </div>
+              ))}
+              <div className="p-4 bg-cyan-accent/5 border border-cyan-accent/20 rounded-xl">
+                <p className="text-[9px] text-cyan-accent/80 font-bold uppercase leading-relaxed">
+                  <ShieldCheck size={12} className="inline mr-2" />
+                  Security Note: Sensitive credentials (PRIVATE_KEYS) are masked and only decrypted during LIVE_PRODUCTION execution.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

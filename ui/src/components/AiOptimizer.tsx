@@ -51,7 +51,7 @@ const AiOptimizer: React.FC = () => {
           </p>
 
           <div className="space-y-4">
-            <div className={`p-4 rounded-xl border flex items-center justify-between transition-all ${engine.hardened ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-ash-border bg-black/40'}`}>
+            <div className={`p-4 rounded-xl border flex items-center justify-between transition-all ${engine.hardened ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-ash-border bg-black'}`}>
               <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Lock Status</span>
               <Badge className={`${engine.hardened ? 'bg-emerald-500/10 text-emerald-500' : 'bg-zinc-800 text-zinc-500'} text-[8px] font-black uppercase px-2 py-0.5 rounded`}>
                 {engine.hardened ? 'ENGAGED' : 'STANDBY'}

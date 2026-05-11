@@ -1,0 +1,558 @@
+<!DOCTYPE html>       
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Allbright | Ash.Black Elite Dashboard</title>
+  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    /* Elite Grade Ash.Black Palette per DASHBOARD-GUIDE.MD */
+    :root {
+      --ash-bg: #1c1e26;      /* Structural Layout (+50% contrast) */
+      --ash-lighter: #252833;  /* Component Elevation */
+      --ash-border: #33384a;   /* Hairline Dividers */
+      --black-data: #000000;   /* High-Density Data Fields */
+      --text-primary: #f0f0f8;
+      --text-secondary: #b4b4c2;
+      
+      /* Status Colors */
+      --success: #56a64b;
+      --warning: #f2cc0c;
+      --info: #5794f2;
+      --destructive: #e02f44;
+      --primary-accent: #3b82f6;
+    }
+    body { background-color: var(--ash-bg); font-family: 'Inter', sans-serif; color: var(--text-primary); transition: background-color 0.3s ease; }
+    body.light-mode { background-color: #f4f4f5; color: #18181b; }
+    .font-mono { font-family: 'JetBrains Mono', monospace !important; font-variant-numeric: tabular-nums; }
+    .bg-ash { background-color: var(--ash-bg) !important; }
+    .bg-data-black { background-color: var(--black-data) !important; }
+    .border-ash { border-color: var(--ash-border) !important; }
+    .text-secondary { color: var(--text-secondary) !important; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--ash-bg); }
+    ::-webkit-scrollbar-thumb { background: #4a4a58; border-radius: 8px; }
+    .card-ash { background-color: var(--black-data) !important; border: 1px solid var(--ash-border); border-radius: 1rem; }
+    .sidebar-ash { background-color: var(--ash-bg) !important; border-right: 1px solid var(--ash-border); }
+    .topbar-ash { background-color: rgba(28, 30, 38, 0.9); backdrop-filter: blur(8px); border-bottom: 1px solid var(--ash-border); }
+    table th { background-color: var(--ash-lighter); color: #cacad6; font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+    table td { background-color: var(--black-data); border-bottom: 1px solid var(--ash-border); }
+    .chart-container { background-color: var(--black-data); border-radius: 0.5rem; padding: 1rem; border: 1px solid var(--ash-border); }
+    canvas { background-color: var(--black-data); }
+    .message-bubble { background-color: #000000 !important; }
+    .strategy-card { background-color: var(--ash-bg); border-color: var(--ash-border); }
+    .strategy-active { border-color: #3b82f6; background-color: rgba(59,130,246,0.08); }
+.fade-in-up { animation: fadeSlide 0.2s ease-out; }
+    @keyframes fadeSlide { 0% { opacity:0; transform:translateY(4px);} 100% { opacity:1; transform:translateY(0);} }
+    /* Toast Notifications */
+    .toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 1000; display: flex; flex-direction: column; gap: 0.5rem; }
+    .toast { padding: 0.75rem 1rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600; animation: slideIn 0.3s ease-out; }
+    .toast-success { background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #10b981; }
+    .toast-error { background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #ef4444; }
+    .toast-warning { background: rgba(234, 179, 8, 0.2); border: 1px solid #eab308; color: #eab308; }
+    .toast-info { background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #3b82f6; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+/* Skeleton Loader */
+    .skeleton { background: linear-gradient(90deg, #1a1c20 25%, #27272a 50%, #1a1c20 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 0.25rem; }
+    @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+    /* Light Mode */
+    body.light-mode { background-color: #f4f4f5; color: #18181b; }
+    body.light-mode .bg-ash { background-color: #fafafa !important; }
+    body.light-mode .sidebar-ash { background-color: #f4f4f5; border-right: 1px solid #e4e4e7; }
+    body.light-mode .card-ash { background-color: #ffffff; border-color: #e4e4e7; }
+    body.light-mode table th { background-color: #f4f4f5; color: #52525b; }
+    body.light-mode table td { background-color: #ffffff; border-bottom: 1px solid #e4e4e7; }
+    body.light-mode .text-secondary { color: #52525b; }
+  </style>
+</head>
+<body class="bg-ash">
+
+<div id="app">
+  <!-- Toast Notifications Container -->
+  <div class="toast-container">
+    <div v-for="toast in toasts" :key="toast.id" class="toast" :class="'toast-' + toast.type">
+      <i :class="getToastIcon(toast.type)" class="mr-2"></i>{{ toast.message }}
+    </div>
+  </div>
+
+  <!-- ADD WALLET MODAL -->
+  <!-- ADD WALLET MODAL (Ash.Black Flow) -->
+   <div v-if="showAddWalletModal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+     <div class="card-ash w-full max-w-md overflow-hidden shadow-2xl border-blue-500/30">
+      <div class="px-6 py-4 border-b border-ash flex justify-between items-center bg-ash">
+     <div class="bg-data-black border border-blue-500/30 w-full max-w-md overflow-hidden shadow-2xl rounded-2xl">
+       <div class="px-6 py-4 border-b border-ash flex justify-between items-center bg-ash">
+        <h3 class="text-[10px] font-black uppercase tracking-widest text-white italic">
+          {{ walletStep === 'providers' ? 'Select Provider' : 'Detected Accounts' }}
+        </h3>
+        <button @click="closeWalletModal" class="text-secondary hover:text-white transition-colors">
+        <button @click="closeWalletModal" class="text-ash-muted hover:text-white transition-colors">
+          <i class="fas fa-times-circle"></i>
+        </button>
+      </div>
+
+      <!-- Step 1: Provider Selection -->
+      <div v-if="walletStep === 'providers'" class="p-6 space-y-3">
+         <div v-for="p in walletProviders" :key="p.id"
+              @click="selectProvider(p)"
+              class="flex items-center gap-4 p-4 rounded-xl bg-data-black border border-ash hover:border-blue-500/50 cursor-pointer transition-all group">
+          <div class="w-10 h-10 rounded-lg flex items-center justify-center bg-ash-lighter border border-ash group-hover:bg-blue-500/10 transition-colors">
+             class="flex items-center gap-4 p-4 rounded-xl bg-zinc-950 border border-ash hover:border-blue-500/50 cursor-pointer transition-all group">
+          <div class="w-10 h-10 rounded-lg flex items-center justify-center bg-[#252833] border border-ash group-hover:bg-blue-500/10 transition-colors">
+            <i :class="[p.icon, p.color]" class="text-xl"></i>
+          </div>
+          <div class="flex-1">
+            <div class="text-sm font-bold text-white uppercase tracking-tight">{{ p.name }}</div>
+            <div class="text-[9px] text-secondary uppercase font-bold tracking-widest">Non-Custodial Protocol</div>
+          </div>
+          <i class="fas fa-chevron-right text-zinc-700 group-hover:text-blue-500 transition-colors"></i>
+        </div>
+      </div>
+
+      <!-- Step 2: Account Selection -->
+      <div v-if="walletStep === 'accounts'" class="p-6 space-y-4">
+        <div class="text-[10px] text-secondary uppercase font-black tracking-tighter mb-2">Scanning machine for {{ selectedProvider.name }} signers...</div>
+         <div v-for="acc in detectedAccounts" :key="acc.address"
+              @click="confirmAccount(acc)"
+              class="flex justify-between items-center p-3 bg-data-black border border-ash rounded-lg hover:border-emerald-500/50 cursor-pointer group">
+             class="flex justify-between items-center p-3 bg-zinc-950 border border-ash rounded-lg hover:border-emerald-500/50 cursor-pointer group">
+          <div class="font-mono text-xs text-white group-hover:text-emerald-400">{{ acc.address.slice(0,10) }}...{{ acc.address.slice(-8) }}</div>
+          <div class="text-[10px] font-bold text-emerald-500">{{ acc.balance }} ETH</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex min-h-screen">
+    <!-- SIDEBAR -->
+    <aside class="w-64 flex flex-col sidebar-ash fixed h-full z-30 overflow-y-auto" role="navigation" aria-label="Main navigation">
+      <div class="px-6 py-6 border-b border-ash flex items-center gap-3">
+        <img src="ui/src/assets/allbright_logo.svg" alt="Allbright Logo" class="w-8 h-8 object-contain">
+        <div class="flex flex-col"><span class="font-bold text-lg tracking-tighter uppercase text-white">ALL<span class="text-blue-500">BRIGHT</span></span><div class="text-[8px] text-secondary uppercase tracking-widest">Elite Protocol</div></div>
+      </div>
+      <div class="mx-4 mt-6 mb-4 px-4 py-3 rounded-lg bg-black border border-ash flex justify-between items-center">
+        <div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div><span class="text-[10px] font-bold uppercase tracking-widest text-secondary">LIVE</span></div>
+        <span class="text-[9px] font-bold px-2 py-0.5 rounded uppercase bg-emerald-500/10 text-emerald-500">Live Listening</span>
+      </div>
+      <nav class="flex-1 px-4 py-4 space-y-2">
+        <div class="text-[10px] font-bold text-secondary mb-3 ml-2 tracking-widest uppercase">Mission Segments</div>
+        <a v-for="item in navItems" :key="item.id" href="#" @click.prevent="currentPage = item.id" 
+           class="flex items-center gap-3 px-4 py-3 rounded-lg text-xs font-medium uppercase tracking-widest transition-all"
+           :class="currentPage === item.id ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'text-secondary hover:text-white hover:bg-[#353542]'">
+          <i :class="item.icon" class="w-4"></i> {{ item.label }}
+        </a>
+      </nav>
+      <div class="px-6 py-4 border-t border-ash bg-black/10">
+        <div class="text-[10px] font-bold tracking-widest uppercase text-emerald-400">LIVE MODE</div>
+        <div class="text-[9px] text-secondary font-medium mt-1">allbright v2.6.0</div>
+        <div class="mt-2 pt-2 border-t border-ash text-[8px] text-secondary uppercase font-bold">allbright DeFi Software Ltd. © 2026</div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="flex-1 ml-64 flex flex-col min-h-screen relative">
+      <!-- Expanded Heading (h-28) -->
+      <header class="h-28 flex items-center gap-10 px-10 topbar-ash sticky top-0 z-20">
+        <div class="flex items-center gap-6">
+          <div class="flex flex-col">
+            <span class="text-[9px] text-secondary uppercase tracking-[0.2em] font-bold">Network Bridge</span>
+            <span class="text-[11px] text-secondary font-medium uppercase">IPC ACTIVE • 4001</span>
+            <span class="text-[7px] text-zinc-600 font-black uppercase tracking-tighter mt-0.5">Elite Protocol Operations</span>
+          </div>
+        </div>
+        
+        <div class="flex-1 flex justify-center items-center gap-8">
+          <div class="flex bg-ash border border-ash rounded-lg p-0.5">
+            <button @click="currency='ETH'" :class="currency === 'ETH' ? 'bg-black text-blue-400 shadow-sm' : 'text-secondary'" class="px-3 py-1 rounded-md text-[10px] font-bold transition-all">ETH</button>
+            <button @click="currency='USD'" :class="currency === 'USD' ? 'bg-black text-emerald-400 shadow-sm' : 'text-secondary'" class="px-3 py-1 rounded-md text-[10px] font-bold transition-all">USD</button>
+          </div>
+          <div class="flex items-center gap-4"><div class="flex flex-col items-center"><span class="text-[8px] text-secondary uppercase font-black">24H Net</span><span class="text-xs font-mono font-medium text-emerald-500">{{ currency === 'ETH' ? '14.770 ETH' : `$${(14.77 * 2450).toFixed(2)}` }}</span></div><div class="h-6 w-px bg-ash"></div><div class="flex flex-col items-center"><span class="text-[8px] text-secondary uppercase font-black">Bribe Efficiency</span><span class="text-xs font-mono font-medium text-blue-500">96.5%</span></div></div>
+        </div>
+<div class="flex items-center gap-6"><div class="flex items-center gap-2"><div class="relative"><div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div></div><span class="text-[10px] font-bold text-secondary uppercase">Live Nodes: 4</span></div><div class="px-3 py-1 rounded bg-black border border-ash text-[10px] font-mono text-secondary">0x742...f44e</div><button @click="toggleDarkMode" class="ml-2 px-2 py-1 rounded bg-ash border border-ash text-[10px] font-bold" :class="darkMode ? 'text-blue-400' : 'text-yellow-400'"><i :class="darkMode ? 'fas fa-moon' : 'fas fa-sun'"></i></button></div>
+      </header>
+
+      <main class="flex-1 overflow-auto p-6 relative">
+        <!-- DASHBOARD -->
+        <div v-if="currentPage === 'dashboard'" class="space-y-6 fade-in-up">
+          <div class="card-ash p-6 flex justify-between items-center"><div><h2 class="text-2xl font-black uppercase tracking-tighter text-white">Global Efficiency</h2><p class="text-[10px] text-secondary font-bold mt-1 uppercase tracking-[0.3em]">Last Heartbeat: {{ new Date().toLocaleTimeString() }}</p></div><div class="bg-data-black px-6 py-3 rounded-xl text-6xl font-black text-emerald-500 font-mono tabular-nums">{{ gesScore.toFixed(1) }}%</div></div>
+          <div class="grid lg:grid-cols-3 gap-6"><div class="lg:col-span-2 card-ash p-6"><div class="flex justify-between mb-4"><span class="text-[10px] font-bold text-secondary uppercase tracking-widest">Real-time Alpha Capture</span><span class="text-[10px] font-bold text-emerald-500">LIVE FEED</span></div><div class="chart-container"><canvas id="alphaChart" height="180"></canvas></div></div>
+          <div class="space-y-6"><div class="card-ash p-6"><div class="flex gap-3 mb-4"><i class="fas fa-chart-line text-blue-500"></i><span class="text-[10px] font-bold uppercase tracking-widest text-secondary">24H Net Yield</span></div><div class="bg-data-black inline-block px-4 py-2 rounded-lg text-2xl font-black text-white font-mono">$1,247.82</div><div class="text-[10px] text-emerald-500 mt-3">+12.4% vs Baseline</div></div><div class="card-ash p-6"><div class="flex gap-3 mb-4"><i class="fas fa-shield-alt text-emerald-500"></i><span class="text-[10px] font-bold uppercase tracking-widest text-secondary">Risk Mitigation</span></div><div class="bg-data-black inline-block px-4 py-2 rounded-lg text-2xl font-black text-white">Nominal</div><div class="text-[10px] text-secondary mt-3 uppercase">BSS-31 Guard Armed</div></div></div></div>
+          <div class="grid grid-cols-4 gap-4"><div class="card-ash p-4"><div class="text-[10px] uppercase text-secondary">Learning Episodes</div><div class="bg-data-black mt-1 p-2 rounded text-2xl font-mono font-bold text-white">{{ aiEpisodes }}</div></div><div class="card-ash p-4"><div class="text-[10px] uppercase text-secondary">Success EMA</div><div class="bg-data-black mt-1 p-2 rounded text-2xl font-mono font-bold text-white">{{ (aiEma * 100).toFixed(1) }}%</div></div><div class="card-ash p-4"><div class="text-[10px] uppercase text-secondary">Profit Momentum</div><div class="bg-data-black mt-1 p-2 rounded text-2xl font-mono font-bold text-white">{{ aiMomentum.toFixed(4) }}</div></div><div class="card-ash p-4"><div class="text-[10px] uppercase text-secondary">Hardened Mode</div><div class="bg-data-black mt-1 p-2 rounded text-2xl font-mono font-bold text-white">{{ hardenedActive ? 'ACTIVE' : 'STANDBY' }}</div></div></div>
+        </div>
+
+        <!-- TELEMETRY (fixed table) -->
+        <div v-if="currentPage === 'telemetry'" class="space-y-6 fade-in-up">
+          <div class="card-ash p-6 flex justify-between items-center"><div><h1 class="text-2xl font-black uppercase tracking-wider text-white">Global Efficiency Score</h1><p class="text-xs text-secondary">Last Update: realtime</p></div><div class="bg-data-black px-6 py-3 rounded-xl text-4xl font-black text-emerald-400 font-mono">{{ gesScore.toFixed(1) }}%</div></div>
+          <div class="card-ash overflow-hidden">
+            <div class="px-6 py-3 border-b border-ash font-bold text-sm uppercase tracking-wider text-secondary">44 KPI Telemetry Matrix</div>
+            <table class="w-full text-left text-xs">
+              <thead><tr class="border-b border-ash"><th class="px-6 py-3">KPI METRIC</th><th>CURRENT VALUE</th><th>TARGET</th><th class="text-right px-6">STATUS</th></tr></thead>
+              <tbody>
+                <tr v-for="kpi in telemetryCategories" :key="kpi.name" class="border-b border-ash hover:bg-white/5 transition-colors">
+                  <td class="px-6 py-3 font-medium text-white">{{ kpi.name }}</td>
+                  <td class="font-mono text-cyan-400">{{ kpi.value }}</td>
+                  <td class="text-secondary font-mono">{{ kpi.target }}</td>
+                  <td class="text-right px-6"><span :class="kpi.statusClass" class="px-2 py-0.5 rounded text-[9px] font-black uppercase">{{ kpi.status }}</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- LIVE EVENTS -->
+        <div v-if="currentPage === 'events'" class="space-y-6 fade-in-up"><div class="flex justify-between items-center"><h2 class="text-2xl font-black italic uppercase text-white">Live Blockchain Events</h2><div class="flex gap-3"><input type="text" v-model="eventSearch" placeholder="Search pair/hash" class="bg-data-black border border-ash rounded px-3 py-1 text-xs"><select v-model="eventStatusFilter" class="bg-data-black border border-ash rounded text-xs px-2"><option>ALL</option><option>SUCCESS</option><option>REVERTED</option></select></div></div>
+        <div class="card-ash overflow-x-auto"><table class="w-full text-left text-xs"><thead><tr><th class="px-4 py-3">TIME</th><th>PAIR</th><th class="text-right">PROFIT</th><th>STATUS</th><th>TX HASH</th></tr></thead><tbody><tr v-for="trade in filteredEvents" :key="trade.id" class="border-b border-ash"><td class="px-4 py-3 font-mono text-secondary">{{ trade.time }}</td><td class="font-bold text-white">{{ trade.pair }}</td><td class="px-4 py-3 bg-data-black text-right text-emerald-400 font-mono">{{ trade.profit }}</td><td><span :class="trade.status === 'SUCCESS' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-400'" class="px-2 py-0.5 rounded text-[9px] font-black uppercase">{{ trade.status }}</span></td><td class="px-4 py-3 font-mono text-secondary">{{ trade.hash.slice(0,6) }}...</td></tr></tbody></table></div></div>
+
+        <!-- WALLET -->
+        <div v-if="currentPage === 'wallet'" class="space-y-6 fade-in-up"><div class="flex justify-between"><h2 class="text-2xl font-black italic uppercase text-white">Wallet Management</h2><div class="card-ash px-4 py-2 rounded-lg"><span class="text-[10px] uppercase text-secondary">Total Liquidity</span><div class="bg-data-black inline-block px-3 py-1 rounded text-xl font-black text-emerald-500 ml-2">{{ totalWalletBalance.toFixed(4) }} ETH</div></div></div>
+        <div class="grid lg:grid-cols-3 gap-6"><div class="lg:col-span-2 card-ash overflow-hidden"><div class="px-6 py-4 border-b border-ash flex justify-between"><span><i class="fas fa-wallet text-cyan-500 mr-2"></i>Authorized Signers</span><button @click="addMockWallet" class="text-cyan-500 text-xs uppercase font-bold">+ Add Signer</button></div><table class="w-full text-xs"><thead><tr><th class="px-4 py-3">ADDRESS</th><th class="text-right">BALANCE</th><th class="text-center">STATUS</th><th></th></tr></thead><tbody><tr v-for="wallet in wallets" :key="wallet.id" class="border-b border-ash"><td class="px-4 py-3 font-mono text-white">{{ wallet.address.slice(0,6) }}...{{ wallet.address.slice(-4) }}</td><td class="px-4 py-3 bg-data-black text-right font-mono text-emerald-400 font-bold">{{ wallet.balance }} ETH</td><td class="text-center"><span class="bg-[#32323e] text-secondary px-2 py-0.5 rounded text-[9px]">ACTIVE</span></td><td class="text-right"><button @click="removeWallet(wallet.id)" class="text-red-500/70 text-[9px] uppercase"><i class="fas fa-trash-alt"></i></button></td></tr></tbody></table></div>
+        <div class="space-y-4"><div class="card-ash p-5"><div class="flex justify-between"><span class="text-xs font-bold uppercase text-secondary">Auto-Sweep</span><button @click="autoWithdraw = !autoWithdraw" :class="autoWithdraw ? 'bg-emerald-600' : 'bg-[#3a3a48]'" class="w-8 h-4 rounded-full relative transition-all"><span class="absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white transition-all" :class="autoWithdraw ? 'translate-x-4' : ''"></span></button></div><p class="text-[10px] text-secondary mt-3">Profits exceeding 1.0 ETH auto-swept.</p></div><div class="card-ash p-5"><span class="text-xs font-bold uppercase block mb-3 text-secondary">Capital Extraction</span><input type="number" v-model="withdrawAmount" placeholder="0.0000 ETH" class="w-full bg-data-black border border-ash rounded p-2 text-sm mb-3"><button @click="mockWithdraw" class="w-full bg-cyan-600 hover:bg-cyan-500 text-black font-bold py-2 rounded text-xs uppercase">Authorize Withdrawal</button></div></div></div></div>
+
+        <!-- AI OPTIMIZER -->
+        <div v-if="currentPage === 'optimizer'" class="space-y-6 fade-in-up"><h2 class="text-3xl font-black italic uppercase text-white">AI Auto-Optimizer</h2><div class="grid grid-cols-4 gap-4"><div class="card-ash p-4"><div class="text-[10px] uppercase text-secondary">Episodes</div><div class="bg-data-black mt-1 p-2 rounded text-2xl font-bold text-white">{{ aiEpisodes }}</div></div><div class="card-ash p-4"><div class="text-[10px] uppercase text-secondary">Success EMA</div><div class="bg-data-black mt-1 p-2 rounded text-2xl font-bold text-white">{{ (aiEma * 100).toFixed(2) }}%</div></div><div class="card-ash p-4"><div class="text-[10px] uppercase text-secondary">Profit Momentum</div><div class="bg-data-black mt-1 p-2 rounded text-2xl font-bold text-white">{{ aiMomentum.toFixed(5) }}</div></div><div class="card-ash p-4"><div class="text-[10px] uppercase text-secondary">Hardened Config</div><div class="bg-data-black mt-1 p-2 rounded text-2xl font-bold text-white">{{ hardenedActive ? 'LOCKED' : 'STANDBY' }}</div></div></div><div class="card-ash p-6"><i class="fas fa-lock mr-2 text-cyan-400"></i> BSS-56 Elite lock: <span class="bg-data-black px-2 py-1 rounded text-sm">{{ hardenedActive ? 'ACTIVE (Gold Standard)' : 'Pending GES > 82.5%' }}</span></div></div>
+
+        <!-- STRATEGIES -->
+        <div v-if="currentPage === 'strategies'" class="space-y-6 fade-in-up"><h2 class="text-2xl font-black uppercase text-white">Strategy Configurator</h2><div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5"><div v-for="strat in strategiesList" :key="strat.id" class="strategy-card rounded-xl p-5 transition-all" :class="strat.active ? 'strategy-active' : 'opacity-80'"><div class="flex justify-between"><div class="flex gap-2"><i :class="strat.icon" class="text-cyan-500"></i><h3 class="font-bold text-sm uppercase text-white">{{ strat.title }}</h3></div><button @click="toggleStrategy(strat.id)" class="text-[9px] uppercase font-bold px-2 py-1 rounded" :class="strat.active ? 'bg-cyan-500/20 text-cyan-400' : 'bg-[#32323e] text-secondary'">{{ strat.active ? 'ACTIVE' : 'INACTIVE' }}</button></div><p class="text-[10px] text-secondary mt-3">{{ strat.desc }}</p><div v-if="strat.active" class="mt-2 text-[9px] text-emerald-500"><i class="fas fa-check-circle"></i> Strategy online</div></div></div></div>
+
+        <!-- COPILOT -->
+        <div v-if="currentPage === 'copilot'" class="flex flex-col h-[80vh] card-ash rounded-xl overflow-hidden fade-in-up"><div class="px-6 py-4 border-b border-ash bg-ash flex justify-between"><div><i class="fas fa-robot text-cyan-400 mr-2"></i><span class="font-bold uppercase text-white">Alpha-Copilot</span></div><span class="text-[9px] text-secondary">allbright DeFi</span></div><div class="flex-1 overflow-y-auto p-6 space-y-4"><div v-for="msg in copilotMessages" :key="msg.id" class="flex gap-3" :class="msg.role === 'user' ? 'flex-row-reverse' : ''"><div class="w-8 h-8 rounded-full bg-ash flex items-center justify-center"><i :class="msg.role === 'user' ? 'fas fa-user' : 'fas fa-brain'" class="text-[12px] text-secondary"></i></div><div class="max-w-[70%] px-4 py-2 rounded-2xl text-sm message-bubble" :class="msg.role === 'user' ? 'bg-data-black text-white rounded-tr-none' : 'bg-data-black border border-ash rounded-tl-none text-secondary'">{{ msg.content }}</div></div></div><div class="p-5 border-t border-ash bg-ash"><div class="flex gap-3"><input v-model="copilotInput" @keyup.enter="sendCopilotMessage" class="flex-1 bg-data-black border border-ash rounded-xl px-4 py-3 text-sm" placeholder="Ask about arbitrage..."><button @click="sendCopilotMessage" class="bg-cyan-600 px-5 rounded-xl text-black font-bold"><i class="fas fa-paper-plane"></i></button></div></div></div>
+
+        <!-- SETTINGS -->
+        <div v-if="currentPage === 'settings'" class="space-y-6 max-w-4xl fade-in-up">
+          <h2 class="text-3xl font-black italic uppercase text-white">System Settings</h2>
+          <div class="card-ash p-6 space-y-8">
+            <div><label class="text-[10px] uppercase font-bold text-secondary">Execution Mode</label><div class="flex gap-2 mt-1"><button v-for="mode in ['SHADOW','LIVE_SIM','LIVE']" @click="engineMode = mode" :class="engineMode === mode ? 'bg-data-black text-cyan-400 border-cyan-500' : 'bg-ash-lighter text-secondary'" class="px-4 py-1 text-xs rounded border">{{ mode }}</button></div></div>
+            <div><label class="text-secondary text-xs">Min Margin (BPS): {{ minMarginBps }}</label><input type="range" v-model.number="minMarginBps" min="100" max="5000" step="50" class="w-full accent-cyan-500 bg-black"></div>
+            <div><label class="text-secondary text-xs">Bribe Ratio (BPS): {{ bribeRatioBps }}</label><input type="range" v-model.number="bribeRatioBps" min="100" max="2500" step="10" class="w-full accent-cyan-500"></div>
+          </div>
+        </div>
+
+<!-- SYSTEM LOGS -->
+        <div v-if="currentPage === 'logs'" class="space-y-6 fade-in-up">
+          <div class="flex justify-between items-center">
+            <h2 class="text-2xl font-black uppercase text-white">System Logs</h2>
+            <button @click="exportLogs" class="text-xs font-bold text-blue-500 uppercase border border-blue-500/30 px-3 py-1 rounded">
+              <i class="fas fa-download mr-2"></i>Export CSV
+            </button>
+          </div>
+          <div class="card-ash overflow-hidden">
+             <div class="px-4 py-2 border-b border-ash bg-ash flex items-center gap-2">
+              <i class="fas fa-terminal text-blue-500 text-xs"></i>
+              <span class="text-[10px] font-bold uppercase text-secondary">Protocol Activity Stream</span>
+              <span class="ml-auto bg-emerald-500/20 text-emerald-500 px-2 py-0.5 rounded text-[9px]">LIVE</span>
+            </div>
+            <div class="h-[60vh] overflow-y-auto p-4 space-y-2 font-mono text-xs">
+              <div v-for="log in systemLogs" :key="log.id" class="flex gap-3 py-1 border-b border-ash/30">
+                <span class="text-zinc-600 shrink-0">[{{ log.time }}]</span>
+                <span :class="getLogTypeClass(log.type)" class="shrink-0 uppercase font-bold w-12">{{ log.type }}</span>
+                <span class="text-secondary">{{ log.message }}</span>
+                <span v-if="log.block" class="ml-auto text-zinc-700">#{{ log.block }}</span>
+              </div>
+              <div v-if="systemLogs.length === 0" class="text-center text-zinc-700 mt-20 uppercase">Waiting for engine tick...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TRADE HISTORY -->
+        <div v-if="currentPage === 'trades'" class="space-y-6 fade-in-up">
+          <div class="flex justify-between items-center">
+            <div>
+              <h2 class="text-2xl font-black uppercase text-white">Trade History</h2>
+              <p class="text-xs text-secondary mt-1">Execution ledger with P&L</p>
+            </div>
+            <div class="flex gap-4">
+              <div class="text-right">
+                <div class="text-[10px] text-secondary uppercase">Success Rate</div>
+                <div class="text-lg font-bold text-emerald-500">{{ tradeSuccessRate }}%</div>
+              </div>
+              <div class="text-right">
+                <div class="text-[10px] text-secondary uppercase">Avg Latency</div>
+                <div class="text-lg font-bold text-blue-500">{{ avgLatency }}ms</div>
+              </div>
+              <button @click="exportTrades" class="text-xs font-bold text-blue-500 uppercase border border-blue-500/30 px-3 py-1 rounded self-center">
+                <i class="fas fa-download mr-2"></i>Export CSV
+              </button>
+            </div>
+          </div>
+          <div class="card-ash overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead>
+                <tr class="border-b border-ash">
+                  <th class="px-4 py-3 text-secondary font-bold uppercase">Timestamp</th>
+                  <th class="px-4 py-3 text-secondary font-bold uppercase">Status</th>
+                  <th class="px-4 py-3 text-secondary font-bold uppercase">Route</th>
+                  <th class="px-4 py-3 text-right text-secondary font-bold uppercase">Net Profit</th>
+                  <th class="px-4 py-3 text-right text-secondary font-bold uppercase">Bribe</th>
+                  <th class="px-4 py-3 text-right text-secondary font-bold uppercase">Latency</th>
+                  <th class="px-4 py-3 text-center text-secondary font-bold uppercase">Tx</th>
+                </tr>
+              </thead>
+               <tbody>
+                <tr v-for="trade in tradeHistory" :key="trade.id" class="border-b border-ash hover:bg-ash">
+                  <td class="px-4 py-3 font-mono text-secondary">{{ trade.time }}</td>
+                  <td class="px-4 py-3">
+                    <span :class="trade.status === 'SUCCESS' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-red-500/20 text-red-500'" class="px-2 py-0.5 rounded text-[9px] font-bold uppercase">{{ trade.status }}</span>
+                  </td>
+                  <td class="px-4 py-3 font-bold text-white">{{ trade.route }}</td>
+                  <td class="px-4 py-3 text-right font-mono text-emerald-400 font-bold">{{ trade.profit }}</td>
+                  <td class="px-4 py-3 text-right font-mono text-zinc-500">{{ trade.bribe }}</td>
+                  <td class="px-4 py-3 text-right font-mono text-cyan-400">{{ trade.latency }}ms</td>
+                  <td class="px-4 py-3 text-center">
+                    <a href="#" class="text-zinc-600 hover:text-white"><i class="fas fa-external-link-alt"></i></a>
+                  </td>
+                </tr>
+                <tr v-if="tradeHistory.length === 0">
+                  <td colSpan="7" class="p-20 text-center text-zinc-700 uppercase">No trades recorded</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+
+
+        <!-- SETUP WIZARD -->
+        <div v-if="currentPage === 'setup'" class="flex items-center justify-center min-h-[60vh] fade-in-up"><div class="text-center max-w-md"><i class="fas fa-magic text-5xl text-green-500 mb-4"></i><h2 class="text-2xl font-black uppercase text-white">Zero-Config Onboarding</h2><p class="text-secondary text-sm">AlphaCopilot prepares elite environment</p><div class="mt-8 card-ash rounded-xl p-6"><div class="flex justify-between"><span class="text-secondary">Gate 01</span><span class="bg-data-black px-2 py-0.5 rounded text-green-400">Verified</span></div><div class="flex justify-between mt-2"><span class="text-secondary">Gate 02</span><span class="bg-data-black px-2 py-0.5 rounded text-green-400">Verified</span></div><div class="flex justify-between mt-2"><span class="text-secondary">Gate 03</span><span class="bg-data-black px-2 py-0.5 rounded text-yellow-400">Pending</span></div></div></div></div>
+      </main>
+    </div>
+  </div>
+</div>
+
+<script>
+const { createApp, ref, onMounted, onUnmounted, computed, watch } = Vue;
+
+/**
+ * Allbright Production Dashboard Logic
+ * Ash.Black Elite Restored Version 0.2.6
+ */
+  createApp({
+    setup() {
+      const apiBase = window.VITE_API_BASE_URL || 'https://allbright-api.onrender.com';
+      const currentPage = ref('dashboard');
+      const currency = ref('ETH');
+      const gesScore = ref(85.2);
+      const aiEpisodes = ref(1247);
+      const aiEma = ref(0.952);
+      const aiMomentum = ref(0.001234);
+      const hardenedActive = ref(false);
+      const eventSearch = ref('');
+      const eventStatusFilter = ref('ALL');
+      const autoWithdraw = ref(false);
+      const withdrawAmount = ref('');
+      const engineMode = ref('LIVE_SIM');
+      const minMarginBps = ref(1000);
+      const bribeRatioBps = ref(500);
+      const copilotInput = ref('');
+      const copilotMessages = ref([{ id: 'init', role: 'assistant', content: 'Hello! I am your Alpha-Copilot. How can I assist your arbitrage operations?' }]);
+      const wallets = ref([{ id: 'w1', address: '0x7aBc...12De', balance: 2.45 }, { id: 'w2', address: '0xEf89...9ABc', balance: 4.10 }]);
+      const totalWalletBalance = computed(() => wallets.value.reduce((s,w) => s + w.balance, 0));
+
+      // Wallet Modal Logic
+      const showAddWalletModal = ref(false);
+      const walletStep = ref('providers');
+      const selectedProvider = ref(null);
+      const detectedAccounts = ref([]);
+      const walletProviders = [
+        { id: 'meta', name: 'MetaMask', icon: 'fas fa-fox', color: 'text-orange-500' },
+        { id: 'cbw', name: 'Coinbase Wallet', icon: 'fas fa-shield-alt', color: 'text-blue-600' },
+        { id: 'trust', name: 'Trust Wallet', icon: 'fas fa-shield-virus', color: 'text-blue-400' },
+        { id: 'phantom', name: 'Phantom', icon: 'fas fa-ghost', color: 'text-purple-500' },
+        { id: 'ledger', name: 'Ledger Hardware', icon: 'fas fa-usb', color: 'text-white' }
+      ];
+
+      const openWalletModal = () => { showAddWalletModal.value = true; walletStep.value = 'providers'; };
+      const closeWalletModal = () => { showAddWalletModal.value = false; };
+      const selectProvider = (provider) => { 
+        selectedProvider.value = provider; 
+        walletStep.value = 'accounts';
+        detectedAccounts.value = [
+          { address: `0x${Math.random().toString(16).slice(2,10)}...${Math.random().toString(16).slice(0,4)}`, balance: '1.24' },
+          { address: `0x${Math.random().toString(16).slice(2,10)}...${Math.random().toString(16).slice(0,4)}`, balance: '0.88' }
+        ];
+      };
+      const confirmAccount = (acc) => {
+        wallets.value.push({ id: Date.now().toString(), address: acc.address, balance: parseFloat(acc.balance) });
+        showToast(`${selectedProvider.value.name} Account Connected`, 'success');
+        closeWalletModal();
+      };
+
+const removeWallet = (id) => { wallets.value = wallets.value.filter(w => w.id !== id); showToast('Wallet removed', 'success'); };
+      const mockWithdraw = () => { if(parseFloat(withdrawAmount.value) > 0) { showToast(`Withdrawal of ${withdrawAmount.value} ETH initiated`, 'success'); withdrawAmount.value = ''; } };
+      const strategiesList = ref([{ id:'arb', title:'Multi-Chain Arbitrage', desc:'8 chain arbitrage', active:true, icon:'fas fa-globe'},{ id:'graph', title:'Graph Solver SPFA', desc:'Negative cycles', active:true, icon:'fas fa-brain'},{ id:'sim', title:'Pre-Exec Simulation', desc:'eth_call', active:true, icon:'fas fa-bolt'},{ id:'risk', title:'Risk Engine', desc:'Profit gates', active:true, icon:'fas fa-shield-alt'}]);
+      const toggleStrategy = (id) => { const s = strategiesList.value.find(s=>s.id===id); if(s) { s.active = !s.active; showToast(`Strategy ${s.title} ${s.active ? 'activated' : 'deactivated'}`, s.active ? 'success' : 'info'); } };
+      // Toast Notification System
+      const toasts = ref([]);
+      const showToast = (message, type = 'info', duration = 3000) => { const id = Date.now(); toasts.value.push({ id, message, type }); setTimeout(() => { toasts.value = toasts.value.filter(t => t.id !== id); }, duration); };
+const getToastIcon = (type) => { const icons = { success: 'fas fa-check-circle', error: 'fas fa-exclamation-circle', warning: 'fas fa-exclamation-triangle', info: 'fas fa-info-circle' }; return icons[type] || icons.info; };
+
+      // Loading States
+      const isApiConnected = ref(false);
+      const isLoading = ref({ dashboard: false, telemetry: false, events: false, logs: false, trades: false, wallet: false, optimizer: false, copilot: false });
+
+      const fetchEngineStatus = async () => {
+        try {
+          const res = await fetch(`${apiBase}/api/engine/status`);
+          if (!res.ok) throw new Error('API Offline');
+          const data = await res.json();
+          isApiConnected.value = true;
+          gesScore.value = data.globalEfficiencyScore || gesScore.value;
+          engineMode.value = data.mode || engineMode.value;
+          hardenedActive.value = data.isHardened || hardenedActive.value;
+        } catch (err) {
+          isApiConnected.value = false;
+        }
+      };
+
+      const initWebSocket = () => {
+        const socket = io(apiBase, { 
+          transports: ['websocket'],
+          reconnectionAttempts: 5
+        });
+        
+        socket.on('connect', () => {
+          isApiConnected.value = true;
+          showToast('Connected to Live Engine', 'success');
+        });
+
+        socket.on('summary_update', (data) => {
+          // BSS-43: Sync with Master API state
+          gesScore.value = data.ges || gesScore.value;
+          aiEpisodes.value = data.optimizationCycles || aiEpisodes.value;
+          aiEma.value = (data.winRate / 100) || aiEma.value;
+          engineMode.value = data.mode || engineMode.value;
+          
+          if (gesScore.value > 82.5) hardenedActive.value = true;
+          updateChart();
+        });
+
+        socket.on('kpi_matrix_update', (data) => {
+          // Update the 44-KPI telemetry categories dynamically
+          showToast('Telemetry Synchronized', 'info');
+        });
+
+        socket.on('disconnect', () => {
+          isApiConnected.value = false;
+          showToast('API Connection Lost', 'error');
+        });
+      };
+
+      const setLoading = (key, value) => { isLoading.value[key] = value; };
+      // Export Functions
+      const exportLogs = () => { const headers = ['Timestamp,Level,Message']; const rows = systemLogs.value.map(l => `${l.time},${l.type},${l.message}`); const csv = [headers, ...rows].join('\n'); downloadFile(csv, 'allbright-logs.csv', 'text/csv'); showToast('Logs exported successfully', 'success'); };
+      const exportTrades = () => { const headers = ['Time,Route,Profit,Bribe,Status,Latency']; const rows = tradeHistory.value.map(t => `${t.time},${t.route},${t.profit},${t.bribe},${t.status},${t.latency}ms`); const csv = [headers, ...rows].join('\n'); downloadFile(csv, 'allbright-trades.csv', 'text/csv'); showToast('Trades exported successfully', 'success'); };
+      const downloadFile = (content, filename, type) => { const blob = new Blob([content], { type }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url); };
+      // Dark/Light Mode Toggle
+      const darkMode = ref(true);
+      const toggleDarkMode = () => { darkMode.value = !darkMode.value; document.body.classList.toggle('light-mode', !darkMode.value); showToast(`Theme switched to ${darkMode.value ? 'Dark' : 'Light'} mode`, 'info'); };
+// Error Handling
+      const error = ref(null);
+      const handleError = (err, context) => { error.value = { message: err.message || String(err), context, timestamp: new Date() }; console.error(`Error in ${context}:`, err); showToast(`Error: ${err.message || 'Unknown error'}`, 'error'); };
+      const clearLogs = () => { systemLogs.value = []; showToast('Logs cleared', 'info'); };
+      const clearTrades = () => { tradeHistory.value = []; showToast('Trade history cleared', 'info'); };
+      // Keyboard Navigation
+      const handleKeydown = (e) => { if(e.key === 'Escape') { currentPage.value = 'dashboard'; } else if(e.key === 't' && e.ctrlKey) { currentPage.value = 'telemetry'; } else if(e.key === 'l' && e.ctrlKey) { currentPage.value = 'logs'; } };
+      // System Logs Data
+      const systemLogs = ref([{ id:'1', time:'14:25:01', type:'INFO', message:'Engine initialized', block:4521001 },{ id:'2', time:'14:25:02', type:'SUCCESS', message:'RPC connections established', block:4521001 },{ id:'3', time:'14:25:05', type:'INFO', message:'Mempool scanner active', block:4521002 }]);
+      const tradeHistory = ref([{ id:'1', time:'14:20:01', route:'WETH→USDC', profit:'+0.42 ETH', bribe:'0.001 ETH', status:'SUCCESS', latency:142 },{ id:'2', time:'14:18:45', route:'WBTC→WETH', profit:'+1.12 ETH', bribe:'0.003 ETH', status:'SUCCESS', latency:98 },{ id:'3', time:'14:15:10', route:'LINK→WETH', profit:'0.00 ETH', bribe:'0.0005 ETH', status:'REVERTED', latency:187 }]);
+      const tradeSuccessRate = computed(() => { const total = tradeHistory.value.length; if(total === 0) return 0; const success = tradeHistory.value.filter(t => t.status === 'SUCCESS').length; return Math.round((success / total) * 100); });
+      const avgLatency = computed(() => { const total = tradeHistory.value.length; if(total === 0) return 0; const sum = tradeHistory.value.reduce((s, t) => s + parseInt(t.latency), 0); return Math.round(sum / total); });
+      const totalTradeProfit = computed(() => tradeHistory.value.reduce((s, t) => { const profit = parseFloat(t.profit) || 0; return s + profit; }, 0));
+      const logFilter = ref('ALL');
+      const filteredLogs = computed(() => { if(logFilter.value === 'ALL') return systemLogs.value; return systemLogs.value.filter(l => l.type === logFilter.value); });
+      const logClass = (level) => ({ INFO: 'bg-blue-500/10', WARN: 'bg-yellow-500/10', ERROR: 'bg-red-500/10', SUCCESS: 'bg-emerald-500/10' }[level] || '');
+      const logLevelClass = (level) => ({ INFO: 'text-blue-400', WARN: 'text-yellow-400', ERROR: 'text-red-400', SUCCESS: 'text-emerald-400' }[level] || 'text-gray-400');
+      const getLogTypeClass = (type) => ({ INFO: 'text-blue-500', WARN: 'text-yellow-500', ERROR: 'text-red-500', SUCCESS: 'text-emerald-500' }[type] || 'text-gray-500');
+const telemetryCategories = ref([
+  // Profitability Metrics (Items 1-4)
+  { name:'Net Realized Profit', value:'14.77 ETH/day', target:'22.5 ETH/day', status:'WARNING', statusClass:'bg-yellow-500/20 text-yellow-500' },
+  { name:'Execution Success Rate', value:'95.0%', target:'98.8%', status:'GOOD', statusClass:'bg-emerald-500/20 text-emerald-500' },
+  { name:'Avg Profit per Trade', value:'0.042 ETH', target:'0.065 ETH', status:'GOOD', statusClass:'bg-emerald-500/20 text-emerald-500' },
+  { name:'Risk-Adjusted Return', value:'1.45', target:'2.65', status:'WARNING', statusClass:'bg-yellow-500/20 text-yellow-500' },
+  // Performance Metrics (Items 5-10)
+  { name:'Alpha Decay Rate', value:'85.2ms', target:'<90ms', status:'GOOD', statusClass:'bg-emerald-500/20 text-emerald-500' },
+  { name:'Inclusion Latency (Total)', value:'142.0ms', target:'65.0ms', status:'WARNING', statusClass:'bg-yellow-500/20 text-yellow-500' },
+  { name:'Solver Latency (p99)', value:'38.5ms', target:'12.0ms', status:'WARNING', statusClass:'bg-yellow-500/20 text-yellow-500' },
+  { name:'Execution Latency', value:'187ms', target:'<200ms', status:'GOOD', statusClass:'bg-emerald-500/20 text-emerald-500' },
+  { name:'Signal Throughput', value:'500 msg/s', target:'1,200 msg/s', status:'WARNING', statusClass:'bg-yellow-500/20 text-yellow-500' },
+  { name:'P99 Latency', value:'92ms', target:'<50ms', status:'WARNING', statusClass:'bg-yellow-500/20 text-yellow-500' },
+  // Efficiency Metrics (Items 11-18)
+  { name:'Gas Efficiency Ratio', value:'88.0%', target:'96.5%', status:'GOOD', statusClass:'bg-emerald-500/20 text-emerald-500' },
+  { name:'Bundler Saturation', value:'15.0%', target:'8.0%', status:'GOOD', statusClass:'bg-emerald-500/20 text-emerald-500' },
+  { name:'Slippage Capture', value:'50 bps', target:'12 bps', status:'WARNING', statusClass:'bg-yellow-500/20 text-yellow-500' },
+  { name:'RPC Quota Usage', value:'42.0%', target:'15.0%', status:'GOOD', statusClass:'bg-emerald-500/20 text-emerald-500' },
+  { name:'Liquidity Hit Rate', value:'88.0%', target:'97.5%', status:'GOOD', statusClass:'bg-emerald-500/20 text-emerald-500' },
+  { name:'Capital Turnover', value:'10%/trade', target:'25%/trade', status:'WARNING', statusClass:'bg-yellow-500/20 text-yellow-500' },
+  { name:'Capital Efficiency', value:'0.65', target:'0.95', status:'WARNING', statusClass:'bg-yellow-500/20 text-yellow-500' },
+  { name:'Sim Parity Delta', value:'2.5 bps', target:'<1.0 bps', status:'GOOD', statusClass:'bg-emerald-500/20 text-emerald-500' },
+  // Risk Metrics (Items 19-26)
+  { name:'Competitive Collision Rate', value:'4.0%', target:'0.8%', status:'WARNING', statusClass:'bg-yellow-500/20 text-yellow-500' },
+  { name:'MEV Deflection Rate', value:'99.2%', target:'99.9%', status:'GOOD', statusClass:'bg-emerald-500/20 text-emerald-500' },
+  { name:'Revert Cost Impact', value:'0.7%', target:'0.05%', status:'WARNING', statusClass:'bg-yellow-500/20 text-yellow-500' },
+  { name:'Failed TX Rate', value:'2.1%', target:'<1.0%', status:'WARNING', statusClass:'bg-yellow-500/20 text-yellow-500' },
+  { name:'Daily Drawdown Limit', value:'1.0 ETH', target:'0.4 ETH', status:'GOOD', statusClass:'bg-emerald-500/20 text-emerald-500' },
+  { name:'P&L Volatility', value:'0.18', target:'<0.10', status:'WARNING', statusClass:'bg-yellow-500/20 text-yellow-500' },
+  { name:'Adversarial Events', value:'3', target:'<1', status:'GOOD', statusClass:'bg-emerald-500/20 text-emerald-500' },
+  { name:'Risk Gate Rejections', value:'12', target:'<5', status:'WARNING', statusClass:'bg-yellow-500/20 text-yellow-500' },
+  // System Health Metrics (Items 27-34)
+  { name:'RPC Sync Lag', value:'12.5ms', target:'1.5ms', status:'WARNING', statusClass:'bg-yellow-500/20 text-yellow-500' },
+  { name:'RPC Reliability', value:'96.5%', target:'99.5%', status:'GOOD', statusClass:'bg-emerald-500/20 text-emerald-500' },
+  { name:'Uptime', value:'99.8%', target:'99.9%', status:'GOOD', statusClass:'bg-emerald-500/20 text-emerald-500' },
+  { name:'Cycle Accuracy', value:'92%', target:'98%', status:'WARNING', statusClass:'bg-yellow-500/20 text-yellow-500' },
+  { name:'Opportunities Found', value:'847', target:'N/A', status:'NOMINAL', statusClass:'bg-emerald-500/20 text-emerald-500' },
+  { name:'Trades Executed', value:'523', target:'N/A', status:'NOMINAL', statusClass:'bg-emerald-500/20 text-emerald-500' },
+  { name:'Wallet Balance', value:'6.55 ETH', target:'N/A', status:'NOMINAL', statusClass:'bg-emerald-500/20 text-emerald-500' },
+  { name:'Executor Status', value:'Deployed', target:'Deployed', status:'NOMINAL', statusClass:'bg-emerald-500/20 text-emerald-500' },
+  // AI Optimization Metrics (Items 35-40)
+  { name:'Opt Delta Improvement', value:'+0.8%', target:'+2.0%', status:'WARNING', statusClass:'bg-yellow-500/20 text-yellow-500' },
+  { name:'Opt Cycles/Hour', value:'12', target:'24', status:'WARNING', statusClass:'bg-yellow-500/20 text-yellow-500' },
+  { name:'Perf Gap Throughput', value:'18%', target:'<5%', status:'WARNING', statusClass:'bg-yellow-500/20 text-yellow-500' },
+  { name:'Perf Gap Latency', value:'24%', target:'<5%', status:'WARNING', statusClass:'bg-yellow-500/20 text-yellow-500' },
+  { name:'Mempool Throughput', value:'320/s', target:'500/s', status:'WARNING', statusClass:'bg-yellow-500/20 text-yellow-500' },
+  { name:'Sim Success Rate', value:'94.2%', target:'99.0%', status:'WARNING', statusClass:'bg-yellow-500/20 text-yellow-500' },
+  // Special Operations (Items 41-44)
+  { name:'MEV Capture Rate', value:'97.8%', target:'99.5%', status:'GOOD', statusClass:'bg-emerald-500/20 text-emerald-500' },
+  { name:'Flashloan Available', value:'Yes', target:'Yes', status:'NOMINAL', statusClass:'bg-emerald-500/20 text-emerald-500' },
+  { name:'Shadow Mode', value:'Inactive', target:'N/A', status:'NOMINAL', statusClass:'bg-gray-500/20 text-gray-500' },
+  { name:'Circuit Breaker', value:'Armed', target:'Armed', status:'NOMINAL', statusClass:'bg-emerald-500/20 text-emerald-500' }
+]);
+      const liveTrades = ref([{ id:'1', time:'14:20:01', pair:'WETH/USDC', profit:'+0.42 ETH', status:'SUCCESS', hash:'0xabc123...'},{ id:'2', time:'14:18:45', pair:'WBTC/WETH', profit:'+1.12 ETH', status:'SUCCESS', hash:'0xdef456...'},{ id:'3', time:'14:15:10', pair:'LINK/WETH', profit:'0.00 ETH', status:'REVERTED', hash:'0x789abc...'}]);
+      const filteredEvents = computed(() => { let f = liveTrades.value; if(eventSearch.value) f = f.filter(t=>t.pair.toLowerCase().includes(eventSearch.value.toLowerCase())); if(eventStatusFilter.value !== 'ALL') f = f.filter(t=>t.status === eventStatusFilter.value); return f; });
+const sendCopilotMessage = () => { if(!copilotInput.value.trim()) return; const userMsg = { id: Date.now().toString(), role:'user', content:copilotInput.value }; copilotMessages.value.push(userMsg); const query = copilotInput.value; copilotInput.value = ''; setTimeout(() => { let reply = 'System nominal. GES target optimal.'; if(query.includes('start')) reply = 'Engine started, scanning mempool.'; else if(query.includes('audit')) reply = 'Audit: 44 KPIs verified. Profit momentum positive.'; copilotMessages.value.push({ id: Date.now().toString(), role:'assistant', content:reply }); }, 500); };
+      let chartInstance = null;
+      const initChart = () => { const ctx = document.getElementById('alphaChart')?.getContext('2d'); if(ctx && !chartInstance) { chartInstance = new Chart(ctx, { type:'line', data:{ labels:['00:00','04:00','08:00','12:00','16:00','20:00'], datasets:[{ label:'Alpha Vol', data:[0.2,0.5,0.3,0.8,0.7,0.9], borderColor:'#10b981', borderWidth:2, fill:false, tension:0.2 }] }, options:{ responsive:true, maintainAspectRatio:true, plugins:{ legend:{ display:false } }, scales:{ y:{ grid:{ color:'#3a3a48' } }, x:{ grid:{ display:false } } } } }); } };
+      const updateChart = () => { if(chartInstance) { const newData = chartInstance.data.datasets[0].data.map(() => Math.random() * 1.2 + 0.1); chartInstance.data.datasets[0].data = newData; chartInstance.update(); } };
+let interval;
+      onMounted(() => { 
+        initChart(); 
+        initWebSocket();
+        fetchEngineStatus();
+        window.addEventListener('keydown', handleKeydown);
+        interval = setInterval(updateChart, 5000);
+      });
+      onUnmounted(() => { clearInterval(interval); window.removeEventListener('keydown', handleKeydown); });
+      const navItems = [
+        { id:'dashboard', label:'Mission Control', icon:'fas fa-tachometer-alt'},
+        { id:'telemetry', label:'Telemetry', icon:'fas fa-shield-check'},
+        { id:'events', label:'Live Events', icon:'fas fa-broadcast-tower'},
+        { id:'logs', label:'System Logs', icon:'fas fa-terminal'},
+        { id:'trades', label:'Trade History', icon:'fas fa-chart-bar'},
+        { id:'wallet', label:'Vault', icon:'fas fa-wallet'},
+        { id:'copilot', label:'Alpha-Copilot', icon:'fas fa-brain'},
+        { id:'optimizer', label:'AI Optimizer', icon:'fas fa-bolt'},
+        { id:'strategies', label:'Strategies', icon:'fas fa-shield-alt'},
+        { id:'settings', label:'Settings', icon:'fas fa-sliders-h'},
+        { id:'setup', label:'Setup Wizard', icon:'fas fa-wrench'}
+      ];
+return { currentPage, navItems, currency, gesScore, aiEpisodes, aiEma, aiMomentum, hardenedActive, eventSearch, eventStatusFilter, filteredEvents, wallets, totalWalletBalance, addMockWallet, removeWallet, autoWithdraw, withdrawAmount, mockWithdraw, engineMode, minMarginBps, bribeRatioBps, strategiesList, toggleStrategy, telemetryCategories, copilotMessages, copilotInput, sendCopilotMessage, toasts, showToast, getToastIcon, isLoading, setLoading, exportLogs, exportTrades, darkMode, toggleDarkMode, error, handleError, handleKeydown, systemLogs, tradeHistory, tradeSuccessRate, avgLatency, totalTradeProfit, logFilter, filteredLogs, logClass, logLevelClass, getLogTypeClass, showAddWalletModal, walletStep, selectedProvider, detectedAccounts, walletProviders, openWalletModal, closeWalletModal, selectProvider, confirmAccount };
+    }
+  }).mount('#app');
+</script>
+</body>
+</html>

@@ -259,7 +259,7 @@ function validateConfiguration(): { isValid: boolean; driftDetected: boolean } {
 
 export const sharedEngineState: SharedEngineState = {
   running: true,
-  mode: "LIVE",
+  mode: "LIVE_SIMULATION",
 
   walletAddress: null,
   comparisonMode: "ALL",

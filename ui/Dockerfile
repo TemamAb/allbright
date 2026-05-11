@@ -16,7 +16,7 @@ COPY lib ./lib
 ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --prefer-offline
 RUN pnpm --filter @allbright/ui build
 
 EXPOSE 4173

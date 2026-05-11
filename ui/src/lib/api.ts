@@ -174,7 +174,7 @@ export interface TelemetryResponse {
     mode?: string;
   };
   intelligence?: {
-    tuning?: unknown;
+    tuning?: Record<string, number | string | boolean>;
     learningDelta?: number;
     competitiveOverlapPct?: number;
     alphaReasoning?: string;
@@ -198,7 +198,7 @@ export interface TelemetryResponse {
 export interface SettingsOverviewResponse {
   success: boolean;
   env: Array<{ key: string; value?: string }>;
-  deploymentRegistry?: unknown[];
+  deploymentRegistry?: Array<{ id: string; status: string; url?: string; [key: string]: string | undefined }>;
   ghostMode?: boolean;
   clientProfile?: string | null;
   integrityThreshold?: number | null;

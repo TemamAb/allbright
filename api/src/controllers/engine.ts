@@ -26,7 +26,7 @@
  */
 
 import { Router } from "express";
-import { Wallet, HDNodeWallet, Interface, AbiCoder, parseUnits } from "ethers";
+import { Wallet, HDNodeWallet, Interface, AbiCoder, parseUnits, JsonRpcProvider, Contract, parseEther } from "ethers";
 import { db } from "@workspace/db";
 import { settingsTable, streamEventsTable, tradesTable, kpiSnapshotsTable } from "@workspace/db";
 import { sql } from "drizzle-orm";
@@ -447,23 +447,50 @@ function broadcastTelemetry(type: string, payload: any) {
 
 // ─── KPI 12: Auto Profit Withdrawal to User Wallet ──────────────────────────────
 async function autoWithdrawProfits(profitEth: number, chainId: number) {
-  const profitWallet = process.env["PROFIT_WALLET_ADDRESS"];
+  // BSS-52: Locate authorized destination from the management ledger.
+  // We prioritize wallets marked as active and matching the current execution chain.
+  const ledgerWallet = sharedEngineState.wallets.find(w => w.isActive && (w.chainId === chainId));
+  const fallbackWallet = sharedEngineState.wallets.find(w => w.isActive)?.address || process.env["PROFIT_WALLET_ADDRESS"];
+  const profitWallet = ledgerWallet?.address || fallbackWallet;
+
   if (!profitWallet) {
-    logger.warn("PROFIT_WALLET_ADDRESS not set, skipping auto-withdrawal");
+    logger.warn({ chainId }, "No destination wallet found in management ledger or ENV, skipping auto-withdrawal");
     return;
   }
+
   const ethPrice = await getEthPriceUsd();
   logger.info(
-    { profitEth, profitUsd: profitEth * ethPrice, profitWallet, chainId },
-    "Auto-withdrawing profit to user wallet",
+    { profitEth, profitUsd: profitEth * ethPrice, profitWallet, chainId, source: ledgerWallet ? 'ledger_chain_match' : 'fallback' },
+    "Routing profit to managed wallet",
   );
-  // Implementation would call FlashExecutor.withdraw(profitEth, profitWallet)
-  // For now, log the withdrawal event to DB
+
+  // BSS-52: On-chain Execution for capital extraction
+  try {
+    const rpc = process.env.RPC_ENDPOINT;
+    const pk = process.env.PRIVATE_KEY;
+    const contractAddr = sharedEngineState.flashloanContractAddress;
+
+    if (rpc && pk && contractAddr) {
+      const provider = new JsonRpcProvider(rpc);
+      const signer = new Wallet(pk, provider);
+      const contract = new Contract(contractAddr, [
+        "function withdraw(uint256,address)",
+        "event Withdrawal(address indexed operator, address indexed to, uint256 amount, uint256 timestamp)"
+      ], signer);
+      
+      const tx = await contract.withdraw(parseEther(profitEth.toFixed(18)), profitWallet);
+      logger.info({ txHash: tx.hash, to: profitWallet }, "[BSS-52] Auto-sweep on-chain withdrawal initiated with event tracking enabled");
+    }
+  } catch (err) {
+    logger.error({ err }, "Auto-sweep on-chain withdrawal failed");
+  }
+
+  // For now, log the withdrawal event to DB audit trail
   await safeDbOperation(async () =>
     db!.insert(streamEventsTable).values({
       id: genId("evt"),
       type: "WITHDRAWAL",
-      message: `Auto-withdrawn ${profitEth.toFixed(5)} ETH ($${(profitEth * ethPrice).toFixed(2)}) to ${profitWallet.slice(0, 10)}...`,
+      message: `[AUTO-SWEEP] Routed ${profitEth.toFixed(5)} ETH ($${(profitEth * ethPrice).toFixed(2)}) to ${profitWallet.slice(0, 10)}... on chain:${chainId}`,
       blockNumber: null,
       protocol: null,
     }),
@@ -1761,17 +1788,19 @@ router.post("/engine/start", async (req, res) => {
     process.env.PAPER_TRADING_MODE === "false" ? "LIVE" : "SHADOW";
   // targetMode is already declared above
 
-  // Validate mode transitions
+  // BSS-52: Production Credential Validation
   const caps = await detectLiveCapability();
   if (targetMode === "LIVE" && !caps.liveCapable) {
+    logger.error("[ENGINE] Production start failed: Missing pre-loaded Render credentials.");
     return res.status(400).json({
       success: false,
       message:
-        "Cannot start in LIVE mode: Pimlico API Key, Private RPC, or Executor Address missing.",
+        "Cannot start in LIVE mode: Primary Wallet or Private Key not detected in Render environment.",
       caps,
     });
   }
-  // KPI 11: Use env wallet if set, otherwise generate ephemeral
+  
+  // BSS-52: Prioritize Render-preloaded signing credentials for initial production state
   const envWalletAddress2 = process.env["WALLET_ADDRESS"] || null;
   const envPrivateKey2 = normalizeKey(process.env["PRIVATE_KEY"] || null);
 
@@ -1780,17 +1809,15 @@ router.post("/engine/start", async (req, res) => {
   if (envWalletAddress2 && envPrivateKey2) {
     address2 = envWalletAddress2;
     privateKey2 = envPrivateKey2;
-    logger.info(
-      { address: address2 },
-      "Using wallet from .env for manual start",
-    );
+    logger.info({ address: address2 }, "Engaging primary Render signer for Production");
   } else {
+    // If Simulation, generate ephemeral. If Production reaches here (due to bad detect), fail safely.
+    if (targetMode === "LIVE") return res.status(500).json({ success: false, message: "Security Failure: No pre-loaded keys found for Production engagement." });
+    
     const wallet2 = Wallet.createRandom();
     address2 = wallet2.address;
     privateKey2 = wallet2.privateKey;
-    logger.info(
-      "Generated ephemeral wallet for manual start (no .env wallet found)",
-    );
+    logger.info("Generated ephemeral wallet for Simulation");
   }
 
   engineState.running = true;

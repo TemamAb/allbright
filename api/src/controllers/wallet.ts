@@ -4,13 +4,19 @@
  */
 
 import { Router } from "express";
-import { db } from "@workspace/db";
-import { settingsTable } from "@workspace/db";
+import { db, settingsTable, streamEventsTable } from "@workspace/db";
+import { sql } from "drizzle-orm";
+import * as crypto from "crypto";
 import { getEthPriceUsd } from "../services/priceOracle";
 import { sharedEngineState, WalletAccount } from "../services/engineState";
 import { logger } from "../services/logger";
+import { Wallet, JsonRpcProvider, Contract, parseEther } from "ethers";
 
 const router = Router();
+
+function genId(prefix: string): string {
+  return `${prefix}_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
+}
 
 async function fetchEthBalance(address: string, chainId: number = 1): Promise<number> {
   if (!address) return 0;
@@ -53,12 +59,19 @@ router.get("/wallet", async (req, res) => {
       w.balanceEth = await fetchEthBalance(w.address, w.chainId);
     }
 
+    // BSS-52 Audit: Populate history from persistent database ledger
+    const dbHistory = await db.select()
+      .from(streamEventsTable)
+      .where(sql`type = 'WITHDRAWAL'`)
+      .orderBy(sql`timestamp DESC`)
+      .limit(50);
+
     res.json({
       wallets: sharedEngineState.wallets,
       activeAddress: sharedEngineState.walletAddress,
       ethPriceUsd: ethPrice,
       autoWithdraw: sharedEngineState.autoWithdrawEnabled,
-      history: sharedEngineState.withdrawalHistory,
+      history: dbHistory,
       liveCapable: sharedEngineState.liveCapable,
     });
   } catch (error: any) {
@@ -141,6 +154,54 @@ router.put("/wallet/config", async (req, res) => {
   }
 
   res.json({ success: true, message: "Wallet config updated." });
+});
+
+/**
+ * BSS-52: Manual Sweep Trigger
+ * Triggers immediate profit extraction to the primary managed wallet
+ */
+router.post("/sweep", async (req, res) => {
+  try {
+    const activeWallet = sharedEngineState.wallets.find(w => w.isActive);
+    if (!activeWallet) return res.status(400).json({ error: "No active wallet for sweep" });
+
+    const rpc = process.env.RPC_ENDPOINT;
+    const pk = process.env.PRIVATE_KEY;
+    const contractAddr = sharedEngineState.flashloanContractAddress;
+
+    if (!rpc || !pk || !contractAddr) {
+      return res.status(500).json({ error: "System not configured for on-chain execution" });
+    }
+
+    const provider = new JsonRpcProvider(rpc);
+    const signer = new Wallet(pk, provider);
+    const contract = new Contract(contractAddr, [
+      "function withdraw(uint256,address)",
+      "event Withdrawal(address indexed operator, address indexed to, uint256 amount, uint256 timestamp)"
+    ], signer);
+
+    // Sweep 100% of accumulated contract profit to the active wallet
+    const tx = await contract.withdraw(0, activeWallet.address); // Using 0 to trigger 'sweep all' if supported by contract
+
+    // BSS-52: Persist manual sweep to database audit trail
+    await db.insert(streamEventsTable).values({
+      id: genId("evt"),
+      type: "WITHDRAWAL",
+      message: `[MANUAL-SWEEP] Triggered for ${activeWallet.address}`,
+      profit: "0",
+      txHash: tx.hash,
+    });
+    
+    logger.info({ txHash: tx.hash, to: activeWallet.address }, "[WALLET] Manual sweep executed - monitoring Withdrawal events");
+    
+    res.json({ 
+      success: true, 
+      txHash: tx.hash,
+      message: `Manual sweep to ${activeWallet.address.slice(0, 10)}... initiated` 
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 export default router;

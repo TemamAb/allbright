@@ -22,14 +22,10 @@ export default function App() {
       <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/telemetry" component={Telemetry} />
-        <Route path="/events" component={Stream} />
-        <Route path="/logs" component={Stream} />
         <Route path="/trades" component={Trades} />
         <Route path="/vault" component={VaultWithdrawalView} />
         <Route path="/copilot" component={Copilot} />
-        <Route path="/optimizer" component={AiOptimizer} />
         <Route path="/settings" component={SystemSettings} />
-        <Route path="/setup" component={SetupWizard} />
         
         {/* Default 404 handler */}
         <Route>

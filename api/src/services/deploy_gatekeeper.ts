@@ -342,7 +342,7 @@ async function checkStrategicReadiness(kpiResults: any[]) {
     },
     liquidity_gate: {
       status: isGaslessReady ? 'PASS' : (isFunded ? 'PASS' : 'FAIL'),
-      details: isGaslessReady ? 'Elite: Gasless Mode (ERC-4337) active. No local ETH required.' : (isFunded ? `Operational: Wallet funded with ${sharedEngineState.walletEthBalance} ETH.` : 'FAIL: Insufficient liquidity for gas/bribes.')
+      details: isGaslessReady ? 'Elite: Gasless Mode (ERC-4337) active via Pimlico. Zero-Balance Start authorized.' : (isFunded ? `Operational: Wallet funded with ${sharedEngineState.walletEthBalance} ETH.` : 'FAIL: No Sponsorship or Local Funds detected.')
     },
     orchestrator_health: {
       status: (!alphaCritical && kpiResults.every(r => r.tuned)) ? 'PASS' : 'FAIL',

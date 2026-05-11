@@ -184,7 +184,7 @@ const KpiMatrix: React.FC = () => {
                       const isPositive = variance.startsWith('+');
 
                       return (
-                        <tr key={`${cat.id}-${idx}`} className="bg-black/40 border-b border-ash-border/10 group/row hover:bg-black/60 transition-colors">
+                        <tr key={`${cat.id}-${idx}`} className="bg-black border-b border-ash-border/10 group/row hover:bg-black/60 transition-colors">
                           <td className="px-6 py-4 pl-16">
                             <span className="text-xs font-medium text-zinc-400 group-hover/row:text-zinc-200 transition-colors uppercase tracking-tight">{kpi.name}</span>
                           </td>
@@ -222,4 +222,4 @@ const KpiMatrix: React.FC = () => {
   );
 };
 
-export default KpiMatrix;
+export default React.memo(KpiMatrix);

@@ -1,7 +1,8 @@
-module.exports = {
+/** @type {import('tailwindcss').Config} */
+export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
-    extend: {
+extend: {
       colors: {
         // Grafana 100% Dark Palette
         'grafana-bg': '#161819',
@@ -25,15 +26,20 @@ module.exports = {
         'metallic-white': '#F5F7FA',
         'bright-blue': '#00A3FF',
         'neon-green': '#00FF94',
-        // Ash.Black Theme (Elite Grade per DASHBOARD-GUIDE.MD)
-        'ash-black': '#111217',
-        'ash-dark': '#1a1c20', 
-        'ash-border': '#27272a',
-        'ash-text': '#e5e7eb',
-        'ash-muted': '#71717a',
-        'data-black': '#000000',
-        'cyan-accent': '#06b6d4',
-        'emerald-accent': '#10b981',
+        // Ash.Black Theme (Elite Grade) - 100% Black vs 15% Ash
+        'ash-black': '#262626',  // 15% Ash for layout background
+        'ash-dark': '#333333',   // Component elevation
+        'ash-border': '#404040', // Hairline dividers
+        'ash-muted': '#a0a0a0',  // Muted text
+        'data-black': '#000000', // 100% Black for data panels
+        // Unified color palette - aligned with HTML dashboard
+        'cyan-accent': '#3b82f6',   // Blue-500 - matches HTML primary-accent
+        'emerald-accent': '#56a64b',  // Green - matches HTML success
+        'success': '#56a64b',
+        'warning': '#f2cc0c',
+        'info': '#5794f2',
+        'destructive': '#e02f44',
+        'primary-accent': '#3b82f6',
       },
       backdropBlur: {
         xs: '2px',

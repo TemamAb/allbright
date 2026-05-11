@@ -14,6 +14,7 @@ import {
   type TelemetryResponse,
   type TradesSummary,
 } from "../lib/api";
+import { useQuery } from "@tanstack/react-query";
 
 /**
  * Engine State Store
@@ -241,16 +242,9 @@ function buildTelemetryState(
 }
 
 export function EngineProvider({ children }: { children: React.ReactNode }) {
-  const [engineState, setEngineState] = useState<SharedEngineState | null>(null);
-  const [telemetry, setTelemetry] = useState<FullKPIState>(INITIAL_TELEMETRY);
-  const [telemetryFeed, setTelemetryFeed] = useState<TelemetryResponse | null>(null);
-  const [summary, setSummary] = useState<TradesSummary | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const syncEngine = useCallback(async () => {
-    try {
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['engineStatus'],
+    queryFn: async () => {
       const [engine, feed, tradeSummary] = await Promise.all([
         apiFetch<EngineStatusResponse>("/api/engine/status"),
         apiFetch<TelemetryResponse>("/api/telemetry"),
@@ -305,50 +299,32 @@ export function EngineProvider({ children }: { children: React.ReactNode }) {
         pendingWithdrawals: [],
       };
 
-      setEngineState(nextEngineState);
-      setTelemetryFeed(feed);
-      setSummary(tradeSummary);
-      setTelemetry(buildTelemetryState(nextEngineState, feed, tradeSummary));
-      setIsConnected(true);
-      setError(null);
-    } catch (err) {
-      console.error("Engine sync failed:", err);
-      setError(String(err));
-      setIsConnected(false);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+      const telemetryState = buildTelemetryState(nextEngineState, feed, tradeSummary);
 
-  useEffect(() => {
-    syncEngine();
-    const interval = setInterval(syncEngine, 5000);
-    return () => clearInterval(interval);
-  }, [syncEngine]);
+      return {
+        engineState: nextEngineState,
+        telemetryFeed: feed,
+        summary: tradeSummary,
+        telemetry: telemetryState,
+      };
+    },
+    refetchInterval: 5000,
+  });
 
   const value = useMemo(
     () => ({
-      engine: engineState,
-      telemetry,
-      telemetryFeed,
-      summary,
-      isConnected,
-      isLive: isConnected && !!engineState?.running,
+      engine: data?.engineState ?? null,
+      telemetry: data?.telemetry ?? INITIAL_TELEMETRY,
+      telemetryFeed: data?.telemetryFeed ?? null,
+      summary: data?.summary ?? null,
+      isConnected: !!data,
+      isLive: !!data && !!data.engineState?.running,
       isLoading,
-      error,
-      lastUpdate: telemetry.timestamp || new Date(),
-      refresh: syncEngine,
+      error: error ? String(error) : null,
+      lastUpdate: data?.telemetry?.timestamp || new Date(),
+      refresh: async () => { await refetch(); },
     }),
-    [
-      engineState,
-      telemetry,
-      telemetryFeed,
-      summary,
-      isConnected,
-      isLoading,
-      error,
-      syncEngine,
-    ],
+    [data, isLoading, error, refetch],
   );
 
   return React.createElement(
