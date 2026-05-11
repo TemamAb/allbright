@@ -147,14 +147,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             .duration_since(std::time::UNIX_EPOCH)
                             .unwrap_or_default()
                             .as_secs();
-                        let stats = watchtower_stats_arc.lock().unwrap_or_else(|p| p.into_inner());
+                        // Extract values from lock guard BEFORE awaiting to fix Send trait issue
+                        let (nrp_eth_per_day, active_rpc_count) = {
+                            let stats = watchtower_stats_arc.lock().unwrap_or_else(|p| p.into_inner());
+                            (stats.current_nrp_eth_per_day, stats.active_rpc_count)
+                        };
                         let body = serde_json::json!({
                             "status": "ok",
                             "service": "allbright-solver",
                             "version": "0.2.6",
                             "uptime_secs": uptime,
-                            "nrp_eth_per_day": stats.current_nrp_eth_per_day,
-                            "active_rpc_count": stats.active_rpc_count,
+                            "nrp_eth_per_day": nrp_eth_per_day,
+                            "active_rpc_count": active_rpc_count,
                             "ges_weights": 9
                         }).to_string();
 
@@ -208,4 +212,3 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         });
     }
 }
-
