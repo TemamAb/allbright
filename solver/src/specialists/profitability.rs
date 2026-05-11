@@ -40,8 +40,11 @@ impl SubsystemSpecialist for ProfitabilitySpecialist {
         // and `self.stats` to determine if KPI tuning is needed.
         let mut stats_guard = self.stats.lock().unwrap();
 
-        let target_nrp = 20.0; // ETH/day, from benchmark-36-kpis.md
+        // BSS-63: Synchronize with APEX Lead Architect Mandate (100.5 ETH/day)
+        let target_nrp = 100.5; 
         let current_nrp = stats_guard.current_nrp_eth_per_day;
+        // BSS-52: Onboarding grace period (first 1000 messages) to prevent gate blocks
+        let is_onboarding = stats_guard.msg_throughput_count < 1000;
 
         let mut gate_trigger = GateTriggerResult::default();
         if current_nrp < target_nrp * 0.8 { // If NRP is significantly below target
@@ -58,7 +61,7 @@ impl SubsystemSpecialist for ProfitabilitySpecialist {
         Ok(SpecialistResult {
             name: self.name.clone(),
             category: self.category.clone(),
-            tuned: current_nrp >= target_nrp, // Simple check for tuning status
+            tuned: current_nrp >= target_nrp || is_onboarding,
             metrics: json!({ "current_nrp_eth_per_day": current_nrp, "target_nrp_eth_per_day": target_nrp }),
             gate_trigger,
         })

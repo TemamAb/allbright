@@ -8,6 +8,7 @@ import { Server } from "socket.io";
 import { getMetrics } from "./controllers/metrics";
 import { rateLimiter } from "./middleware/rateLimiter";
 import { authenticate } from "./middleware/auth";
+import { alphaCopilot } from "./services/alphaCopilot";
 
 const app: Express = express();
 const httpServer = createServer(app);
@@ -88,6 +89,17 @@ app.get("/", (_req, res) => {
 
 // Health check (public, for monitoring)
 app.use("/api", require("./controllers/health").default);
+
+// BSS-43: Engine Status Bridge (Authenticated Mission Control access)
+app.get("/api/engine/status", authenticate, async (_req, res) => {
+  try {
+    const status = await alphaCopilot.getEngineStatus();
+    res.json(status);
+  } catch (error) {
+    logger.error({ error }, "Failed to fetch engine status");
+    res.status(500).json({ error: "Failed to fetch engine status" });
+  }
+});
 
 // Metrics endpoint (Prometheus) - allow without auth for scraping
 app.get("/metrics", getMetrics);

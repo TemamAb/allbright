@@ -250,6 +250,29 @@ export class AlphaCopilot {
   }
 
   /**
+   * BSS-43: Returns the consolidated engine status for the Mission Control dashboard.
+   * This provides a snapshot of the SharedEngineState to verify the IPC bridge.
+   */
+  async getEngineStatus() {
+    return {
+      online: sharedEngineState.running,
+      authority: APEX_MANDATES.identity,
+      lockStatus: "BSS-63_LOCKED",
+      mode: sharedEngineState.mode,
+      ges: (sharedEngineState.totalWeightedScore / 10).toFixed(1) + "%",
+      nrp: sharedEngineState.currentDailyProfit,
+      latency: sharedEngineState.avgLatencyMs,
+      successRate: sharedEngineState.winRate,
+      specialists: sharedEngineState.specialistRegistry.map(s => ({
+        name: s.name,
+        status: s.status,
+        lastTuning: new Date(s.lastTuningMs).toISOString()
+      })),
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  /**
    * BSS-56: Dynamic Benchmark Resolver
    * Returns KPIs for the Apex market leader.
    */
