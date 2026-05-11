@@ -1,131 +1,61 @@
-# Allbright Local Development Docker Compose
-# Use free ports 3001-3010 as verified by check-ports.ps1
-# Services:
-#   - PostgreSQL: 5432
-#   - API: 3001
-#   - Dashboard UI: 3002
-#   - Solver: 3003
+version: '3.8'
 
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: allbright-postgres-local
+    restart: always
     environment:
-      POSTGRES_DB: allbright
-      POSTGRES_USER: allbright
-      POSTGRES_PASSWORD: allbright
+      POSTGRES_DB: ${POSTGRES_DB:-allbright}
+      POSTGRES_USER: ${POSTGRES_USER:-allbright}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-allbright}
     ports:
       - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U allbright -d allbright"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
     volumes:
-      - allbright-postgres-local:/var/lib/postgresql/data
-    networks:
-      - allbright-local
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3001:3001"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      VITE_API_BASE_URL: http://api:3001 # Internal Docker network name
+      DATABASE_URL: postgres://${POSTGRES_USER:-allbright}:${POSTGRES_PASSWORD:-allbright}@postgres:5432/${POSTGRES_DB:-allbright}
+      # Add other required API environment variables here, e.g., PIMLICO_API_KEY, PRIVATE_KEY
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  ui:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3002:3002"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      VITE_API_BASE_URL: http://localhost:3001 # For UI to connect to local API
+    depends_on:
+      - api
 
   solver:
     build:
       context: ./solver
       dockerfile: Dockerfile
-    container_name: allbright-solver-local
-    environment:
-      PRE_FLIGHT_STRICT: "false"
-      INTERNAL_BRIDGE_PORT: "3003"
-      FLASH_EXECUTOR_ADDRESS: ${FLASH_EXECUTOR_ADDRESS:-0x0000000000000000000000000000000000000000}
-      BASE_WS_URL: "wss://base-rpc.publicnode.com"
-      ALLEBRIGHT_SOCKET_PATH: /ipc/allbright_bridge.sock
-      EXECUTOR_CODE_HASH: "0x6f2a4c10da345e0d48f2b1c93a9b1e7f3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f"
-      CHAIN_ID: "8453"
-      PIMLICO_NETWORK: base
-      MAX_PAIRS_TO_SCAN: "2500"
-      SCAN_CONCURRENCY: "8"
-      MEV_PROTECTION: "true"
-      FLASH_LOAN_MAX: "100000000"
-      PIMLICO_API_KEY: ${PIMLICO_API_KEY:-}
-      RPC_ENDPOINT: ${RPC_ENDPOINT:-https://base.llamarpc.com}
-    ports:
-      - "3003:3003"
-    volumes:
-      - allbright-ipc-local:/ipc
-    networks:
-      - allbright-local
-
-  api:
-    build:
-      context: .
-      dockerfile: api/Dockerfile
-    container_name: allbright-api-local
-    ports:
-      - "3001:10000"
-    environment:
-      NODE_ENV: development
-      PORT: "10000"
-      DATABASE_URL: postgresql://allbright:allbright@postgres:5432/allbright
-      INTERNAL_BRIDGE_PORT: "3003"
-      ALLEBRIGHT_SOCKET_PATH: /ipc/allbright_bridge.sock
-      PRE_FLIGHT_STRICT: "false"
-      PAPER_TRADING_MODE: "true"
-      SUDO_CONFIRMATION_ENABLED: "false"
-      EXECUTOR_CODE_HASH: "0x6f2a4c10da345e0d48f2b1c93a9b1e7f3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f"
-      CHAIN_ID: "8453"
-      PIMLICO_NETWORK: base
-      MAX_PAIRS_TO_SCAN: "2500"
-      SCAN_CONCURRENCY: "8"
-      MEV_PROTECTION: "true"
-      FLASH_LOAN_MAX: "100000000"
-      PIMLICO_API_KEY: ${PIMLICO_API_KEY:-}
-      RPC_ENDPOINT: ${RPC_ENDPOINT:-https://base.llamarpc.com}
-      PRIVATE_KEY: ${PRIVATE_KEY:-0x0000000000000000000000000000000000000000000000000000000000000000}
-      WALLET_ADDRESS: ${WALLET_ADDRESS:-0x0000000000000000000000000000000000000000}
-      FLASH_EXECUTOR_ADDRESS: ${FLASH_EXECUTOR_ADDRESS:-0x0000000000000000000000000000000000000000}
-      ETH_RPC_URL: ${ETH_RPC_URL:-https://ethereum.llamarpc.com}
-      BASE_RPC_URL: ${BASE_RPC_URL:-https://base.llamarpc.com}
+    restart: always
+    # Solver port 3003 is for IPC, not typically exposed directly for HTTP access
+    # - "3003:3003" # Uncomment if you need to access solver directly from host
     depends_on:
-      postgres:
-        condition: service_healthy
-      solver:
-        condition: service_started
-    volumes:
-      - allbright-ipc-local:/ipc
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "node",
-          "-e",
-          "fetch('http://localhost:10000/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
-        ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    networks:
-      - allbright-local
-
-  dashboard:
-    build:
-      context: .
-      dockerfile: ui/Dockerfile
-      args:
-        VITE_API_BASE_URL: http://localhost:3001
-    container_name: allbright-dashboard-local
-    ports:
-      - "3002:4173"
-    depends_on:
-      api:
-        condition: service_healthy
-    environment:
-      VITE_API_BASE_URL: http://localhost:3001
-    networks:
-      - allbright-local
+      - api
 
 volumes:
-  allbright-ipc-local:
-  allbright-postgres-local:
-
-networks:
-  allbright-local:
-    driver: bridge
+  postgres_data:
