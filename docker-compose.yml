@@ -15,10 +15,10 @@ services:
     volumes:
       - allbright-postgres:/var/lib/postgresql/data
 
-  solver:
+solver:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: solver/Dockerfile
     environment:
       PRE_FLIGHT_STRICT: "false"
       INTERNAL_BRIDGE_PORT: "4001"
