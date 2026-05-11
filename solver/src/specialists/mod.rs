@@ -1,10 +1,6 @@
 pub mod api;
 pub mod auto_optimization;
-pub mod benchmarks;
-pub mod efficiency;
-pub mod health;
 pub mod kpi;
-pub mod performance;
 pub mod profitability;
 pub mod risk;
 pub mod vault_integrity;

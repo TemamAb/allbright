@@ -37,6 +37,6 @@ impl SubsystemSpecialist for VaultIntegritySpecialist {
 
     fn status(&self) -> serde_json::Value {
         let stats = self.stats.lock().unwrap();
-        json!({ "status": "synced", "violations": stats.violations_count })
+        json!({ "status": "synced", "violations": stats.withdrawal_policy_violations })
     }
 }
