@@ -3,6 +3,12 @@ databases:
     plan: starter
 
 services:
+  # ─────────────────────────────────────────────
+  # SERVICE 1: Rust Solver (Docker)
+  # Render assigns PORT automatically — do NOT override it.
+  # The solver binds to $PORT so Render can route traffic to /health.
+  # INTERNAL_BRIDGE_PORT is used only for API→Solver IPC config reference.
+  # ─────────────────────────────────────────────
   - type: web
     name: allbright-solver
     env: docker
@@ -10,7 +16,7 @@ services:
     branch: main
     rootDir: solver
     healthCheckPath: /health
-    healthCheckTimeout: 10
+    healthCheckTimeout: 30
     envVars:
       - key: ETH_WS_URL
         value: wss://ethereum-rpc.publicnode.com
@@ -30,13 +36,14 @@ services:
         value: wss://fantom-rpc.publicnode.com
       - key: RUST_LOG
         value: info
-      - key: INTERNAL_BRIDGE_PORT
-        value: "4003"
       - key: SKIP_GATE
         value: "true"
-      - key: PORT
-        value: "4003"
+      # NOTE: PORT is intentionally NOT set here — Render injects it automatically.
+      # The solver reads $PORT at runtime in main.rs.
 
+  # ─────────────────────────────────────────────
+  # SERVICE 2: Node.js API (Docker)
+  # ─────────────────────────────────────────────
   - type: web
     name: allbright-api
     env: docker
@@ -45,7 +52,7 @@ services:
     dockerfilePath: api/Dockerfile
     healthCheckPath: /api/health
     healthCheckTimeout: 30
-    startPeriod: 60s
+    startPeriod: 120s
     database: allbright-db
     envVars:
       - key: NODE_ENV
@@ -91,7 +98,7 @@ services:
       - key: allbright_TCP_HOST
         value: allbright-solver
       - key: allbright_TCP_PORT
-        value: "4003"
+        value: "10000"
       - key: DATABASE_URL
         fromDatabase: allbright-db
       - key: APP_INITIAL_SETUP
@@ -103,6 +110,9 @@ services:
       - key: UI_URL
         value: https://allbright-ez5o.onrender.com
 
+  # ─────────────────────────────────────────────
+  # SERVICE 3: Static Dashboard (Vite build)
+  # ─────────────────────────────────────────────
   - type: web
     name: allbright-dashboard
     env: static

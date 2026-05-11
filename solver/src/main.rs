@@ -11,7 +11,7 @@ use std::env;
 use std::sync::Mutex;
 use std::sync::Arc;
 use tokio::net::TcpListener;
-use tokio::io::AsyncReadExt;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use serde_json::Value;
 use tracing::{info, warn};
 
@@ -132,15 +132,43 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
 
     loop {
-        let (mut socket, _) = listener.accept().await?;
+        let (mut socket, peer_addr) = listener.accept().await?;
         let watchtower_stats_arc = Arc::clone(&watchtower_stats);
 
         tokio::spawn(async move {
-            let mut buf = [0; 1024];
+            let mut buf = [0; 4096];
             match socket.read(&mut buf).await {
                 Ok(n) if n > 0 => {
                     let msg = String::from_utf8_lossy(&buf[..n]);
-                    // Handle multiple JSON objects in one buffer if necessary (newline delimited)
+
+                    // BSS-RENDER: Detect HTTP requests (Render health check sends GET /health HTTP/1.1)
+                    if msg.starts_with("GET ") {
+                        let uptime = std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .unwrap_or_default()
+                            .as_secs();
+                        let stats = watchtower_stats_arc.lock().unwrap_or_else(|p| p.into_inner());
+                        let body = serde_json::json!({
+                            "status": "ok",
+                            "service": "allbright-solver",
+                            "version": "0.2.6",
+                            "uptime_secs": uptime,
+                            "nrp_eth_per_day": stats.current_nrp_eth_per_day,
+                            "active_rpc_count": stats.active_rpc_count,
+                            "ges_weights": 9
+                        }).to_string();
+
+                        let response = format!(
+                            "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                            body.len(),
+                            body
+                        );
+                        let _ = socket.write_all(response.as_bytes()).await;
+                        info!("[HTTP] Health check responded 200 to {:?}", peer_addr);
+                        return;
+                    }
+
+                    // Handle JSON IPC messages (newline delimited)
                     for line in msg.lines() {
                         if let Ok(json) = serde_json::from_str::<Value>(line) {
                             match json["type"].as_str() {
@@ -180,3 +208,4 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         });
     }
 }
+

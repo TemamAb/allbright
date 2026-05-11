@@ -13,19 +13,26 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml ./
 COPY tsconfig.json tsconfig.base.json ./
 COPY tsconfig*.json ./
+COPY .npmrc* ./
 COPY api ./api
 COPY lib ./lib
 COPY scripts ./scripts
 
-# Run install - prioritize frozen lockfile, fallback to full install
-RUN pnpm install --frozen-lockfile --prefer-offline
+# Scope workspace to only API + lib packages (ui/solver are not needed in this image)
+# This prevents pnpm from failing on missing workspace members
+RUN echo "packages:" > pnpm-workspace.yaml && \
+    echo "  - 'api'" >> pnpm-workspace.yaml && \
+    echo "  - 'lib/*'" >> pnpm-workspace.yaml
 
-RUN pnpm --filter @allbright/api run build
+# Run install - prioritize frozen lockfile, fallback to no-frozen for scoped workspace
+RUN pnpm install --frozen-lockfile --prefer-offline || pnpm install --no-frozen-lockfile
+
+RUN pnpm --filter @workspace/api-server run build
 
 # Render provides the PORT env var; we expose it for documentation
 EXPOSE 10000 
 
-CMD ["sh", "-lc", "pnpm --filter @allbright/db run push && PORT=${PORT:-10000} pnpm --filter @allbright/api run start"]
+CMD ["sh", "-lc", "pnpm --filter @workspace/db run push && PORT=${PORT:-10000} pnpm --filter @workspace/api-server run start"]
