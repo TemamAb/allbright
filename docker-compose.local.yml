@@ -20,8 +20,8 @@ services:
 
   api:
     build:
-      context: ./api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: api/Dockerfile
     restart: always
     ports:
       - "3001:3001"
@@ -36,11 +36,11 @@ services:
 
   ui:
     build:
-      context: ./ui
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ui/Dockerfile
     restart: always
     ports:
-      - "3002:3002"
+      - "3002:80"
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       VITE_API_BASE_URL: http://localhost:3001 # For UI to connect to local API
@@ -49,8 +49,8 @@ services:
 
   solver:
     build:
-      context: ./solver
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: solver/Dockerfile
     restart: always
     # Solver port 3003 is for IPC, not typically exposed directly for HTTP access
     # - "3003:3003" # Uncomment if you need to access solver directly from host

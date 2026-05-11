@@ -1,38 +1,17 @@
-# syntax=docker/dockerfile:1
-FROM node:22-bookworm-slim
-
-ENV PNPM_HOME=/pnpm
-ENV PATH=$PNPM_HOME:$PATH
-
-# Install pnpm globally using npm
-RUN npm install -g pnpm@9.15.4
-
-# Install system dependencies required for native Node.js modules
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 make g++ && apt-get clean && rm -rf /var/lib/apt/lists/*
-
+FROM node:20-alpine AS builder
 WORKDIR /app
+RUN npm install -g pnpm
 
-COPY package.json pnpm-lock.yaml ./
-COPY tsconfig.json tsconfig.base.json ./
-COPY tsconfig*.json ./
-COPY .npmrc* ./
-COPY api ./api
-COPY lib ./lib
-COPY scripts ./scripts
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY api/package.json ./api/
+COPY lib/db/package.json ./lib/db/
 
-# Scope workspace to only API + lib packages (ui/solver are not needed in this image)
-# This prevents pnpm from failing on missing workspace members
-RUN echo "packages:" > pnpm-workspace.yaml && \
-    echo "  - 'api'" >> pnpm-workspace.yaml && \
-    echo "  - 'lib/*'" >> pnpm-workspace.yaml
+RUN pnpm install --frozen-lockfile
 
-# Run install - prioritize frozen lockfile, fallback to no-frozen for scoped workspace
-RUN pnpm install --frozen-lockfile --prefer-offline || pnpm install --no-frozen-lockfile
+COPY api/ ./api/
+COPY lib/db/ ./lib/db/
 
-RUN pnpm --filter @workspace/api-server run build
+RUN pnpm --filter @allbright/api build
 
-# Render provides the PORT env var; we expose it for documentation
-EXPOSE 10000 
-
-CMD ["sh", "-lc", "pnpm --filter @workspace/db run push && PORT=${PORT:-10000} pnpm --filter @workspace/api-server run start"]
+EXPOSE 3001
+CMD ["node", "api/dist/index.mjs"]
