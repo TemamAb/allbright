@@ -75,7 +75,7 @@ export const useSimulationReporter = (telemetry: any) => {
       timestamp: new Date().toISOString(),
       narrative: [
         `Apex Identity Lock: Logic secured under authority ${APEX_LOCK.identity}.`,
-        lockIntegrityVerified ? `Lock Integrity: Enforced 100 ETH/day benchmark is confirmed active.` : `CRITICAL: Lock integrity mismatch detected!`,
+        lockIntegrityVerified ? `Lock Integrity: Enforced 100.5 ETH/day benchmark is confirmed active.` : `CRITICAL: Lock integrity mismatch detected!`,
         driftBlocked ? `Security Event: Blocked unauthorized attempt to shift benchmark to ${attemptedBenchmark} ETH/day.` : `Lock Stability: No benchmark drift attempts detected in this cycle.`,
         isPlateau ? `Pareto Plateau Reached: System is operating at absolute mathematical efficiency.` :
         checkpointBenchmark ? `Incremental Refinement: Chasing +${(avgGes - (checkpointBenchmark || 0)).toFixed(2)}% gain over last checkpoint.` : `Initial Benchmark Pursuit: NRP trending toward target.`,
