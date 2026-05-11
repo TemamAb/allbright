@@ -1,8 +1,8 @@
-FROM rust:1.88-slim AS builder
+FROM rust:1.85-slim AS builder
 WORKDIR /app
 
 # Install dependencies for building
-RUN apt-get update && apt-get install -y pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y pkg-config libssl-dev libicu-dev && rm -rf /var/lib/apt/lists/*
 
 COPY . .
 RUN cargo build --release --manifest-path solver/Cargo.toml
