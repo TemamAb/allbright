@@ -169,9 +169,22 @@ info!("Simulation GES: {:.2}%", total_ges * 100.0);
                     // and Send by breaking the reference into the stack-allocated 'buf'.
                     let msg_owned = String::from_utf8_lossy(&buf[..n]).into_owned();
 
-                    // BSS-RENDER: Detect HTTP requests (Render health check sends GET /health HTTP/1.1)
+                    // BSS-RENDER: Detect HTTP requests
+                    if msg_owned.starts_with("GET / ") || msg_owned.starts_with("GET /index.html") {
+                        // Browser entry point: Redirect to the React Dashboard (Ash.Black)
+                        let body = "<html><head><meta http-equiv=\"refresh\" content=\"0; URL='https://allbright-dashboard.onrender.com'\" /></head><body><script>window.location.href='https://allbright-dashboard.onrender.com'</script></body></html>";
+                        let response = format!(
+                            "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                            body.len(),
+                            body
+                        );
+                        let _ = socket.write_all(response.as_bytes()).await;
+                        info!("[HTTP] Root access redirected to Dashboard at {:?}", peer_addr);
+                        return;
+                    }
+
                     if msg_owned.starts_with("GET ") {
-                        let uptime = std::time::SystemTime::now()
+                        let current_timestamp = std::time::SystemTime::now()
                             .duration_since(std::time::UNIX_EPOCH)
                             .unwrap_or_default()
                             .as_secs();
@@ -183,9 +196,9 @@ info!("Simulation GES: {:.2}%", total_ges * 100.0);
                         let body = serde_json::json!({
                             "status": "ok",
                             "service": "allbright-solver",
-                            "version": "v0.2.6-Apex",
-                            "uptime_secs": uptime,
-                            "nrp_eth_per_day": nrp_eth_per_day,
+                            "version": "v0.2.6-Apex-Production",
+                            "uptime_secs": current_timestamp.saturating_sub(startup_time),
+                            "nrp_eth_per_day": (nrp_eth_per_day * 1000.0).round() / 1000.0,
                             "active_rpc_count": active_rpc_count,
                             "lock_status": "BSS-63_LOCKED",
                             "ges_weights": 9
