@@ -61,16 +61,24 @@ impl SubBlockTiming {
     /// Implements precise delay waiting to target a specific millisecond offset within a block slot.
     /// This helps avoid early-slot collisions with other bots (Adversarial Deflection BSS-17).
     pub async fn wait_for_optimal_delay(&self, slot: u64, base_offset_ms: u64) {
-        let start = Instant::now();
-        
-        // Calculate jitter to prevent deterministic pattern detection by competitors
-        let jitter = (slot % 7) as u64; 
-        let target_delay = base_offset_ms + jitter;
+        let start = Instant::now();        
+
+        // BSS-13: Latency-Aware Offset Calculation
+        // We subtract the average local processing latency from the base offset
+        let avg_latency = if self.latency_samples.is_empty() {
+            10
+        } else {
+            self.latency_samples.iter().rev().take(5).map(|s| s.1).sum::<u64>() / 5
+        };
+
+        // Add deterministic jitter to prevent pattern matching by adversarial sequencers
+        let jitter = (slot % 11) as u64; 
+        let target_delay = base_offset_ms.saturating_sub(avg_latency).saturating_add(jitter);
 
         info!("[BSS-13] Initiating precision wait for {}ms offset (jitter: {}ms)", target_delay, jitter);
         
-        // For production, this would ideally use spin-waiting or high-precision timers
-        // if running on dedicated hardware.
+        // BSS-13: Production precision requires tokio::time::sleep for cooperative multitasking,
+        // but in high-frequency windows, this logic determines the sub-block positioning.
         let delay_duration = Duration::from_millis(target_delay);
         
         if delay_duration.as_millis() > 0 {

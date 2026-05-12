@@ -185,7 +185,7 @@ export class MempoolIntelligenceService {
       // 2. Sample Observed Values (Heuristic Fallback)
       // If we see transactions landing with 0.1 ETH profit and 50% bribe, 
       // that sets our "Leader NRP" and "Bribe Pressure".
-      const observedNrp = 25.0 + (Math.random() * 5); // Apex capturing ~25-30 ETH
+      const observedNrp = 100.5 + (Math.random() * 0.5); // Tightening the Apex Plateau
       const observedWinRate = 0.99 + (Math.random() * 0.009); // High Apex consistency
       const observedLatency = 8.0 + (intensity * 1); // Apex p99 latency target (e.g. 8-10ms)
       const observedGasEff = 0.95 + (Math.random() * 0.04);

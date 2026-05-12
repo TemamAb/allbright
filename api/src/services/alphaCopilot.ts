@@ -132,6 +132,28 @@ export class AlphaCopilot {
   }
 
   /**
+   * BSS-64: Apex Verification Routine
+   * Simulates high-cycle optimization to verify stability and benchmark adherence.
+   */
+  async runApexVerification(cycles: number = 10000): Promise<{ success: boolean; finalGes: number; nrp: number }> {
+    logger.info(`[APEX-VERIFIER] Initiating ${cycles} cycle stress test...`);
+    
+    for (let i = 0; i < cycles; i++) {
+      await this.fullKpiTuneCycle({ simulation: true });
+      if (i % 2500 === 0 && i > 0) {
+        logger.info(`[APEX-VERIFIER] Checkpoint ${i}: GES ${(sharedEngineState.totalWeightedScore / 10).toFixed(1)}% | NRP ${sharedEngineState.currentDailyProfit.toFixed(2)} ETH`);
+      }
+    }
+
+    const finalGes = sharedEngineState.totalWeightedScore / 10;
+    const nrp = sharedEngineState.currentDailyProfit;
+    const success = nrp >= APEX_MANDATES.enforced_benchmark && finalGes >= APEX_MANDATES.target_ges;
+
+    logger.info(`[APEX-VERIFIER] Completed ${cycles} cycles. Final Status: ${success ? 'PASSED' : 'FAILED'}`);
+    return { success, finalGes, nrp };
+  }
+
+  /**
    * Analyzes proposed feature value vs architectural cost.
    * Rejects if V2C (Value to Complexity) score is < 2.0 (Elite Grade)
    */
