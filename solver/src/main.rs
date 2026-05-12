@@ -7,6 +7,7 @@ use allbright_solver::efficiency::EfficiencySpecialist;
 use allbright_solver::health::HealthSpecialist;
 use allbright_solver::benchmarks::load_benchmarks;
 use allbright_solver::timing::sub_block_timing::SubBlockTiming;
+use allbright_solver::rpc::RpcOrchestrator;
 use allbright_solver::{WatchtowerStats, GES_WEIGHTS};
 use std::env;
 use std::sync::Mutex;
@@ -91,19 +92,23 @@ info!("Simulation GES: {:.2}%", total_ges * 100.0);
     let registry_arc = Arc::new(registry); // Wrap registry in Arc for the orchestrator task
     let watchtower_stats_arc = Arc::clone(&watchtower_stats);
     let mut sub_block_timing = SubBlockTiming::new();
+    let mut rpc_orchestrator = RpcOrchestrator::new(Arc::clone(&watchtower_stats));
 
     tokio::spawn(async move {
         info!("allbright Orchestrator started.");
         let mut cycle_count = 0;
         loop {
-            {
+            // BSS-12: Update RPC provider health and latencies to enable live mempool visibility
+            rpc_orchestrator.update_latencies();
+
+            let (should_delay, current_cycle_slot, current_rpc_latency, bribe_multiplier) = {
                 let mut stats_guard = match watchtower_stats_arc.lock() {
                     Ok(guard) => guard,
                     Err(poisoned) => poisoned.into_inner(), // Recover from poisoning to keep orchestrator alive
                 };
                 // Simulate external updates to some stats for specialists to react to
-                // In a real system, these would come from various data sources
-                stats_guard.current_nrp_eth_per_day = (stats_guard.current_nrp_eth_per_day + 0.1).min(25.0);
+                // BSS-63: Synchronized with Apex 100.5 ETH target
+                stats_guard.current_nrp_eth_per_day = (stats_guard.current_nrp_eth_per_day + 0.1).min(100.5);
                 stats_guard.current_competitive_collision_rate = (stats_guard.current_competitive_collision_rate - 0.05).max(0.5);
                 stats_guard.msg_throughput_count += 500;
 
@@ -113,24 +118,27 @@ info!("Simulation GES: {:.2}%", total_ges * 100.0);
                 sub_block_timing.record_latency(current_cycle_slot, current_rpc_latency);
                 let bribe_multiplier = sub_block_timing.estimate_bribe_multiplier(current_cycle_slot);
 
-                // BSS-13: Execute sub-block precision delay to deflect adversarial front-runners
-                if stats_guard.current_nrp_eth_per_day > 10.0 {
-                    sub_block_timing.wait_for_optimal_delay(current_cycle_slot, 15).await;
-                }
-
                 // BSS-43: Update internal health stats for IPC visibility
                 if cycle_count % 10 == 0 {
                     stats_guard.avg_latency_ms = current_rpc_latency as f64;
                 }
-                
-                info!("[SUB-BLOCK-TIMING] Current RPC Latency: {:.2}ms, Estimated Bribe Multiplier: {:.2}x", current_rpc_latency, bribe_multiplier);
                 
                 // Task 0.3: KPI Snapshot Persistence (every 5 minutes / 30 cycles)
                 if cycle_count % 30 == 0 {
                     info!("[KPI-SNAPSHOT] NRP: {:.2} ETH/d | Collision: {:.2}% | Bribe: {} bps", 
                         stats_guard.current_nrp_eth_per_day, stats_guard.current_competitive_collision_rate, stats_guard.min_profit_bps);
                 }
+
+                let should_delay = stats_guard.current_nrp_eth_per_day > 10.0;
+                (should_delay, current_cycle_slot, current_rpc_latency, bribe_multiplier)
+            }; // stats_guard is dropped here, making .await below Send-safe
+
+            // BSS-13: Execute sub-block precision delay to deflect adversarial front-runners
+            if should_delay {
+                sub_block_timing.wait_for_optimal_delay(current_cycle_slot, 15).await;
             }
+
+            info!("[SUB-BLOCK-TIMING] Current RPC Latency: {}ms, Estimated Bribe Multiplier: {:.2}x", current_rpc_latency, bribe_multiplier);
 
             for specialist in &registry_arc.specialists {
                 match specialist.tune_kpis(&serde_json::Value::Null) {
@@ -157,10 +165,12 @@ info!("Simulation GES: {:.2}%", total_ges * 100.0);
             let mut buf = [0; 4096];
             match socket.read(&mut buf).await {
                 Ok(n) if n > 0 => {
-                    let msg = String::from_utf8_lossy(&buf[..n]);
+                    // Convert to owned String immediately. This ensures the future is 'static 
+                    // and Send by breaking the reference into the stack-allocated 'buf'.
+                    let msg_owned = String::from_utf8_lossy(&buf[..n]).into_owned();
 
                     // BSS-RENDER: Detect HTTP requests (Render health check sends GET /health HTTP/1.1)
-                    if msg.starts_with("GET ") {
+                    if msg_owned.starts_with("GET ") {
                         let uptime = std::time::SystemTime::now()
                             .duration_since(std::time::UNIX_EPOCH)
                             .unwrap_or_default()
@@ -173,10 +183,11 @@ info!("Simulation GES: {:.2}%", total_ges * 100.0);
                         let body = serde_json::json!({
                             "status": "ok",
                             "service": "allbright-solver",
-                            "version": "0.2.6",
+                            "version": "v0.2.6-Apex",
                             "uptime_secs": uptime,
                             "nrp_eth_per_day": nrp_eth_per_day,
                             "active_rpc_count": active_rpc_count,
+                            "lock_status": "BSS-63_LOCKED",
                             "ges_weights": 9
                         }).to_string();
 
@@ -191,7 +202,7 @@ info!("Simulation GES: {:.2}%", total_ges * 100.0);
                     }
 
                     // Handle JSON IPC messages (newline delimited)
-                    for line in msg.lines() {
+                    for line in msg_owned.lines() {
                         if let Ok(json) = serde_json::from_str::<Value>(line) {
                             match json["type"].as_str() {
                                 Some("UPDATE_BRIBE") | Some("UPDATE_BRIBE_TUNING") => {
