@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import autoOptimizerRouter from '../controllers/auto-optimizer';
 import healthRouter from '../controllers/health';
 import engineRouter from '../controllers/engine';
 import telemetryRouter from '../controllers/telemetry';
@@ -14,8 +13,7 @@ router.use('/telemetry', telemetryRouter);
 router.use('/trades', tradesRouter);
 router.use('/wallet', walletRouter);
 
-// Fix for crash - define autoOptimizerRouter properly
-router.use('/auto-optimizer', autoOptimizerRouter);
+// Auto-optimizer was removed - using AI Optimizer component instead
 
 router.get('/', (req, res) => {
   res.json({ status: 'API routes active', timestamp: new Date().toISOString() });

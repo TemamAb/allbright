@@ -13,5 +13,8 @@ COPY . .
 RUN pnpm --filter @allbright/ui build
 
 FROM nginx:stable-alpine
+# Copy custom nginx.conf for SPA fallback support
+COPY ui/nginx.conf /etc/nginx/conf.d/default.conf
+# Copy built UI assets
 COPY --from=builder /app/ui/dist /usr/share/nginx/html
 EXPOSE 80
