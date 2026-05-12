@@ -261,7 +261,10 @@ export class AlphaCopilot {
     
     // 4. Reality Delta Compliance (Mainnet Mirror Mandate)
     const currentDelta = sharedEngineState.marketPulse?.realityDelta || 0;
-    const deltaCompliance = currentDelta <= APEX_MANDATES.reality_delta_limit ? 1.0 : 0.5;
+    // BSS-63: Exponential penalty for Reality Delta breaches to prevent live execution drift
+    const deltaCompliance = currentDelta <= APEX_MANDATES.reality_delta_limit 
+      ? 1.0 
+      : Math.max(0.1, 1.0 - (currentDelta / (APEX_MANDATES.reality_delta_limit * 10)));
 
     const aiseScore = learningMaturity * stability * drift * deltaCompliance;
 
