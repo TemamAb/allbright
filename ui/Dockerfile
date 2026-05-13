@@ -2,20 +2,21 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
-COPY ui/package.json ./ui/
-COPY lib/api-client-react/package.json ./lib/api-client-react/
-COPY lib/db/package.json ./lib/db/
+# Copy workspace files for pnpm install
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ../
+COPY lib/api-client-react/package.json ../lib/api-client-react/
+COPY lib/db/package.json ../lib/db/
 
+# Now work in ui folder and install
+WORKDIR /app/ui
 RUN pnpm install --frozen-lockfile
 
+# Build the UI
 COPY . .
-RUN pnpm --filter @allbright/ui build
+RUN pnpm build
 
 FROM nginx:stable-alpine
-# Copy custom nginx.conf for SPA fallback support
-COPY ui/nginx.conf /etc/nginx/conf.d/default.conf
-# Copy built UI assets
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/ui/dist /usr/share/nginx/html
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

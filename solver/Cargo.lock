@@ -55,6 +55,7 @@ dependencies = [
  "hmac",
  "lazy_static",
  "petgraph",
+ "rand",
  "rayon",
  "redis",
  "reqwest 0.11.27",

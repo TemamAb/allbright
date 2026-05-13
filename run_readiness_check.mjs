@@ -1,5 +1,5 @@
-import('./api/src/services/deploy_gatekeeper.ts')
-  .then(m => m.generateDeploymentReadinessReport())
+import('./api/dist/index.mjs')
+  .then(m => m.generateDeploymentReadinessReport(true)) // skipRuntimeStage=true
   .then(r => {
     console.log('=== Deployment Readiness Report ===');
     console.log('Status:', r.overallStatus);

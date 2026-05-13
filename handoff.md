@@ -1135,3 +1135,40 @@ This script validates dependencies, builds the Vite frontend, compiles the Rust 
 ---
 
 **Session Complete - Desktop App Ready, All Code Issues Resolved**
+
+---
+
+## 📋 CURRENT SESSION UPDATE - Deployment Readiness Analysis (2026-01-11)
+
+### Folders Analyzed
+| Folder | Purpose | Status |
+|--------|---------|----------|
+| `Cargo-nextest-llvm-cov-integration-tests-main` | Rust testing template (cargo nextest + llvm-cov) | ✅ Template Available |
+| `universal` | AI harness skill distributions | ⚠️ Not related to deployment |
+
+### Deployment Readiness Tools Identified
+- **Core Tool**: `api/src/services/deploy_gatekeeper.ts` → `generateDeploymentReadinessReport()`
+- **CLI Entry**: `run_readiness_check.mjs`, `check_ready_quiet.mjs`
+- **Documentation**: `MASTER_DEPLOYMENT_READINESS_REPORT_v3.0.md`
+
+### Phase 1 Fixes Progress
+
+| Task | Status | Notes |
+|------|--------|-------|
+| Install React types | ✅ COMPLETE | Added @types/react, @types/react-dom to workspace |
+| VITE_API_BASE_URL | ⚠️ PENDING | Needs to be added to ui/.env for production |
+| Environment variables | ⚠️ PENDING | DATABASE_URL, RPC_ENDPOINT, PIMLICO_API_KEY |
+
+### Key Findings
+1. **Rust specialists module**: `solver/src/specialists/mod.rs` exists and properly declared
+2. **Onboarding Status**: System shows "Onboarding not complete" - inhibits KPI tune cycle
+3. **GES**: 85.0% exceeds 82.5% target - strong performance foundation
+4. **TypeScript**: 81 errors - React types installed, remaining are import/path issues
+
+### Next Actions Required (For Next Session)
+1. Add `VITE_API_BASE_URL` to `ui/.env` for production builds
+2. Configure production environment variables
+3. Complete onboarding to enable full KPI cycle
+4. Re-run deployment readiness check
+
+**Status**: Session Complete - Analysis Done, Phase 1 Partially Complete

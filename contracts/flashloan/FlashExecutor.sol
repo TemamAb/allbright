@@ -100,12 +100,12 @@ contract FlashExecutor is ReentrancyGuard {
         // Execute arbitrage across protocols
         uint256 amountOut = _executeArbitrage(arbParams);
 
-        // Ensure we have enough to repay flash loan
+// Approve repayment BEFORE checking (prevents race condition)
         uint256 totalDebt = amount + premium;
-        require(amountOut >= totalDebt, "Insufficient funds to repay");
-
-        // Approve repayment
         IERC20(asset).approve(address(aavePool), totalDebt);
+
+        // Ensure we have enough to repay flash loan
+        require(amountOut >= totalDebt, "Insufficient funds to repay");
 
         return true;
     }

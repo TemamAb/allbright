@@ -1,0 +1,18 @@
+{
+  "canary": {
+    "enabled": true,
+    "exposureLimit": "100 USD",
+    "durationHours": 24,
+    "networks": ["base"],
+    "autoRollback": true
+  },
+  "limits": {
+    "maxTradeSize": "100",
+    "maxDailyVolume": "1000",
+    "maxOpenTrades": 1
+  },
+  "alerts": {
+    "thresholdLoss": "10 USD",
+    "notification": true
+  }
+}
