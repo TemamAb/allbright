@@ -35,3 +35,5 @@ export default function App() {
     </Layout>
   );
 }
+// SPA fallback safeguard
+<Route path="*" element={<Dashboard />} />
