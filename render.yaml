@@ -63,7 +63,7 @@ services:
         sync: false
       - key: PIMLICO_API_KEY
         sync: false
-      - key: WALLET_ADDRESS
+- key: WALLET_ADDRESS
         sync: false
       - key: PRIVATE_KEY
         sync: false
@@ -106,9 +106,9 @@ services:
       - key: PRE_FLIGHT_STRICT
         value: "false"
       - key: CORS_ORIGINS
-        value: https://allbright-ez5o.onrender.com
+        value: https://allbright-live.onrender.com,https://allbright-live.onrender.com
       - key: UI_URL
-        value: https://allbright-ez5o.onrender.com
+        value: https://allbright-live.onrender.com
 
 # ─────────────────────────────────────────────
   # SERVICE 3: Dashboard (Docker with nginx for SPA fallback)
