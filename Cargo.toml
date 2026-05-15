@@ -1,0 +1,14 @@
+[workspace]
+members = ["src-tauri"]
+resolver = "2"
+
+[workspace.package]
+version = "0.2.6"
+edition = "2021"
+authors = ["Allbright Systems"]
+license = "MIT"
+
+[workspace.dependencies]
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+tauri = "2"

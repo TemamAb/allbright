@@ -2,6 +2,8 @@ import { SubsystemSpecialist } from '../specialists';
 import { sharedEngineState } from '../engineState';
 import { preflightCheck } from '../preflightCheck';
 import { debuggingSystem } from '../debuggingSystem';
+import { alphaCopilot } from '../alphaCopilot.js';
+import { logger } from '../logger';
 
 /**
  * BSS-60: DiagnosticSpecialist
@@ -31,6 +33,29 @@ export class DiagnosticSpecialist implements SubsystemSpecialist {
       diagnosticHealth: iseReadyScore,
       latentRiskDiscovery: diagnostic.results.filter(r => r.status === 'FAIL').length
     };
+
+    // 4. Stable-State Recovery Trigger (BSS-60)
+    // Automatically invoke triggerSelfHealingReset if stability failure is detected via pre-flight.
+    // The reset flag check prevents cascading re-initialization loops during recovery.
+    if (!preflight.passed && sharedEngineState.selfHealingEnabled && !kpiData?.reset) {
+      logger.warn({ failedChecks: preflight.failedChecks }, "[DIAGNOSTIC] Stability failure detected. Invoking Stable-State recovery...");
+      
+      // Execute reset asynchronously to allow the current tune cycle to complete telemetry reporting
+      setImmediate(() => {
+        alphaCopilot.triggerSelfHealingReset().catch(err => 
+          logger.error({ err }, "[DIAGNOSTIC] Failed to execute automated recovery trigger")
+        );
+      });
+
+      return {
+        ...tunedKpis,
+        lastAction: "Stable-State Recovery Triggered",
+        impact: "HEALING",
+        confidence: 0.5,
+        recommendations: ["Await self-healing completion", ...diagnostic.rootCauseSummary.split('.')],
+        nextAction: "Verify stability post-reset"
+      };
+    }
 
     return {
       ...tunedKpis,

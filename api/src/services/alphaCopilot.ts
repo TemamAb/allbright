@@ -126,6 +126,8 @@ export interface WatchtowerStats {
 }
 
 export class AlphaCopilot {
+  private lastSelfHealingReset: number = 0;
+
   constructor() {
     this.load_model();
     this.initScheduledAudits();
@@ -275,6 +277,84 @@ export class AlphaCopilot {
   }
 
   /**
+   * BSS-60: Micro-Readiness Check
+   * Validates specialist stability in <1s after a self-healing reset.
+   * Ensures the engine doesn't resume execution with degraded logic.
+   */
+  async performMicroReadinessCheck(): Promise<{ stable: boolean; activeCount: number; reason?: string }> {
+    const registry = sharedEngineState.specialistRegistry;
+    const activeSpecialists = registry.filter(s => s.status === 'ACTIVE');
+    
+    // Threshold: At least 80% of specialists must be ACTIVE for stability
+    const minRequired = Math.ceil(registry.length * 0.8);
+    
+    if (activeSpecialists.length < minRequired) {
+      return { 
+        stable: false, 
+        activeCount: activeSpecialists.length, 
+        reason: `Insufficient active specialists: ${activeSpecialists.length}/${registry.length}` 
+      };
+    }
+
+    // Verify confidence convergence: Last 3 scores should be above Apex floor (0.7)
+    const unstable = activeSpecialists.find(s => {
+      const history = s.decisionHistory || [];
+      // Analyze the tail of the rolling confidence window
+      const recent = history.slice(-3);
+      return recent.length > 0 && recent.some(score => score < 0.7);
+    });
+
+    if (unstable) {
+      return { 
+        stable: false, 
+        activeCount: activeSpecialists.length, 
+        reason: `Specialist ${unstable.name} exhibits confidence instability (< 70%).` 
+      };
+    }
+
+    return { stable: true, activeCount: activeSpecialists.length };
+  }
+
+  /**
+   * BSS-60: Self-Healing Reset
+   * Gracefully recovers degraded specialists and verifies via Micro-Readiness.
+   */
+  async triggerSelfHealingReset() {
+    const now = Date.now();
+    const cooldown = sharedEngineState.selfHealingCooldownMs;
+    if (now - this.lastSelfHealingReset < cooldown) {
+      const remaining = Math.ceil((cooldown - (now - this.lastSelfHealingReset)) / 1000);
+      logger.warn({ remainingSec: remaining }, "[COPILOT] Self-Healing Reset inhibited: Cooldown active.");
+      return;
+    }
+
+    this.lastSelfHealingReset = now;
+    sharedEngineState.lastResetAt = now; // Sync with shared state for dashboard visibility
+    logger.info("[COPILOT] Initiating Self-Healing Reset sequence...");
+    
+    // Mark all specialists for re-initialization
+    sharedEngineState.specialistRegistry.forEach(s => {
+      s.consecutiveMisses = 0;
+      s.status = 'PENDING';
+    });
+
+    // Re-run tuning cycle to re-establish logic stability
+    await this.fullKpiTuneCycle({ reset: true });
+    
+    // Re-verify via Micro-Readiness check
+    const status = await this.performMicroReadinessCheck();
+    
+    if (!status.stable) {
+      logger.error({ reason: status.reason }, "[COPILOT] Self-Healing failed Micro-Readiness check.");
+      // Emergency safety measure: Trip circuit breaker if healing fails
+      sharedEngineState.circuitBreakerOpen = true;
+    } else {
+      sharedEngineState.resetSuccessCount++;
+      logger.info("[COPILOT] Self-Healing successful. Engine stability restored.");
+    }
+  }
+
+  /**
    * BSS-43: Returns the consolidated engine status for the Mission Control dashboard.
    * This provides a snapshot of the SharedEngineState to verify the IPC bridge.
    */
@@ -401,7 +481,8 @@ export class AlphaCopilot {
            category: domain,
            status: 'PENDING',
            lastTuningMs: 0,
-           consecutiveMisses: 0
+           consecutiveMisses: 0,
+           decisionHistory: new Array(10).fill(0.85) // BSS-60: Initialize baseline for Micro-Readiness
          });
        }
      }

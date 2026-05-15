@@ -34,7 +34,7 @@
 }
 
 :root {
-  /* LIGHT MODE (Default) */
+  /* LIGHT MODE (Default) - Keep existing for compatibility */
   --background: #fdfdfd;
   --foreground: #1e1e1e;
   --card: #ffffff;
@@ -49,7 +49,7 @@
 
   --app-font-sans: 'Space Mono', 'Menlo', 'Monaco', monospace;
   --app-font-mono: 'Space Mono', 'Menlo', 'Monaco', monospace;
-  
+
   --radius: .25rem;
 
   --primary-shadow: rgba(87, 148, 242, 0.1); /* Blue shadow for light mode primary */
@@ -59,43 +59,43 @@
 }
 
 .dark {
-  /* GRAFANA DARK THEME: EXACT FROM MODEL.HTML */
-  --background: #1e1e1e;
-  --card: #2d2d2d;
-  --border: #404040;
+  /* GRAFANA DARK THEME: Based on UPGRADING-TAURI-DESKTOP.MD */
+  --background: #0B0F14;           /* Background Primary (deep black-blue) */
+  --card: #151B23;                 /* Background Secondary (ash-black) */
+  --border: #2A3441;               /* Borders (soft steel gray) */
   --foreground: #d8d9da;
-  --success: #73bf69;
-  --info: #5794f2;
-  --warning: #ff9830;
-  --destructive: #f2495c;
-  --primary: #ff9830;
-  --muted: #111217;
-  --muted-foreground: #ccccdc;
+  --success: #00E676;              /* Profit */
+  --info: #00C2FF;                 /* AI Signal Blue */
+  --warning: #FFB020;              /* Warning */
+  --destructive: #FF4D4F;          /* Risk */
+  --primary: #4DA3FF;              /* Primary Heading Blue */
+  --muted: #1C2430;                /* Panel Surface (graphite ash) */
+  --muted-foreground: #a0a0a0;
 
-  --primary-shadow: rgba(255, 152, 48, 0.1); /* Orange shadow for dark mode primary */
-  --destructive-shadow: rgba(242, 73, 92, 0.15); /* Red shadow for dark mode destructive */
-  --warning-shadow: rgba(255, 152, 48, 0.1); /* Orange shadow for dark mode warning */
-  --success-shadow: rgba(115, 191, 105, 0.1); /* Green shadow for dark mode success */
+  --primary-shadow: rgba(77, 163, 255, 0.1); /* Heading blue shadow */
+  --destructive-shadow: rgba(255, 77, 79, 0.15); /* Risk shadow */
+  --warning-shadow: rgba(255, 176, 32, 0.1); /* Warning shadow */
+  --success-shadow: rgba(0, 230, 118, 0.1); /* Profit shadow */
 }
 
 .black {
-  /* 100% BLACK THEME: OLED HIGH CONTRAST */
-  --background: #000000;
-  --card: #0a0a0a;
-  --border: #222222;
+  /* 100% BLACK THEME: OLED HIGH CONTRAST - Enhanced for elite trading */
+  --background: #0B0F14;           /* Background Primary (deep black-blue) */
+  --card: #151B23;                 /* Background Secondary (ash-black) */
+  --border: #2A3441;               /* Borders (soft steel gray) */
   --foreground: #ffffff;
-  --primary: #00e5ff;
-  --success: #00ff88;
-  --info: #00e5ff;
-  --warning: #ffcc00;
-  --destructive: #ff0066;
-  --muted: #050505;
+  --primary: #4DA3FF;              /* Primary Heading Blue */
+  --success: #00E676;              /* Profit */
+  --info: #00C2FF;                 /* AI Signal Blue */
+  --warning: #FFB020;              /* Warning */
+  --destructive: #FF4D4F;          /* Risk */
+  --muted: #1C2430;                /* Panel Surface (graphite ash) */
   --muted-foreground: #a0a0a0;
 
-  --primary-shadow: rgba(0, 229, 255, 0.1); /* Cyan shadow for black mode primary */
-  --destructive-shadow: rgba(255, 0, 102, 0.15); /* Pink shadow for black mode destructive */
-  --warning-shadow: rgba(255, 204, 0, 0.1); /* Yellow shadow for black mode warning */
-  --success-shadow: rgba(0, 255, 136, 0.1); /* Emerald shadow for black mode success */
+  --primary-shadow: rgba(77, 163, 255, 0.1); /* Heading blue shadow */
+  --destructive-shadow: rgba(255, 77, 79, 0.15); /* Risk shadow */
+  --warning-shadow: rgba(255, 176, 32, 0.1); /* Warning shadow */
+  --success-shadow: rgba(0, 230, 118, 0.1); /* Profit shadow */
 }
 
 .colorblind {

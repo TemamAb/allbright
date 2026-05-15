@@ -192,6 +192,10 @@ export interface SharedEngineState {
   appName: string;
   logoUrl: string | null;
   ghostMode: boolean; // BSS-WhiteLabel: Total identity masking
+  selfHealingEnabled: boolean; // BSS-60: Automated recovery mandate
+  lastResetAt: number | null; // BSS-60: Track last self-healing reset for cooldown status
+  selfHealingCooldownMs: number; // BSS-60: Cooldown period for recovery cycles
+  resetSuccessCount: number; // BSS-60: Total successful self-healing cycles
   
   currentUserRole: 'USER' | 'ADMIN'; // Commercialization: Role-based access
 
@@ -343,6 +347,10 @@ avgLatencyMs: 2.7,
   activeBundlers: 1,
   appName: 'allbright', // Standard default branding
   logoUrl: null,
+  selfHealingEnabled: true,
+  lastResetAt: null,
+  selfHealingCooldownMs: 60000,
+  resetSuccessCount: 0,
   ghostMode: false,
   intelligenceSource: 'allbright_BOOTSTRAP',
   clientProfile: null,

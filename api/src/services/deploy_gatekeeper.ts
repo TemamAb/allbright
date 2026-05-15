@@ -456,7 +456,7 @@ export async function generateDeploymentReadinessReport(skipRuntimeStage = false
     .map(gate => gate.gateId);
   const criticalFails = gateResults.filter(g => g.riskAssessment === 'CRITICAL' && !g.approved).length;
 
-   // 36-KPI breakdown from specialist results
+   // 44-KPI breakdown from specialist results
    const kpiBreakdown: Array<{ domain: string; score: number; status: 'OPTIMAL' | 'DEGRADED' | 'CRITICAL'; metrics: Record<string, any> }> = kpiResults.map(res => ({
      domain: res.category,
      score: res.confidence,
@@ -475,6 +475,9 @@ export async function generateDeploymentReadinessReport(skipRuntimeStage = false
        domain_score_eff: sharedEngineState.domainScoreEff,
        domain_score_health: sharedEngineState.domainScoreHealth,
        domain_score_auto_opt: sharedEngineState.domainScoreAutoOpt,
+       domain_score_bribe_opt: sharedEngineState.domainScoreBribeOpt,
+       domain_score_cloud_health: sharedEngineState.domainScoreCloudHealth,
+       domain_score_vault_integrity: sharedEngineState.domainScoreVaultIntegrity,
        raw_stats: kpiBreakdown
      });
    } catch (err) {

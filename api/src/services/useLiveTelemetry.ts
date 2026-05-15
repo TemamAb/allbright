@@ -100,6 +100,12 @@ export function useLiveTelemetry() {
     // Calculated field for real-time UI countdowns
     nextOptimizationIn: engineState?.nextOptimizationCycle 
       ? Math.max(0, engineState.nextOptimizationCycle - Math.floor(Date.now() / 1000)) 
-      : null
+      : null,
+    // BSS-60: Self-healing cooldown countdown (Seconds remaining)
+    selfHealingCooldownRemaining: (engineState?.lastResetAt && engineState?.selfHealingCooldownMs)
+      ? Math.max(0, Math.ceil((engineState.lastResetAt + engineState.selfHealingCooldownMs - Date.now()) / 1000))
+      : 0,
+    // BSS-60: Successful self-healing cycles
+    resetSuccessCount: engineState?.resetSuccessCount || 0
   };
 }

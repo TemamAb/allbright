@@ -1,0 +1,22 @@
+{
+  "daily_profit_eth": 0,
+  "success_rate": 0,
+  "arb_execution_count": 0,
+  "avg_profit_per_trade": 0,
+  "loss_rate": 0,
+  "gas_efficiency": 0,
+  "execution_latency": 0,
+  "mev_capture_rate": 0,
+  "failed_tx_rate": 0,
+  "liquidity_hit_rate": 0,
+  "slippage_cost": 0,
+  "spread_capture": 0,
+  "uptime": 0,
+  "rpc_reliability": 0,
+  "cycle_accuracy": 0,
+  "signal_throughput": 0,
+  "capital_efficiency": 0,
+  "risk_adjusted_return": 0,
+  "drawdown": 0,
+  "pnl_volatility": 0
+}

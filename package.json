@@ -44,5 +44,22 @@
   "packageManager": "pnpm@9.12.2",
   "pnpm": {
     "overrides": {}
-  }
+  },
+  "description": "",
+  "directories": {
+    "doc": "docs",
+    "lib": "lib"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TemamAb/allbright.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/TemamAb/allbright/issues"
+  },
+  "homepage": "https://github.com/TemamAb/allbright#readme"
 }

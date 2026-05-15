@@ -35,7 +35,7 @@ export async function analyzeReadiness(): Promise<any> {
   const { generateDeploymentReadinessReport } = await import('./deploy_gatekeeper.js');
   const report = await generateDeploymentReadinessReport();
   console.log('Status:', report.overallStatus, 'Score:', report.deploymentScore);
-  console.log('36-KPI Domains:', report.kpiBreakdown.map(d => `${d.domain}:${d.status}`).join(', '));
+  console.log('44-KPI Domains:', report.kpiBreakdown.map(d => `${d.domain}:${d.status}`).join(', '));
   return report;
 }
 
@@ -73,4 +73,3 @@ export async function startLocal() {
   await alphaCopilot.executeMissionCommand('docker-compose up -d');
   logger.info('Local stack started');
 }
-

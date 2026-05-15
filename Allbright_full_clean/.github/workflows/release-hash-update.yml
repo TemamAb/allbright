@@ -1,0 +1,108 @@
+name: Release Multi-Platform Hash Update
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build-and-hash:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [windows-latest, macos-latest, ubuntu-latest]
+        include:
+          - platform: windows-latest
+            artifact_path: ./tauri/src-tauri/target/release/bundle/msi/Allbright-Desktop_0.2.6_x64_en-US.msi
+          - platform: macos-latest
+            artifact_path: ./tauri/src-tauri/target/release/bundle/dmg/Allbright-Desktop_0.2.6_x64.dmg
+          - platform: ubuntu-latest
+            artifact_path: ./tauri/src-tauri/target/release/bundle/deb/allbright-desktop_0.2.6_amd64.deb
+
+    runs-on: ${{ matrix.platform }}
+    outputs:
+      hash: ${{ steps.calculate_hash.outputs.hash }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Build Tauri application
+        working-directory: ./tauri
+        run: pnpm tauri build --release
+
+      - name: Verify MSI Icon (Windows Only)
+        if: matrix.platform == 'windows-latest'
+        shell: pwsh
+        run: |
+          # Run the post-build verification script to ensure branding integrity
+          ./scripts/verify-msi-icon.ps1 -MsiPath "${{ matrix.artifact_path }}" -ExpectedVersion "0.2.6"
+
+      - name: Calculate SHA-256 checksum
+        id: calculate_hash
+        shell: bash
+        run: |
+          if [ ! -f "${{ matrix.artifact_path }}" ]; then
+            echo "Artifact not found: ${{ matrix.artifact_path }}"
+            exit 1
+          fi
+          HASH=$(sha256sum "${{ matrix.artifact_path }}" | awk '{ print $1 }')
+          echo "SHA256_HASH=$HASH" >> $GITHUB_OUTPUT
+          echo "$HASH" > hash.txt
+
+      - name: Upload Hash Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hash-${{ matrix.platform }}
+          path: hash.txt
+
+  update-manifest:
+    needs: build-and-hash
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Hash Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: hashes
+
+      - name: Update Distribution Manifest
+        run: |
+          WIN_HASH=$(cat hashes/hash-windows-latest/hash.txt)
+          MAC_HASH=$(cat hashes/hash-macos-latest/hash.txt)
+          LIN_HASH=$(cat hashes/hash-ubuntu-latest/hash.txt)
+          
+          manifest_file="DISTRIBUTION_MANIFEST_v0.2.6.md"
+          sed -i "s/\[WINDOWS_MSI_SHA256\]/$WIN_HASH/g" $manifest_file
+          sed -i "s/\[MACOS_DMG_SHA256\]/$MAC_HASH/g" $manifest_file
+          sed -i "s/\[LINUX_DEB_SHA256\]/$LIN_HASH/g" $manifest_file
+
+      - name: Commit and push changes
+        uses: EndBug/add-and-commit@v9
+        with:
+          author_name: GitHub Actions
+          author_email: actions@github.com
+          message: "docs: Update multi-platform SHA-256 hashes for v0.2.6 release"
+          add: 'DISTRIBUTION_MANIFEST_v0.2.6.md'
+          token: ${{ secrets.GITHUB_TOKEN }}
