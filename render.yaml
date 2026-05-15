@@ -117,8 +117,8 @@ services:
     name: allbright-dashboard
     env: docker
     plan: starter
-    rootDir: ui
-    dockerfilePath: Dockerfile
+    rootDir: .
+    dockerfilePath: ui/Dockerfile
     healthCheckPath: /
     healthCheckTimeout: 60
     startPeriod: 60s

@@ -3,20 +3,24 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Copy workspace files for pnpm install
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ../
-COPY lib/api-client-react/package.json ../lib/api-client-react/
-COPY lib/db/package.json ../lib/db/
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY ui/package.json ./ui/
+COPY lib/api-client-react/package.json ./lib/api-client-react/
+COPY lib/db/package.json ./lib/db/
 
-# Now work in ui folder and install
-WORKDIR /app/ui
+# Install all workspace dependencies
 RUN pnpm install --frozen-lockfile
 
+# Copy the rest of the source code
+COPY ui/ ./ui/
+COPY lib/ ./lib/
+
 # Build the UI
-COPY . .
+WORKDIR /app/ui
 RUN pnpm build
 
 FROM nginx:stable-alpine
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY ui/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/ui/dist /usr/share/nginx/html
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
