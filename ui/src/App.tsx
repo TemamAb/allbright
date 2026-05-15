@@ -16,6 +16,7 @@ import Trades from './components/Trades';
 import StrategiesPage from './components/StrategiesPage';
 import NotFound from './components/NotFound';
 import ErrorBoundary from './components/ErrorBoundary';
+import AdminAuditDashboard from './components/AdminAuditDashboard';
 
 import DeploymentReadiness from './components/DeploymentReadiness';
 import { Toaster } from "sonner";
@@ -90,6 +91,7 @@ const App: React.FC = () => {
               <Route path="/readiness" component={DeploymentReadiness} />
               <Route path="/settings" component={SystemSettings} />
               <Route path="/setup" component={SetupWizard} />
+              <Route path="/admin/audit" component={AdminAuditDashboard} />
               <Route component={NotFound} />
             </Switch>
           </ErrorBoundary>

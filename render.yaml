@@ -106,9 +106,9 @@ services:
       - key: PRE_FLIGHT_STRICT
         value: "false"
       - key: CORS_ORIGINS
-        value: https://allbright-live.onrender.com,https://allbright-live.onrender.com
+        value: https://allbright-i03f.onrender.com
       - key: UI_URL
-        value: https://allbright-live.onrender.com
+        value: https://allbright-i03f.onrender.com
 
 # ─────────────────────────────────────────────
   # SERVICE 3: Dashboard (Docker with nginx for SPA fallback)

@@ -16,6 +16,7 @@ const navItems = [
   { path: "/trades", label: "Operations Ledger", icon: Terminal },
   { path: "/vault", label: "Wallet Management", icon: Wallet },
   { path: "/settings", label: "System Config", icon: Settings },
+  { path: "/admin/audit", label: "Admin Audit", icon: ShieldCheck },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -141,28 +142,28 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="relative group flex items-center gap-4 cursor-help">
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <div className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-profit' : 'bg-[rgb(255,77,79)']} animate-pulse`} />
-                  <div className={`absolute inset-0 w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-profit/50' : 'bg-[rgb(255,77,79)/50]'} animate-ping`} />
-                </div>
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Live Nodes: 4</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className={`w-1.5 h-1.5 rounded-full ${
-                  connectionQuality === 'good' ? 'bg-profit' :
-                  connectionQuality === 'poor' ? 'bg-warning' :
-                  'bg-[rgb(255,77,79)]'
-                }`} />
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                  {connectionQuality === 'good' ? 'Online' :
-                   connectionQuality === 'poor' ? 'Slow' :
-                   'Offline'}
-                </span>
-              </div>
-            </div>
+           <div className="flex items-center gap-4">
+             <div className="relative group flex items-center gap-4 cursor-help">
+               <div className="flex items-center gap-2">
+                 <div className="relative">
+                   <div className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-profit' : `bg-red-600`} animate-pulse`} />
+                   <div className={`absolute inset-0 w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-profit/50' : `bg-red-600/50`} animate-ping`} />
+                 </div>
+                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Live Nodes: 4</span>
+               </div>
+               <div className="flex items-center gap-2">
+                 <div className={`w-1.5 h-1.5 rounded-full ${
+                   connectionQuality === 'good' ? 'bg-profit' :
+                   connectionQuality === 'poor' ? 'bg-warning' :
+                   'bg-red-600'
+                 }`} />
+                 <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                   {connectionQuality === 'good' ? 'Online' :
+                    connectionQuality === 'poor' ? 'Slow' :
+                    'Offline'}
+                 </span>
+               </div>
+             </div>
             <button
               onClick={toggleTheme}
               className="px-2 py-1 rounded bg-muted/50 border border-border text-[10px] font-bold text-heading-blue hover:bg-muted/80 transition-colors"
