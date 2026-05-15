@@ -3,43 +3,7 @@ databases:
     plan: starter
 
 services:
-  # ─────────────────────────────────────────────
-  # SERVICE 1: Rust Solver (Docker)
-  # Render assigns PORT automatically — do NOT override it.
-  # The solver binds to $PORT so Render can route traffic to /health.
-  # INTERNAL_BRIDGE_PORT is used only for API→Solver IPC config reference.
-  # ─────────────────────────────────────────────
-  - type: web
-    name: allbright-solver
-    env: docker
-    plan: starter
-    branch: main
-    rootDir: solver
-    healthCheckPath: /health
-    healthCheckTimeout: 30
-    envVars:
-      - key: ETH_WS_URL
-        value: wss://ethereum-rpc.publicnode.com
-      - key: BASE_WS_URL
-        value: wss://base-rpc.publicnode.com
-      - key: ARBITRUM_WS_URL
-        value: wss://arbitrum-rpc.publicnode.com
-      - key: OPTIMISM_WS_URL
-        value: wss://optimism-rpc.publicnode.com
-      - key: POLYGON_WS_URL
-        value: wss://polygon-rpc.publicnode.com
-      - key: AVALANCHE_WS_URL
-        value: wss://avalanche-rpc.publicnode.com
-      - key: BSC_WS_URL
-        value: wss://bsc-rpc.publicnode.com
-      - key: FANTOM_WS_URL
-        value: wss://fantom-rpc.publicnode.com
-      - key: RUST_LOG
-        value: info
-      - key: SKIP_GATE
-        value: "true"
-      # NOTE: PORT is intentionally NOT set here — Render injects it automatically.
-      # The solver reads $PORT at runtime in main.rs.
+
 
   # ─────────────────────────────────────────────
   # SERVICE 2: Node.js API (Docker)
@@ -94,11 +58,7 @@ services:
       - key: MEV_PROTECTION
         value: "true"
       - key: USE_TCP_BRIDGE
-        value: "true"
-      - key: allbright_TCP_HOST
-        value: allbright-solver
-      - key: allbright_TCP_PORT
-        value: "10000"
+        value: "false"
       - key: DATABASE_URL
         fromDatabase: allbright-db
       - key: APP_INITIAL_SETUP
