@@ -1,28 +1,14 @@
-# syntax=docker/dockerfile:1
-# AllBright Solver Dockerfile - Root Context Build
-FROM rust:1.88-slim AS builder
+# ==========================================
+# DEPRECATED SOLVER DOCKERFILE
+# ==========================================
+# The Allbright Solver has been migrated directly into the Tauri Desktop 
+# application (src-tauri). This Dockerfile now serves as a dummy container 
+# to satisfy legacy Render service hooks without crashing the build pipeline.
 
-WORKDIR /app
+FROM alpine:latest
 
-# Install dependencies for building
-RUN apt-get update && apt-get install -y pkg-config libssl-dev libicu-dev && rm -rf /var/lib/apt/lists/*
+# Expose the port Render expects to bind to
+EXPOSE 10000
 
-# Copy all source files for build
-COPY . .
-
-# Build the solver using workspace manifest
-RUN cargo build --release --manifest-path solver/Cargo.toml
-
-FROM debian:bookworm-slim
-WORKDIR /app
-
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y libssl3 ca-certificates && rm -rf /var/lib/apt/lists/*
-
-# Copy the built binary from builder
-COPY --from=builder /app/solver/target/release/allbright .
-
-# Expose IPC port
-EXPOSE 4001
-
-CMD ["./allbright"]
+# Run a simple endless loop so the service doesn't crash on boot
+CMD ["sh", "-c", "echo 'Allbright Solver migrated to Tauri Desktop. This dummy service is safely hibernating.' && sleep infinity"]
