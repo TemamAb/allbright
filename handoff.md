@@ -1,4 +1,4 @@
-# allbright Handoff - v0.2.8 Production Release - AUDIT PASSED
+# allbright Handoff - v0.2.9 Production Release - AUDIT PASSED
 
 **Status**: 👑 RENDER DOCKER FIX DEPLOYED - PORT 10000 STANDARDIZED
 
@@ -9,7 +9,7 @@
 **Date:** 2026-05-19  
 **Issue:** Render services (Solver/Dashboard) failing with "No open ports detected" or HTTP 502 because containers were not listening on the required port 10000.
 
-### Fix Applied (Audit v0.2.8)
+### Fix Applied (Audit v0.2.9)
 1. **Solver**: Updated Dockerfile to listen on port 10000 and respond with HTTP 200 via netcat.
 2. **Ambiguity Resolution**: Deleted redundant lowercase `dockerfile` to prevent port 3000/10000 collisions on Linux.
 ```dockerfile
@@ -18,7 +18,7 @@ CMD ["sh", "-c", "while true; do printf 'HTTP/1.1 200 OK\r\nContent-Length: 0\r\
 ```
 
 ### Push Status
-- Commit: `AUDIT_FIX_v0.2.8` - Standardized on Port 10000 & Cleaned collisions.
+- Commit: `AUDIT_FIX_v0.2.9` - Fixed "Dockerfile cannot be empty" naming collision.
 - Render: Auto-redeploying with unified port logic.
 
 ---
