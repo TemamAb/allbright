@@ -10,8 +10,8 @@ FROM alpine:latest
 # Install minimal HTTP server
 RUN apk add --no-cache netcat-openbsd
 
-# Expose the port Render expects (3000)
-EXPOSE 3000
+# Expose the port Render expects (10000)
+EXPOSE 10000
 
-# Minimal HTTP responder for Render health checks (returns 200 OK on any request)
-CMD ["sh", "-c", "while true; do printf 'HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n' | nc -l -p 3000 -q 1; done"]
+# Minimal HTTP responder for Render health checks on port 10000
+CMD ["sh", "-c", "while true; do printf 'HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n' | nc -l -p 10000 -q 1; done"]

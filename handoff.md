@@ -1,13 +1,13 @@
 # allbright Handoff - v0.2.6 Production Release
 
-**Status**: 👑 RENDER DOCKER FIX DEPLOYED - HTTP 200 RESPONDER ON PORT 3000
+**Status**: 👑 RENDER DOCKER FIX DEPLOYED - HTTP 200 RESPONDER ON PORT 10000
 
 ---
 
-## Latest Update: Render Solver Docker Fix - PORT 3000 - DEPLOYED
+## Latest Update: Render Deployment Port Alignment - PORT 10000 - DEPLOYED
 
 **Date:** 2026-05-19  
-**Issue:** Render service failing with "No open ports detected" because dummy Dockerfile wasn't listening on port 10000.
+**Issue:** Render services (Solver/Dashboard) failing with "No open ports detected" or HTTP 502 because containers were not listening on the required port 10000.
 
 ### Problem
 Previous dummy Dockerfile only echoed a message and slept:
@@ -15,8 +15,8 @@ Previous dummy Dockerfile only echoed a message and slept:
 CMD ["sh", "-c", "echo 'migrated' && sleep infinity"]
 ```
 
-### Fix Applied (Commit 9de0ce5)
-Updated Dockerfile to listen on port 10000 and respond with HTTP 200:
+### Fix Applied (Commit 9de0ce5 & Latest)
+1. **Solver**: Updated Dockerfile to listen on port 10000 and respond with HTTP 200 via netcat.
 ```dockerfile
 RUN apk add --no-cache netcat-openbsd
 CMD ["sh", "-c", "while true; do printf 'HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n' | nc -l -p 10000 -q 1; done"]

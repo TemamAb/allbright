@@ -21,6 +21,8 @@ RUN pnpm build
 
 FROM nginx:stable-alpine
 COPY ui/nginx.conf /etc/nginx/conf.d/default.conf
+# Fix for Render 502: Reconfigure Nginx to listen on Render's default port 10000
+RUN sed -i 's/listen[[:space:]]*80;/listen 10000;/g' /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/ui/dist /usr/share/nginx/html
-EXPOSE 80
+EXPOSE 10000
 CMD ["nginx", "-g", "daemon off;"]
