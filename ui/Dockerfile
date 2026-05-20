@@ -1,6 +1,11 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
+
+# BSS-64: Stabilize Corepack & PNPM Home on Alpine
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable && corepack prepare pnpm@latest --activate
+
 
 # Copy workspace files for pnpm install
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
