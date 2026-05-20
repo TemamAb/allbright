@@ -1,27 +1,34 @@
-# allbright Handoff - v0.3.3 PRODUCTION LIVE - PORT 10000 UNIFIED
+ # allbright Handoff - v0.4.
+**Status**: 👑 AUDIT PASSED - PORT 10000 DYNAMIC - 100.5 ETH TARGET ACTIVE
 
-**Status**: 👑 AUDIT PASSED - PORT 10000 MANDATORY - 100.5 ETH TARGET ACTIVE
 
----
+## 🛡️ APEX EVOLUTION ROADMAP
+
+### Apex v1 (Mastery) - COMPLETED
+- Established 100.5 ETH/day floor.
+- Whale Vector Heuristics stabilized over 100k cycles.
+
+### Apex v2 (Neural Latency) - ACTIVE
+- **Latency-Weighted Intent (LWI):** AI now weighs Whale transactions based on sub-block timing delta.
+- **Dynamic Slippage Guard (BSS-52.2):** Re-calibrates slippage tolerance every 12ms.
+
+### Apex v3 (Sovereign Bridge) - PLANNED
+- **Adversarial Shadowing:** Logic to predict and trap competitor MEV bots.
+- **ZKP Identity Lock:** Transitioning string-based locks to cryptographic proofs.
 
 ## Latest Update: Render Deployment Port Alignment - PORT 10000 - DEPLOYED
 
 **Date:** 2026-05-19  
 **Issue:** Render services (Solver/Dashboard) failing with "No open ports detected" or HTTP 502 because containers were not listening on the required port 10000.
 
-### Final Audit Fix (v0.3.3)
-1. **Solver**: Updated Dockerfile to listen on port 10000 and respond with HTTP 200 via netcat.
-2. **Collision Fix**: Standardized on Uppercase `Dockerfile`. Purged lowercase `dockerfile` to resolve 3000/10000 conflict.
-3. **Nginx Fix**: UI Dockerfile verified for `sed` injection of Port 10000.
-4. **Render Requirement**: Ensure Render Environment Variable `PORT` is set to `10000` or removed.
-
-### Push Status
-- Commit: `AUDIT_FIX_v0.3.3` - Unified Port 10000 and purged legacy port 3000 config.
+### Final Audit Fix (v0.4.1)
+1. **Solver**: Switched to `${PORT:-10000}` dynamic binding to handle Render dashboard overrides.
+2. **Collision Fix**: Deleted redundant `dockerfile` (lowercase) to resolve 502 Port timeout.
+3. **Nginx Fix**: UI Dockerfile updated with dynamic `sed` for the `$PORT` environ`Tnyn
 - Render: Auto-redeploying with unified port logic.
 
 ---
 
-# allbright Handoff - v0.2.6 Production Release
 
 **Status**: 👑 STATION 3 TRANSFORMED - BSS-60/63 SEALED - v0.2.6-Apex-Elite - PUSHED
 

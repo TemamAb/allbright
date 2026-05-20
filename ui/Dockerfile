@@ -21,8 +21,7 @@ RUN pnpm build
 
 FROM nginx:stable-alpine
 COPY ui/nginx.conf /etc/nginx/conf.d/default.conf
-# Fix for Render 502: Reconfigure Nginx to listen on Render's default port 10000
-RUN sed -i 's/listen[[:space:]]*80;/listen 10000;/g' /etc/nginx/conf.d/default.conf
+# Reconfigure Nginx at runtime to listen on Render's dynamic PORT environment variable
 COPY --from=builder /app/ui/dist /usr/share/nginx/html
-EXPOSE 10000
-CMD ["nginx", "-g", "daemon off;"]
+EXPOSE 80 10000 3000
+CMD ["sh", "-c", "sed -i \"s/listen[[:space:]]*[0-9]*;/listen ${PORT:-10000};/g\" /etc/nginx/conf.d/default.conf && exec nginx -g \"daemon off;\""]
