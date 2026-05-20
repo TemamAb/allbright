@@ -1,6 +1,8 @@
- # allbright Handoff - v0.4.
+ # allbright Handoff - v0.4.1 APEX EVOLUTION - PORT TIMEOUT RESOLVED
+
 **Status**: 👑 AUDIT PASSED - PORT 10000 DYNAMIC - 100.5 ETH TARGET ACTIVE
 
+---
 
 ## 🛡️ APEX EVOLUTION ROADMAP
 
@@ -24,11 +26,15 @@
 ### Final Audit Fix (v0.4.1)
 1. **Solver**: Switched to `${PORT:-10000}` dynamic binding to handle Render dashboard overrides.
 2. **Collision Fix**: Deleted redundant `dockerfile` (lowercase) to resolve 502 Port timeout.
-3. **Nginx Fix**: UI Dockerfile updated with dynamic `sed` for the `$PORT` environ`Tnyn
+3. **Nginx Fix**: UI Dockerfile updated with dynamic `sed` for the `$PORT` environment variable.
+
+### Push Status
+- Commit: `AUDIT_FIX_v0.4.1` - Unified dynamic port binding and collision cleanup.
 - Render: Auto-redeploying with unified port logic.
 
 ---
 
+# allbright Handoff - v0.2.6 Production Release
 
 **Status**: 👑 STATION 3 TRANSFORMED - BSS-60/63 SEALED - v0.2.6-Apex-Elite - PUSHED
 
