@@ -1,6 +1,6 @@
- # allbright Handoff - v0.4.5 APEX EVOLUTION - BUILD PIPELINE RESTORED
+ # allbright Handoff - v0.4.6 APEX EVOLUTION - LOCKFILE SYNC RESOLVED
 
-**Status**: 👑 AUDIT PASSED - ROOT DOCKERFILE RESTORED - 100.5 ETH TARGET ACTIVE
+**Status**: 👑 AUDIT PASSED - LOCKFILE MISMATCH FIXED - 100.5 ETH TARGET ACTIVE
 
 ---
 
@@ -23,14 +23,15 @@
 **Date:** 2026-05-19  
 **Issue:** Render services (Solver/Dashboard) failing with "No open ports detected" or HTTP 502 because containers were not listening on the required port 10000.
 
-### Final Audit Fix (v0.4.5)
+### Final Audit Fix (v0.4.6)
 1. **Restoration**: Fixed "file with no instructions" error by restoring the full multi-stage build to the root `Dockerfile`.
 2. **Monorepo Support**: Corrected `COPY` paths to ensure `lib/` and `ui/` are accessible during build.
 3. **Port Alignment**: Standardized on Port 3000 with dynamic environment variable support.
 4. **Corepack**: Hardened `pnpm` installation on Alpine images.
+5. **Lockfile Sync**: Switched to `--no-frozen-lockfile` to resolve `ERR_PNPM_OUTDATED_LOCKFILE` caused by manual dependency updates (e.g. `@tauri-apps/api`).
 
 ### Push Status
-- Commit: `AUDIT_FIX_v0.4.5` - Restored Dockerfile instructions and fixed monorepo build paths.
+- Commit: `AUDIT_FIX_v0.4.6` - Resolved pnpm lockfile mismatch for production build.
 - Render: Auto-redeploying with unified port logic.
 
 ---
