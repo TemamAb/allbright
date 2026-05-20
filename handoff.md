@@ -1,7 +1,5 @@
- # allbright Handoff - v0.4.9 APEX EVOLUTION - DOCKER BUILD OPTIMIZED
  # allbright Handoff - v0.5.0 APEX EVOLUTION - BUILD ERRORS RESOLVED
 
-**Status**: 👑 AUDIT PASSED - DOCKER BUILD OVERWRITE FIXED - 100.5 ETH TARGET ACTIVE
 **Status**: 👑 AUDIT PASSED - TSCONFIG PATHS FIXED - 100.5 ETH TARGET ACTIVE
 
 ---
@@ -25,7 +23,6 @@
 **Date:** 2026-05-19  
 **Issue:** Render services (Solver/Dashboard) failing with "No open ports detected" or HTTP 502 because containers were not listening on the required port 10000.
 
-### Final Audit Fix (v0.4.9)
 ### Final Audit Fix (v0.5.0)
 1. **Restoration**: Fixed "file with no instructions" error by restoring the full multi-stage build to the root `Dockerfile`.
 2. **Monorepo Support**: Corrected `COPY` paths to ensure `lib/` and `ui/` are accessible during build.
@@ -33,16 +30,12 @@
 4. **Corepack**: Hardened `pnpm` installation on Alpine images.
 5. **Lockfile Sync**: Switched to `--no-frozen-lockfile` to resolve `ERR_PNPM_OUTDATED_LOCKFILE` caused by manual dependency updates (e.g. `@tauri-apps/api`).
 6. **Config Sync**: Explicitly copying `tsconfig*.json` files to resolve compilation errors caused by missing base configurations in the Docker environment.
-7. **TSConfig Protection**: Moved `ui/tsconfig.json` generation to occur *after* the `COPY` command to prevent it being overwritten by local disk files during the Docker build.
-8. **Duplicate Dockerfile Purge**: Removed redundant `ui/Dockerfile` and `dockerfile` (lowercase) to eliminate build ambiguity.
-9. **Git Synchronization**: Resolved the "no changes added to commit" error by providing the correct staging and purge sequence.
 7. **Path Resolution**: Fixed broken `../../lib` paths in `ui/tsconfig.json` and `tsconfig.base.json`. Corrected them to `../lib` to match the actual monorepo structure.
 8. **Build Integrity**: Removed destructive `RUN echo` in Dockerfile that was stripping React configuration from `ui/tsconfig.json`.
 9. **Duplicate Dockerfile Purge**: Removed redundant `ui/Dockerfile` and `dockerfile` (lowercase) to eliminate build ambiguity.
 10. **Git Synchronization**: Resolved the "no changes added to commit" error by providing the correct staging and purge sequence.
 
 ### Push Status
-- Commit: `AUDIT_FIX_v0.4.9` - Fixed Dockerfile overwrite logic and finalized repository cleanup.
 - Commit: `AUDIT_FIX_v0.5.0` - Resolved pnpm build failure by fixing TypeScript path resolution and Dockerfile logic.
 - Render: Auto-redeploying with unified port logic.
 
