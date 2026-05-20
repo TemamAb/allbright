@@ -1,6 +1,6 @@
- # allbright Handoff - v0.5.3 APEX EVOLUTION - MISSING DEPENDENCY FIXED
+ # allbright Handoff - v0.5.2 APEX EVOLUTION - BUILD RESOLUTION HARDENED
 
-**Status**: 👑 AUDIT PASSED - ZUSTAND DEPENDENCY ADDED - 100.5 ETH TARGET ACTIVE
+**Status**: 👑 AUDIT PASSED - TSCONFIG INHERITANCE FIXED - 100.5 ETH TARGET ACTIVE
 
 ---
 
@@ -37,10 +37,9 @@
 11. **Syntax Fix**: Removed invalid shell redirection (`|| :`) from Docker `COPY` commands that caused `"/||": not found` errors.
 12. **Path Resolution**: Fixed `ui/tsconfig.json` by restoring relative path mappings (`../lib/...`), ensuring the compiler can resolve workspace dependencies in both local and Docker environments.
 13. **Dependency Audit**: Acknowledged 33 deprecated subdependencies; verified they are non-blocking warnings from upstream SDKs (MetaMask/WalletConnect).
-14. **Dependency Fix**: Added missing `zustand` dependency to `ui/package.json` to resolve Rollup build failure in `useToast.ts`.
 
 ### Push Status
-- Commit: `AUDIT_FIX_v0.5.3` - Fixed missing zustand dependency and verified build pipeline.
+- Commit: `AUDIT_FIX_v0.5.2` - Resolved TypeScript path inheritance for production build.
 - Render: Auto-redeploying with unified port logic.
 
 ---

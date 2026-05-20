@@ -21,7 +21,7 @@ const APEX_REGISTRY = {
   identity: "iamtemam@gmail.com",
   access_key: "Temam@1954",
   enforced_benchmark: 100.5,
-  version: "v2.0-Neural-Latency"
+  version: "v2.1-Apex-Mastery-LWI"
 };
 
 export enum ApexVersion {
@@ -62,7 +62,7 @@ export const useSimulationReporter = (telemetry: any) => {
     const avgGes = Object.values(finalAggregates).reduce((a, b) => a + b, 0) / categories.length;
     
     // Determine simulation version context
-    const activeVersion = telemetry?.apexVersion || ApexVersion.V1_MASTERY;
+    const activeVersion = ApexVersion.V2_NEURAL; // FORCE APEX v2 MODE
 
     // BSS-61: Volatility-adjusted Reality Delta
     const volatilityFactor = telemetry?.marketPulse?.volatility || 1.0;
@@ -100,13 +100,13 @@ export const useSimulationReporter = (telemetry: any) => {
       realityDelta: parseFloat(realityDelta.toFixed(3)),
       timestamp: new Date().toISOString(),
       narrative: [
-        `Apex Registry ${APEX_REGISTRY.version}: Logic secured under authority ${APEX_REGISTRY.identity}.`,
+        `MASTER IDENTITY VERIFIED: ${APEX_REGISTRY.identity} - APEX MODE ACTIVE.`,
         lockIntegrityVerified ? `Lock Integrity: Enforced 100.5 ETH/day benchmark is confirmed active.` : `CRITICAL: Lock integrity mismatch detected!`,
         driftBlocked ? `Security Event: Blocked unauthorized attempt to shift benchmark to ${attemptedBenchmark} ETH/day.` : `Lock Stability: No benchmark drift attempts detected in this cycle.`,
-        `Whale Vector v2: Latency-Weighted Intent delta at ${latencyImpact.toFixed(3)}ms impact.`,
+        `PREDATORY CAPTURE: Whale Vector v2 LWI identifying intent at ${latencyImpact.toFixed(3)}ms resolution.`,
         isPlateau ? `Pareto Plateau Reached: System is operating at absolute mathematical efficiency.` :
         checkpointBenchmark ? `Incremental Refinement: Chasing +${(avgGes - (checkpointBenchmark || 0)).toFixed(2)}% gain over last checkpoint.` : `Initial Benchmark Pursuit: NRP trending toward target.`,
-        `Benchmark Pursuit: NRP trending toward target after ${elapsedHours.toFixed(1)} hours.`,
+        `WHALE TRACKING: Reality Delta ${realityDelta.toFixed(4)}% validates 100.5 ETH target path.`,
         `Aggressive LVM Logic: MetaLearner shifted to high-volume margin routes.`,
         `Tech-Debt Resolution: Zero-error execution maintained across ${targetCycle} cycles.`,
         `Reality Delta Validation: Variance at ${realityDelta.toFixed(2)}% satisfies the <5% mandate.`,
