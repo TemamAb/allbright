@@ -1,8 +1,8 @@
 import httpServer from "./app";
 import { logger } from "./services/logger";
 
-const rawPort = process.env["PORT"] || "10000";
-const port = Number(rawPort) || 10000;
+const rawPort = process.env["PORT"] || "3000";
+const port = Number(rawPort) || 3000;
 
 httpServer.listen(port, '0.0.0.0', () => {
   logger.info({ port }, "Server listening");

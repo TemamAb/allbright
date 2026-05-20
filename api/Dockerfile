@@ -13,5 +13,5 @@ COPY lib/db/ ./lib/db/
 
 RUN pnpm --filter @allbright/api build
 
-EXPOSE 10000
+EXPOSE 3000
 CMD ["node", "api/dist/index.mjs"]
