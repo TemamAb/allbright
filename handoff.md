@@ -1,7 +1,5 @@
- # allbright Handoff - v0.4.1 APEX EVOLUTION - PORT TIMEOUT RESOLVED
  # allbright Handoff - v0.4.2 APEX EVOLUTION - BUILD PIPELINE STABILIZED
 
-**Status**: 👑 AUDIT PASSED - PORT 10000 DYNAMIC - 100.5 ETH TARGET ACTIVE
 **Status**: 👑 AUDIT PASSED - BUILD FIX APPLIED - 100.5 ETH TARGET ACTIVE
 
 ---
@@ -25,17 +23,13 @@
 **Date:** 2026-05-19  
 **Issue:** Render services (Solver/Dashboard) failing with "No open ports detected" or HTTP 502 because containers were not listening on the required port 10000.
 
-### Final Audit Fix (v0.4.1)
 ### Final Audit Fix (v0.4.2)
 1. **Solver**: Switched to `${PORT:-10000}` dynamic binding to handle Render dashboard overrides.
-2. **Collision Fix**: Deleted redundant `dockerfile` (lowercase) to resolve 502 Port timeout.
-3. **Nginx Fix**: UI Dockerfile updated with dynamic `sed` for the `$PORT` environment variable.
 2. **Collision Fix**: Physically removed lowercase `dockerfile` from Git index to resolve Linux build ambiguity.
 3. **Build Fix**: Updated `ui/Dockerfile` with `PNPM_HOME` environment variables to stabilize Corepack activation on Alpine.
 4. **Logic Alignment**: Updated `useSimulationReporter.ts` to correctly track the 100.5 ETH benchmark drift.
 
 ### Push Status
-- Commit: `AUDIT_FIX_v0.4.1` - Unified dynamic port binding and collision cleanup.
 - Commit: `AUDIT_FIX_v0.4.2` - Resolved build status 1 and standardized simulation narratives.
 - Render: Auto-redeploying with unified port logic.
 
