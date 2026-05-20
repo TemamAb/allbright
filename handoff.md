@@ -1,6 +1,6 @@
-# allbright Handoff - v0.3.1 PRODUCTION LIVE - PORT TIMEOUT FIX
+# allbright Handoff - v0.3.2 PRODUCTION LIVE - COLLISION RESOLVED
 
-**Status**: 👑 LIVE PRODUCTION READY - PORT 10000 STANDARDIZED - TIMEOUT RESOLVED
+**Status**: 👑 LIVE PRODUCTION READY - PORT 10000 UNIFIED - FILENAME COLLISION PURGED
 
 ---
 
@@ -9,13 +9,13 @@
 **Date:** 2026-05-19  
 **Issue:** Render services (Solver/Dashboard) failing with "No open ports detected" or HTTP 502 because containers were not listening on the required port 10000.
 
-### Final Audit Fix (v0.3.1)
+### Final Audit Fix (v0.3.2)
 1. **Solver**: Updated Dockerfile to listen on port 10000 and respond with HTTP 200 via netcat.
-2. **Collision Fix**: Deleted redundant `dockerfile` (lowercase) to resolve Render/Linux naming ambiguity.
+2. **Collision Fix**: Standardized on Uppercase `Dockerfile`. Explicitly purged `dockerfile` (lowercase) to prevent Linux build ambiguity.
 3. **Nginx Fix**: UI Dockerfile verified for `sed` injection of Port 10000.
 
 ### Push Status
-- Commit: `AUDIT_FIX_v0.3.1` - Unified Port 10000 and Resolved Scan Timeout.
+- Commit: `AUDIT_FIX_v0.3.2` - Resolved Dockerfile naming collision and unified Port 10000.
 - Render: Auto-redeploying with unified port logic.
 
 ---
