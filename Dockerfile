@@ -19,12 +19,9 @@ RUN pnpm install --no-frozen-lockfile
 COPY ui/ ./ui/
 COPY lib/ ./lib/
 
-# BSS-65: Overwrite tsconfig after COPY to ensure container-specific path resolution survives the build
-RUN echo '{"extends": "../tsconfig.base.json", "compilerOptions": {"baseUrl": "../"}}' > ./ui/tsconfig.json
-
 # Build the Production Dashboard
 WORKDIR /app/ui
-RUN pnpm build
+RUN CI=false pnpm build
 
 FROM nginx:stable-alpine
 COPY ui/nginx.conf /etc/nginx/conf.d/default.conf
