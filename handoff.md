@@ -1,8 +1,6 @@
- # allbright Handoff - v0.5.0 APEX EVOLUTION - BUILD ERRORS RESOLVED
- # allbright Handoff - v0.5.1 APEX EVOLUTION - DOCKER SYNTAX FIXED
+ # allbright Handoff - v0.5.3 APEX EVOLUTION - MISSING DEPENDENCY FIXED
 
-**Status**: 👑 AUDIT PASSED - TSCONFIG PATHS FIXED - 100.5 ETH TARGET ACTIVE
-**Status**: 👑 AUDIT PASSED - COPY INSTRUCTIONS FIXED - 100.5 ETH TARGET ACTIVE
+**Status**: 👑 AUDIT PASSED - ZUSTAND DEPENDENCY ADDED - 100.5 ETH TARGET ACTIVE
 
 ---
 
@@ -25,7 +23,6 @@
 **Date:** 2026-05-19  
 **Issue:** Render services (Solver/Dashboard) failing with "No open ports detected" or HTTP 502 because containers were not listening on the required port 10000.
 
-### Final Audit Fix (v0.5.0)
 ### Final Audit Fix (v0.5.1)
 1. **Restoration**: Fixed "file with no instructions" error by restoring the full multi-stage build to the root `Dockerfile`.
 2. **Monorepo Support**: Corrected `COPY` paths to ensure `lib/` and `ui/` are accessible during build.
@@ -38,10 +35,12 @@
 9. **Duplicate Dockerfile Purge**: Removed redundant `ui/Dockerfile` and `dockerfile` (lowercase) to eliminate build ambiguity.
 10. **Git Synchronization**: Resolved the "no changes added to commit" error by providing the correct staging and purge sequence.
 11. **Syntax Fix**: Removed invalid shell redirection (`|| :`) from Docker `COPY` commands that caused `"/||": not found` errors.
+12. **Path Resolution**: Fixed `ui/tsconfig.json` by restoring relative path mappings (`../lib/...`), ensuring the compiler can resolve workspace dependencies in both local and Docker environments.
+13. **Dependency Audit**: Acknowledged 33 deprecated subdependencies; verified they are non-blocking warnings from upstream SDKs (MetaMask/WalletConnect).
+14. **Dependency Fix**: Added missing `zustand` dependency to `ui/package.json` to resolve Rollup build failure in `useToast.ts`.
 
 ### Push Status
-- Commit: `AUDIT_FIX_v0.5.0` - Resolved pnpm build failure by fixing TypeScript path resolution and Dockerfile logic.
-- Commit: `AUDIT_FIX_v0.5.1` - Fixed Docker COPY syntax and monorepo workspace integrity.
+- Commit: `AUDIT_FIX_v0.5.3` - Fixed missing zustand dependency and verified build pipeline.
 - Render: Auto-redeploying with unified port logic.
 
 ---
