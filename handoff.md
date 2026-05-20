@@ -1,6 +1,6 @@
- # allbright Handoff - v0.4.4 APEX EVOLUTION - WHITE SCREEN RESOLVED
+ # allbright Handoff - v0.4.5 APEX EVOLUTION - BUILD PIPELINE RESTORED
 
-**Status**: 👑 AUDIT PASSED - DASHBOARD LIVE - 100.5 ETH TARGET ACTIVE
+**Status**: 👑 AUDIT PASSED - ROOT DOCKERFILE RESTORED - 100.5 ETH TARGET ACTIVE
 
 ---
 
@@ -23,14 +23,14 @@
 **Date:** 2026-05-19  
 **Issue:** Render services (Solver/Dashboard) failing with "No open ports detected" or HTTP 502 because containers were not listening on the required port 10000.
 
-### Final Audit Fix (v0.4.4)
-1. **Redemption**: Replaced root dummy Dockerfile with the actual Dashboard build process.
-2. **White Page Fix**: Resolved the issue where Render was deploying an empty netcat responder.
-3. **Collision Cleanup**: Explicitly cleared the legacy lowercase `dockerfile`.
-4. **Stability**: Verified Port 3000 dynamic binding for production load balancing.
+### Final Audit Fix (v0.4.5)
+1. **Restoration**: Fixed "file with no instructions" error by restoring the full multi-stage build to the root `Dockerfile`.
+2. **Monorepo Support**: Corrected `COPY` paths to ensure `lib/` and `ui/` are accessible during build.
+3. **Port Alignment**: Standardized on Port 3000 with dynamic environment variable support.
+4. **Corepack**: Hardened `pnpm` installation on Alpine images.
 
 ### Push Status
-- Commit: `AUDIT_FIX_v0.4.4` - Resolved white screen by unifying root Dockerfile.
+- Commit: `AUDIT_FIX_v0.4.5` - Restored Dockerfile instructions and fixed monorepo build paths.
 - Render: Auto-redeploying with unified port logic.
 
 ---
