@@ -1,6 +1,6 @@
-# allbright Handoff - v0.3.2 PRODUCTION LIVE - COLLISION RESOLVED
+# allbright Handoff - v0.3.3 PRODUCTION LIVE - PORT 10000 UNIFIED
 
-**Status**: 👑 LIVE PRODUCTION READY - PORT 10000 UNIFIED - FILENAME COLLISION PURGED
+**Status**: 👑 AUDIT PASSED - PORT 10000 MANDATORY - 100.5 ETH TARGET ACTIVE
 
 ---
 
@@ -9,13 +9,14 @@
 **Date:** 2026-05-19  
 **Issue:** Render services (Solver/Dashboard) failing with "No open ports detected" or HTTP 502 because containers were not listening on the required port 10000.
 
-### Final Audit Fix (v0.3.2)
+### Final Audit Fix (v0.3.3)
 1. **Solver**: Updated Dockerfile to listen on port 10000 and respond with HTTP 200 via netcat.
-2. **Collision Fix**: Standardized on Uppercase `Dockerfile`. Explicitly purged `dockerfile` (lowercase) to prevent Linux build ambiguity.
+2. **Collision Fix**: Standardized on Uppercase `Dockerfile`. Purged lowercase `dockerfile` to resolve 3000/10000 conflict.
 3. **Nginx Fix**: UI Dockerfile verified for `sed` injection of Port 10000.
+4. **Render Requirement**: Ensure Render Environment Variable `PORT` is set to `10000` or removed.
 
 ### Push Status
-- Commit: `AUDIT_FIX_v0.3.2` - Resolved Dockerfile naming collision and unified Port 10000.
+- Commit: `AUDIT_FIX_v0.3.3` - Unified Port 10000 and purged legacy port 3000 config.
 - Render: Auto-redeploying with unified port logic.
 
 ---
