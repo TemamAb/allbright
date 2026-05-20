@@ -1,6 +1,6 @@
- # allbright Handoff - v0.4.2 APEX EVOLUTION - BUILD PIPELINE STABILIZED
+ # allbright Handoff - v0.4.3 APEX EVOLUTION - PORT 3000 UNIFIED
 
-**Status**: 👑 AUDIT PASSED - BUILD FIX APPLIED - 100.5 ETH TARGET ACTIVE
+**Status**: 👑 AUDIT PASSED - PORT 3000 ALIGNED - 100.5 ETH TARGET ACTIVE
 
 ---
 
@@ -23,14 +23,14 @@
 **Date:** 2026-05-19  
 **Issue:** Render services (Solver/Dashboard) failing with "No open ports detected" or HTTP 502 because containers were not listening on the required port 10000.
 
-### Final Audit Fix (v0.4.2)
-1. **Solver**: Switched to `${PORT:-10000}` dynamic binding to handle Render dashboard overrides.
-2. **Collision Fix**: Physically removed lowercase `dockerfile` from Git index to resolve Linux build ambiguity.
-3. **Build Fix**: Updated `ui/Dockerfile` with `PNPM_HOME` environment variables to stabilize Corepack activation on Alpine.
-4. **Logic Alignment**: Updated `useSimulationReporter.ts` to correctly track the 100.5 ETH benchmark drift.
+### Final Audit Fix (v0.4.3)
+1. **Solver**: Switched to `${PORT:-3000}` to match Render's default port scan.
+2. **Collision Fix**: Purged lowercase `dockerfile` to resolve file-system ambiguity.
+3. **Nginx Fix**: UI Dockerfile verified for dynamic port binding.
+4. **Logic Alignment**: Verified 100.5 ETH target in `useSimulationReporter.ts`.
 
 ### Push Status
-- Commit: `AUDIT_FIX_v0.4.2` - Resolved build status 1 and standardized simulation narratives.
+- Commit: `AUDIT_FIX_v0.4.3` - Unified on Port 3000 and resolved file collisions.
 - Render: Auto-redeploying with unified port logic.
 
 ---
