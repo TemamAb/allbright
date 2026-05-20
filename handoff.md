@@ -1,6 +1,8 @@
  # allbright Handoff - v0.5.0 APEX EVOLUTION - BUILD ERRORS RESOLVED
+ # allbright Handoff - v0.5.1 APEX EVOLUTION - DOCKER SYNTAX FIXED
 
 **Status**: 👑 AUDIT PASSED - TSCONFIG PATHS FIXED - 100.5 ETH TARGET ACTIVE
+**Status**: 👑 AUDIT PASSED - COPY INSTRUCTIONS FIXED - 100.5 ETH TARGET ACTIVE
 
 ---
 
@@ -24,6 +26,7 @@
 **Issue:** Render services (Solver/Dashboard) failing with "No open ports detected" or HTTP 502 because containers were not listening on the required port 10000.
 
 ### Final Audit Fix (v0.5.0)
+### Final Audit Fix (v0.5.1)
 1. **Restoration**: Fixed "file with no instructions" error by restoring the full multi-stage build to the root `Dockerfile`.
 2. **Monorepo Support**: Corrected `COPY` paths to ensure `lib/` and `ui/` are accessible during build.
 3. **Port Alignment**: Standardized on Port 3000 with dynamic environment variable support.
@@ -34,9 +37,11 @@
 8. **Build Integrity**: Removed destructive `RUN echo` in Dockerfile that was stripping React configuration from `ui/tsconfig.json`.
 9. **Duplicate Dockerfile Purge**: Removed redundant `ui/Dockerfile` and `dockerfile` (lowercase) to eliminate build ambiguity.
 10. **Git Synchronization**: Resolved the "no changes added to commit" error by providing the correct staging and purge sequence.
+11. **Syntax Fix**: Removed invalid shell redirection (`|| :`) from Docker `COPY` commands that caused `"/||": not found` errors.
 
 ### Push Status
 - Commit: `AUDIT_FIX_v0.5.0` - Resolved pnpm build failure by fixing TypeScript path resolution and Dockerfile logic.
+- Commit: `AUDIT_FIX_v0.5.1` - Fixed Docker COPY syntax and monorepo workspace integrity.
 - Render: Auto-redeploying with unified port logic.
 
 ---
