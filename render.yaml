@@ -5,7 +5,7 @@ databases:
 services:
 
 
-  # ─────────────────────────────────────────────
+# ─────────────────────────────────────────────
   # SERVICE 2: Node.js API (Docker)
   # ─────────────────────────────────────────────
   - type: web
@@ -19,6 +19,8 @@ services:
     startPeriod: 120s
     database: allbright-db
     envVars:
+      - key: PORT
+        value: "3000"
       - key: NODE_ENV
         value: production
       - key: SKIP_GATE
