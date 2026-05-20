@@ -1,4 +1,5 @@
 {
+  "extends": "../tsconfig.base.json",
   "include": ["src/**/*"],
   "exclude": ["node_modules", "build", "dist", "**/*.test.ts"],
   "compilerOptions": {
@@ -19,8 +20,9 @@
     "types": ["node", "vite/client"],
     "paths": {
       "@/*": ["./src/*"],
-      "@workspace/api-client-react": ["../lib/api-client-react/src/index.ts"],
-      "@workspace/api-client-react/*": ["../lib/api-client-react/src/*"]
+      "@workspace/api-client-react": ["/app/lib/api-client-react/src/index.ts"],
+      "@workspace/db": ["/app/lib/db/src/index.ts"],
+      "@workspace/ts": ["/app/lib/ts/src/index.ts"]
     }
   }
 }

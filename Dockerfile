@@ -11,6 +11,11 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig*.json ./
 COPY ui/package.json ./ui/
 COPY lib/api-client-react/package.json ./lib/api-client-react/
 COPY lib/db/package.json ./lib/db/
+# BSS-66: Copy remaining workspace members to ensure pnpm dependency linking
+COPY api/package.json ./api/ 2>/dev/null || :
+COPY lib/api-spec/package.json ./lib/api-spec/ 2>/dev/null || :
+COPY lib/api-zod/package.json ./lib/api-zod/ 2>/dev/null || :
+COPY lib/ts/package.json ./lib/ts/ 2>/dev/null || :
 
 # Install all workspace dependencies
 RUN pnpm install --no-frozen-lockfile
@@ -18,10 +23,11 @@ RUN pnpm install --no-frozen-lockfile
 # Copy source code
 COPY ui/ ./ui/
 COPY lib/ ./lib/
+COPY api/ ./api/ 2>/dev/null || :
 
 # Build the Production Dashboard
 WORKDIR /app/ui
-RUN CI=false pnpm build
+RUN CI=false pnpm run build
 
 FROM nginx:stable-alpine
 COPY ui/nginx.conf /etc/nginx/conf.d/default.conf

@@ -13,8 +13,9 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./ui/src/*"],
-      "@workspace/*": ["./*"],
-      "@workspace/api-client-react": ["./lib/api-client-react/src/index.ts"]
+      "@workspace/api-client-react": ["./lib/api-client-react/src/index.ts"],
+      "@workspace/db": ["./lib/db/src/index.ts"],
+      "@workspace/ts": ["./lib/ts/src/index.ts"]
     }
   }
 }
